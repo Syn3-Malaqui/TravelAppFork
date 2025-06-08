@@ -25,7 +25,7 @@ function App() {
       <Router>
         <Routes>
           <Route path="/login" element={<LoginPage />} />
-          <Route path="*" element={<Navigate to="/login" replace />} />
+          <Route path="*" element={<Navigate to="/login\" replace />} />
         </Routes>
       </Router>
     );
@@ -51,7 +51,7 @@ function App() {
               <Route path="/messages" element={<div className="p-8 text-center text-gray-500">Messages Page</div>} />
               <Route path="/bookmarks" element={<div className="p-8 text-center text-gray-500">Bookmarks Page</div>} />
               <Route path="/profile" element={<div className="p-8 text-center text-gray-500">Profile Page</div>} />
-              <Route path="/login" element={<Navigate to="/" replace />} />
+              <Route path="/login" element={<Navigate to="/\" replace />} />
             </Routes>
           </div>
         </div>
