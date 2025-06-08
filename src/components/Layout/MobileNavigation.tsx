@@ -33,7 +33,7 @@ export const MobileNavigation: React.FC = () => {
             }`}
             onClick={() => handleNavClick(item.label)}
           >
-            <item.icon className="w-8 h-8" />
+            <item.icon className="w-10 h-10" />
           </Button>
         ))}
       </div>
