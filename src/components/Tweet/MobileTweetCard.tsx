@@ -60,7 +60,7 @@ export const MobileTweetCard: React.FC<MobileTweetCardProps> = ({
         </Avatar>
 
         {/* Content - Now on the left but text-aligned right */}
-        <div className="flex-1 min-w-0 text-right mr-4">
+        <div className="flex-1 min-w-0 text-right mr-2">
           {/* Header */}
           <div className="flex items-center justify-between mb-1">
             {/* More Options - Now on the left */}
