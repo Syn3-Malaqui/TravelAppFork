@@ -2,34 +2,21 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { X, Image, Smile, Calendar, MapPin, ArrowLeft } from 'lucide-react';
 import { Button } from '../ui/button';
-import { Avatar, AvatarImage, AvatarFallback } from '../ui/avatar';
-import { useAuth } from '../../hooks/useAuth';
-import { useTweets } from '../../hooks/useTweets';
 
 export const ComposePage: React.FC = () => {
   const navigate = useNavigate();
-  const { user, profile } = useAuth();
-  const { createTweet } = useTweets();
   const [content, setContent] = useState('');
   const [images, setImages] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
 
   const handleSubmit = async () => {
-    if (!content.trim() || !user) return;
+    if (!content.trim()) return;
 
     setLoading(true);
     try {
-      // Extract hashtags and mentions
-      const hashtags = content.match(/#\w+/g)?.map(tag => tag.slice(1)) || [];
-      const mentions = content.match(/@\w+/g)?.map(mention => mention.slice(1)) || [];
-
-      const { error } = await createTweet(content.trim(), images, hashtags, mentions);
+      // Simulate posting
+      await new Promise(resolve => setTimeout(resolve, 1000));
       
-      if (error) {
-        console.error('Error creating tweet:', error);
-        return;
-      }
-
       setContent('');
       setImages([]);
       navigate('/');
@@ -85,12 +72,7 @@ export const ComposePage: React.FC = () => {
       <div className="p-4">
         <div className="flex space-x-4">
           {/* Avatar */}
-          {profile && (
-            <Avatar className="w-12 h-12 flex-shrink-0">
-              <AvatarImage src={profile.avatar_url || undefined} />
-              <AvatarFallback>{profile.display_name[0]}</AvatarFallback>
-            </Avatar>
-          )}
+          <div className="w-12 h-12 bg-gray-300 rounded-full flex-shrink-0"></div>
 
           {/* Text Area */}
           <div className="flex-1 min-w-0">

@@ -10,12 +10,9 @@ import {
   Settings,
   MoreHorizontal,
   Hash,
-  Users,
-  LogOut
+  Users
 } from 'lucide-react';
 import { Button } from '../ui/button';
-import { Avatar, AvatarImage, AvatarFallback } from '../ui/avatar';
-import { useAuth } from '../../hooks/useAuth';
 
 const sidebarItems = [
   { icon: Home, label: 'Home', active: true },
@@ -31,15 +28,9 @@ const sidebarItems = [
 
 export const Sidebar: React.FC = () => {
   const navigate = useNavigate();
-  const { user, profile, signOut } = useAuth();
 
   const handleTweetClick = () => {
     navigate('/compose');
-  };
-
-  const handleSignOut = async () => {
-    await signOut();
-    navigate('/login');
   };
 
   return (
@@ -79,30 +70,15 @@ export const Sidebar: React.FC = () => {
       </nav>
 
       {/* User Profile */}
-      {user && profile && (
-        <div className="mt-auto">
-          <div className="flex items-center justify-between p-3">
-            <div className="flex items-center">
-              <Avatar className="mr-3">
-                <AvatarImage src={profile.avatar_url || undefined} />
-                <AvatarFallback>{profile.display_name[0]}</AvatarFallback>
-              </Avatar>
-              <div className="flex-1 text-left">
-                <div className="font-bold text-sm">{profile.display_name}</div>
-                <div className="text-gray-500 text-sm">@{profile.username}</div>
-              </div>
-            </div>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={handleSignOut}
-              className="p-2"
-            >
-              <LogOut className="h-4 w-4" />
-            </Button>
+      <div className="mt-auto">
+        <div className="flex items-center p-3">
+          <div className="w-10 h-10 bg-gray-300 rounded-full mr-3"></div>
+          <div className="flex-1 text-left">
+            <div className="font-bold text-sm">Demo User</div>
+            <div className="text-gray-500 text-sm">@demouser</div>
           </div>
         </div>
-      )}
+      </div>
     </div>
   );
 };
