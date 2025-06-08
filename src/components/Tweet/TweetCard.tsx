@@ -62,7 +62,7 @@ export const TweetCard: React.FC<TweetCardProps> = ({
         </Avatar>
 
         {/* Tweet Content - Now on the left but text-aligned right */}
-        <div className="flex-1 min-w-0 text-right mr-6">
+        <div className="flex-1 min-w-0 text-right mr-3">
           {/* Header */}
           <div className="flex items-center justify-between mb-1">
             {/* More Options - Now on the left */}
