@@ -9,7 +9,7 @@ import { useAuth } from '../../hooks/useAuth';
 import { useTweets } from '../../hooks/useTweets';
 import { useInteractions } from '../../hooks/useInteractions';
 import { useStore } from '../../store/useStore';
-import { User, Tweet } from '../types';
+import { User, Tweet } from '../../types';
 
 export const Timeline: React.FC = () => {
   const navigate = useNavigate();

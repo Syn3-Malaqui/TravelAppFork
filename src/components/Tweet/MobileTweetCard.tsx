@@ -52,30 +52,9 @@ export const MobileTweetCard: React.FC<MobileTweetCardProps> = ({
 
   const isOwnTweet = currentUserId === tweet.author.id;
 
-  const renderContentWithTags = (content: string) => {
-    const words = content.split(' ');
-    return words.map((word, index) => {
-      if (word.startsWith('#')) {
-        return (
-          <span key={index} className="text-blue-500 hover:underline cursor-pointer">
-            {word}{' '}
-          </span>
-        );
-      }
-      if (word.startsWith('@')) {
-        return (
-          <span key={index} className="text-blue-500 hover:underline cursor-pointer">
-            {word}{' '}
-          </span>
-        );
-      }
-      return word + ' ';
-    });
-  };
-
   return (
     <div className="border-b border-gray-100 p-4 bg-white">
-      <div className="flex flex-row-reverse gap-3">
+      <div className="flex space-x-3 flex-row-reverse">
         {/* Avatar - Now on the right */}
         <Avatar className="w-10 h-10 flex-shrink-0">
           <AvatarImage src={tweet.author.avatar} />
@@ -83,7 +62,7 @@ export const MobileTweetCard: React.FC<MobileTweetCardProps> = ({
         </Avatar>
 
         {/* Content - Now on the left but text-aligned right */}
-        <div className="flex-1 min-w-0 text-right mr-1">
+        <div className="flex-1 min-w-0 text-right">
           {/* Header */}
           <div className="flex items-center justify-between mb-1">
             {/* More Options - Now on the left */}
@@ -143,22 +122,24 @@ export const MobileTweetCard: React.FC<MobileTweetCardProps> = ({
 
           {/* Tweet Text */}
           <div className="text-gray-900 mb-3 text-sm leading-5 text-right">
-            {renderContentWithTags(tweet.content)}
+            {tweet.content.split(' ').map((word, index) => {
+              if (word.startsWith('#')) {
+                return (
+                  <span key={index} className="text-blue-500">
+                    {word}{' '}
+                  </span>
+                );
+              }
+              if (word.startsWith('@')) {
+                return (
+                  <span key={index} className="text-blue-500">
+                    {word}{' '}
+                  </span>
+                );
+              }
+              return word + ' ';
+            })}
           </div>
-
-          {/* Hashtags */}
-          {tweet.hashtags && tweet.hashtags.length > 0 && (
-            <div className="mb-3 flex flex-wrap justify-end gap-1">
-              {tweet.hashtags.map((tag, index) => (
-                <span 
-                  key={index} 
-                  className="inline-block bg-blue-50 text-blue-600 px-2 py-1 rounded-full text-xs font-medium hover:bg-blue-100 cursor-pointer"
-                >
-                  #{tag}
-                </span>
-              ))}
-            </div>
-          )}
 
           {/* Images */}
           {tweet.images && tweet.images.length > 0 && (
