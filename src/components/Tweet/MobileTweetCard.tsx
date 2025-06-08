@@ -52,7 +52,7 @@ export const MobileTweetCard: React.FC<MobileTweetCardProps> = ({
 
   return (
     <div className="border-b border-gray-100 p-4 bg-white">
-      <div className="flex flex-row-reverse gap-6">
+      <div className="flex flex-row-reverse gap-3">
         {/* Avatar - Now on the right */}
         <Avatar className="w-10 h-10 flex-shrink-0">
           <AvatarImage src={tweet.author.avatar} />
@@ -60,7 +60,7 @@ export const MobileTweetCard: React.FC<MobileTweetCardProps> = ({
         </Avatar>
 
         {/* Content - Now on the left but text-aligned right */}
-        <div className="flex-1 min-w-0 text-right mr-2">
+        <div className="flex-1 min-w-0 text-right mr-1">
           {/* Header */}
           <div className="flex items-center justify-between mb-1">
             {/* More Options - Now on the left */}
