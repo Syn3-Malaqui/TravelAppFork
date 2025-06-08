@@ -28,7 +28,7 @@ export const MobileNavigation: React.FC = () => {
             key={item.label}
             variant="ghost"
             size="sm"
-            className={`flex flex-col items-center p-3 min-w-0 ${
+            className={`flex flex-col items-center p-6 min-w-0 ${
               item.active ? 'text-black' : 'text-gray-500'
             }`}
             onClick={() => handleNavClick(item.label)}
