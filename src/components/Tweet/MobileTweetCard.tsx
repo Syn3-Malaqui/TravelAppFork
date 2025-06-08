@@ -151,7 +151,7 @@ export const MobileTweetCard: React.FC<MobileTweetCardProps> = ({
           )}
 
           {/* Actions */}
-          <div className="flex items-center justify-end max-w-xs mt-2 ml-auto flex-row-reverse">
+          <div className="flex items-center justify-end max-w-xs mt-1 ml-auto flex-row-reverse">
             {/* Share */}
             <Button variant="ghost" size="sm" className="text-gray-500 p-1 h-8">
               <Share className="w-4 h-4" />
