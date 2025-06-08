@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { TweetCard } from '../Tweet/TweetCard';
 import { MobileTweetCard } from '../Tweet/MobileTweetCard';
@@ -89,10 +89,65 @@ const mockTweets: Tweet[] = [
     mentions: [],
     tags: ['Car Rentals'],
   },
+  {
+    id: '4',
+    content: 'Just booked an amazing hotel for my vacation! The amenities look incredible and the location is perfect. Can\'t wait! 🏨✈️',
+    author: {
+      id: '4',
+      username: 'traveler_jane',
+      displayName: 'Jane Smith',
+      avatar: 'https://images.pexels.com/photos/1130626/pexels-photo-1130626.jpeg?auto=compress&cs=tinysrgb&w=150',
+      bio: 'Travel enthusiast and blogger',
+      verified: false,
+      followers: 2100,
+      following: 890,
+      joinedDate: new Date('2020-06-12'),
+    },
+    createdAt: new Date(Date.now() - 8 * 60 * 60 * 1000), // 8 hours ago
+    likes: 245,
+    retweets: 67,
+    replies: 32,
+    views: 3200,
+    images: ['https://images.pexels.com/photos/258154/pexels-photo-258154.jpeg?auto=compress&cs=tinysrgb&w=600'],
+    isLiked: false,
+    isRetweeted: false,
+    isBookmarked: true,
+    hashtags: ['travel', 'vacation'],
+    mentions: [],
+    tags: ['Hotels'],
+  },
+  {
+    id: '5',
+    content: 'Rented a car for the weekend road trip! The freedom to explore at your own pace is unmatched. Road trip vibes! 🚗🛣️',
+    author: {
+      id: '5',
+      username: 'roadtrip_mike',
+      displayName: 'Mike Johnson',
+      avatar: 'https://images.pexels.com/photos/1043471/pexels-photo-1043471.jpeg?auto=compress&cs=tinysrgb&w=150',
+      bio: 'Adventure seeker and road trip enthusiast',
+      verified: false,
+      followers: 1560,
+      following: 445,
+      joinedDate: new Date('2021-09-03'),
+    },
+    createdAt: new Date(Date.now() - 10 * 60 * 60 * 1000), // 10 hours ago
+    likes: 178,
+    retweets: 45,
+    replies: 28,
+    views: 2800,
+    images: ['https://images.pexels.com/photos/116675/pexels-photo-116675.jpeg?auto=compress&cs=tinysrgb&w=600'],
+    isLiked: true,
+    isRetweeted: false,
+    isBookmarked: false,
+    hashtags: ['roadtrip', 'adventure'],
+    mentions: [],
+    tags: ['Car Rentals'],
+  },
 ];
 
 export const Timeline: React.FC = () => {
   const navigate = useNavigate();
+  const [tagFilter, setTagFilter] = useState<string | null>(null);
 
   const handleComposeClick = () => {
     navigate('/compose');
@@ -110,6 +165,33 @@ export const Timeline: React.FC = () => {
     console.log('Bookmark:', tweetId);
   };
 
+  const handleTagFilter = (tag: string | null) => {
+    setTagFilter(tag);
+  };
+
+  // Convert tag filter ID to tag label for filtering
+  const getTagLabel = (tagId: string | null): string | null => {
+    if (!tagId) return null;
+    const tagMap: { [key: string]: string } = {
+      'car-rentals': 'Car Rentals',
+      'hotels': 'Hotels',
+      'tourist-spots': 'Tourist Spots',
+    };
+    return tagMap[tagId] || null;
+  };
+
+  // Filter tweets based on selected tag
+  const filteredTweets = useMemo(() => {
+    if (!tagFilter) return mockTweets;
+    
+    const tagLabel = getTagLabel(tagFilter);
+    if (!tagLabel) return mockTweets;
+
+    return mockTweets.filter(tweet => 
+      tweet.tags && tweet.tags.includes(tagLabel)
+    );
+  }, [tagFilter]);
+
   return (
     <div className="min-h-screen w-full flex justify-end">
       <div className="w-full max-w-2xl border-r border-gray-200">
@@ -121,8 +203,8 @@ export const Timeline: React.FC = () => {
         {/* Mobile Tabs */}
         <MobileTabs />
 
-        {/* Mobile Tags */}
-        <MobileTags />
+        {/* Mobile Tags with filtering */}
+        <MobileTags onTagFilter={handleTagFilter} activeFilter={tagFilter} />
 
         {/* Desktop Tweet Composer */}
         <div className="hidden md:block border-b border-gray-200 p-4">
@@ -139,32 +221,59 @@ export const Timeline: React.FC = () => {
           </div>
         </div>
 
+        {/* Filter indicator */}
+        {tagFilter && (
+          <div className="hidden md:block bg-blue-50 border-b border-blue-200 px-4 py-2">
+            <div className="text-right text-sm text-blue-700">
+              Showing tweets tagged with: <span className="font-semibold">{getTagLabel(tagFilter)}</span>
+              <button 
+                onClick={() => setTagFilter(null)}
+                className="ml-2 text-blue-500 hover:text-blue-700 underline"
+              >
+                Clear filter
+              </button>
+            </div>
+          </div>
+        )}
+
         {/* Timeline */}
         <div className="flex flex-col items-end pb-20 md:pb-0">
-          {mockTweets.map((tweet) => (
-            <div key={tweet.id} className="w-full max-w-2xl">
-              {/* Desktop Tweet Card */}
-              <div className="hidden md:block">
-                <TweetCard 
-                  tweet={tweet} 
-                  onLike={() => handleLike(tweet.id)}
-                  onRetweet={() => handleRetweet(tweet.id)}
-                  onBookmark={() => handleBookmark(tweet.id)}
-                  currentUserId="demo-user"
-                />
-              </div>
-              {/* Mobile Tweet Card */}
-              <div className="md:hidden">
-                <MobileTweetCard 
-                  tweet={tweet}
-                  onLike={() => handleLike(tweet.id)}
-                  onRetweet={() => handleRetweet(tweet.id)}
-                  onBookmark={() => handleBookmark(tweet.id)}
-                  currentUserId="demo-user"
-                />
-              </div>
+          {filteredTweets.length === 0 ? (
+            <div className="w-full text-center py-12 text-gray-500">
+              <p className="text-lg">No tweets found with the selected tag.</p>
+              <button 
+                onClick={() => setTagFilter(null)}
+                className="mt-2 text-blue-500 hover:text-blue-700 underline"
+              >
+                Show all tweets
+              </button>
             </div>
-          ))}
+          ) : (
+            filteredTweets.map((tweet) => (
+              <div key={tweet.id} className="w-full max-w-2xl">
+                {/* Desktop Tweet Card */}
+                <div className="hidden md:block">
+                  <TweetCard 
+                    tweet={tweet} 
+                    onLike={() => handleLike(tweet.id)}
+                    onRetweet={() => handleRetweet(tweet.id)}
+                    onBookmark={() => handleBookmark(tweet.id)}
+                    currentUserId="demo-user"
+                  />
+                </div>
+                {/* Mobile Tweet Card */}
+                <div className="md:hidden">
+                  <MobileTweetCard 
+                    tweet={tweet}
+                    onLike={() => handleLike(tweet.id)}
+                    onRetweet={() => handleRetweet(tweet.id)}
+                    onBookmark={() => handleBookmark(tweet.id)}
+                    currentUserId="demo-user"
+                  />
+                </div>
+              </div>
+            ))
+          )}
         </div>
       </div>
     </div>

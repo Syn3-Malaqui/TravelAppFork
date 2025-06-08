@@ -7,8 +7,20 @@ const tags = [
   { id: 'tourist-spots', label: 'Tourist Spots' },
 ];
 
-export const MobileTags: React.FC = () => {
-  const [activeTag, setActiveTag] = useState<string | null>(null);
+interface MobileTagsProps {
+  onTagFilter: (tag: string | null) => void;
+  activeFilter: string | null;
+}
+
+export const MobileTags: React.FC<MobileTagsProps> = ({ onTagFilter, activeFilter }) => {
+  const handleTagClick = (tagId: string) => {
+    // If clicking the same tag, clear the filter
+    if (activeFilter === tagId) {
+      onTagFilter(null);
+    } else {
+      onTagFilter(tagId);
+    }
+  };
 
   return (
     <div className="md:hidden bg-white border-b border-gray-200 px-4 py-3">
@@ -19,13 +31,23 @@ export const MobileTags: React.FC = () => {
             variant="outline"
             size="sm"
             className={`flex-shrink-0 border-black text-black rounded-full px-4 py-2 text-sm font-medium hover:bg-gray-50 transition-colors ${
-              activeTag === tag.id ? 'bg-gray-100' : 'bg-white'
+              activeFilter === tag.id ? 'bg-blue-500 text-white border-blue-500' : 'bg-white'
             }`}
-            onClick={() => setActiveTag(activeTag === tag.id ? null : tag.id)}
+            onClick={() => handleTagClick(tag.id)}
           >
             {tag.label}
           </Button>
         ))}
+        {activeFilter && (
+          <Button
+            variant="outline"
+            size="sm"
+            className="flex-shrink-0 border-gray-300 text-gray-500 rounded-full px-4 py-2 text-sm font-medium hover:bg-gray-50 transition-colors bg-white"
+            onClick={() => onTagFilter(null)}
+          >
+            Clear Filter
+          </Button>
+        )}
       </div>
     </div>
   );
