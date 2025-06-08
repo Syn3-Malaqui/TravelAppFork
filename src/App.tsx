@@ -1,12 +1,37 @@
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { Sidebar } from './components/Layout/Sidebar';
 import { MobileNavigation } from './components/Layout/MobileNavigation';
 import { Timeline } from './components/Feed/Timeline';
 import { ComposePage } from './components/Tweet/ComposePage';
+import { LoginPage } from './components/Auth/LoginPage';
 import { FloatingActionButton } from './components/ui/FloatingActionButton';
+import { useAuth } from './hooks/useAuth';
 
 function App() {
+  const { user, loading } = useAuth();
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-white flex items-center justify-center">
+        <div className="text-gray-500">Loading...</div>
+      </div>
+    );
+  }
+
+  // If not authenticated, show login page
+  if (!user) {
+    return (
+      <Router>
+        <Routes>
+          <Route path="/login" element={<LoginPage />} />
+          <Route path="*" element={<Navigate to="/login" replace />} />
+        </Routes>
+      </Router>
+    );
+  }
+
+  // If authenticated, show main app
   return (
     <Router>
       <div className="min-h-screen bg-white">
@@ -26,6 +51,7 @@ function App() {
               <Route path="/messages" element={<div className="p-8 text-center text-gray-500">Messages Page</div>} />
               <Route path="/bookmarks" element={<div className="p-8 text-center text-gray-500">Bookmarks Page</div>} />
               <Route path="/profile" element={<div className="p-8 text-center text-gray-500">Profile Page</div>} />
+              <Route path="/login" element={<Navigate to="/" replace />} />
             </Routes>
           </div>
         </div>

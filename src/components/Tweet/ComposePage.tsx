@@ -3,16 +3,13 @@ import { useNavigate } from 'react-router-dom';
 import { X, Image, Smile, Calendar, MapPin, ArrowLeft } from 'lucide-react';
 import { Button } from '../ui/button';
 import { Avatar, AvatarImage, AvatarFallback } from '../ui/avatar';
-import { AuthModal } from '../Auth/AuthModal';
 import { useAuth } from '../../hooks/useAuth';
 import { useTweets } from '../../hooks/useTweets';
-import { useStore } from '../../store/useStore';
 
 export const ComposePage: React.FC = () => {
   const navigate = useNavigate();
   const { user, profile } = useAuth();
   const { createTweet } = useTweets();
-  const { showAuthModal, setShowAuthModal } = useStore();
   const [content, setContent] = useState('');
   const [images, setImages] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
@@ -58,29 +55,6 @@ export const ComposePage: React.FC = () => {
   const characterCount = content.length;
   const maxCharacters = 280;
   const isOverLimit = characterCount > maxCharacters;
-
-  // Show auth modal if not logged in
-  if (!user) {
-    return (
-      <>
-        <div className="min-h-screen bg-white flex items-center justify-center">
-          <div className="text-center">
-            <h1 className="text-2xl font-bold mb-4">Sign in to compose tweets</h1>
-            <Button 
-              onClick={() => setShowAuthModal(true)}
-              className="bg-blue-500 hover:bg-blue-600 text-white font-bold px-6 py-2 rounded-full"
-            >
-              Sign In
-            </Button>
-          </div>
-        </div>
-        <AuthModal 
-          isOpen={showAuthModal} 
-          onClose={() => setShowAuthModal(false)} 
-        />
-      </>
-    );
-  }
 
   return (
     <div className="min-h-screen bg-white">

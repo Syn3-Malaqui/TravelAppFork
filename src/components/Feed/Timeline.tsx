@@ -4,11 +4,9 @@ import { TweetCard } from '../Tweet/TweetCard';
 import { MobileTweetCard } from '../Tweet/MobileTweetCard';
 import { MobileTabs } from '../Layout/MobileTabs';
 import { MobileTags } from '../Layout/MobileTags';
-import { AuthModal } from '../Auth/AuthModal';
 import { useAuth } from '../../hooks/useAuth';
 import { useTweets } from '../../hooks/useTweets';
 import { useInteractions } from '../../hooks/useInteractions';
-import { useStore } from '../../store/useStore';
 import { User, Tweet } from '../types';
 
 export const Timeline: React.FC = () => {
@@ -16,13 +14,8 @@ export const Timeline: React.FC = () => {
   const { user, profile, loading: authLoading } = useAuth();
   const { tweets, loading: tweetsLoading } = useTweets();
   const { userLikes, userRetweets, userBookmarks, toggleLike, toggleRetweet, toggleBookmark } = useInteractions(user?.id);
-  const { showAuthModal, setShowAuthModal } = useStore();
 
   const handleComposeClick = () => {
-    if (!user) {
-      setShowAuthModal(true);
-      return;
-    }
     navigate('/compose');
   };
 
@@ -126,12 +119,6 @@ export const Timeline: React.FC = () => {
           ))}
         </div>
       </div>
-
-      {/* Auth Modal */}
-      <AuthModal 
-        isOpen={showAuthModal} 
-        onClose={() => setShowAuthModal(false)} 
-      />
     </div>
   );
 };
