@@ -101,7 +101,7 @@ export const MobileTweetCard: React.FC<MobileTweetCardProps> = ({
             </div>
 
             {/* User info and timestamp - Now on the right */}
-            <div className="flex items-center space-x-1 flex-row-reverse min-w-0">
+            <div className="flex items-center space-x-3 flex-row-reverse min-w-0">
               <span className="text-gray-500 text-sm flex-shrink-0">
                 {formatDistanceToNow(tweet.createdAt, { addSuffix: true }).replace('about ', '')}
               </span>
