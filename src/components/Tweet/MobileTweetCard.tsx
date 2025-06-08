@@ -57,7 +57,7 @@ export const MobileTweetCard: React.FC<MobileTweetCardProps> = ({
   return (
     <div className="border-b border-gray-100 p-4 bg-white">
       <div className={`flex gap-3 ${isRTL ? '' : 'flex-row-reverse'}`}>
-        {/* Avatar */}
+        {/* Avatar - Position changes based on RTL/LTR */}
         <Avatar className="w-10 h-10 flex-shrink-0">
           <AvatarImage src={tweet.author.avatar} />
           <AvatarFallback>{tweet.author.displayName[0]}</AvatarFallback>

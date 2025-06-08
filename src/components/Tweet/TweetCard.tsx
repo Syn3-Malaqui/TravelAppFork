@@ -59,7 +59,7 @@ export const TweetCard: React.FC<TweetCardProps> = ({
   return (
     <div className="border-b border-gray-200 p-4 hover:bg-gray-50 transition-colors">
       <div className={`flex gap-4 ${isRTL ? '' : 'flex-row-reverse'}`}>
-        {/* Avatar */}
+        {/* Avatar - Position changes based on RTL/LTR */}
         <Avatar className="w-12 h-12 flex-shrink-0">
           <AvatarImage src={tweet.author.avatar} />
           <AvatarFallback>{tweet.author.displayName[0]}</AvatarFallback>
