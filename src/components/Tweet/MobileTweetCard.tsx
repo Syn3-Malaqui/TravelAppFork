@@ -17,7 +17,6 @@ import {
   DropdownMenuTrigger,
 } from '../ui/dropdown-menu';
 import { Tweet } from '../../types';
-import { useTweets } from '../../hooks/useTweets';
 
 interface MobileTweetCardProps {
   tweet: Tweet;
@@ -34,8 +33,6 @@ export const MobileTweetCard: React.FC<MobileTweetCardProps> = ({
   onBookmark, 
   currentUserId 
 }) => {
-  const { deleteTweet } = useTweets();
-
   const formatNumber = (num: number): string => {
     if (num >= 1000000) {
       return (num / 1000000).toFixed(1) + 'M';
@@ -47,14 +44,15 @@ export const MobileTweetCard: React.FC<MobileTweetCardProps> = ({
   };
 
   const handleDelete = async () => {
-    await deleteTweet(tweet.id);
+    // Mock delete functionality
+    console.log('Delete tweet:', tweet.id);
   };
 
   const isOwnTweet = currentUserId === tweet.author.id;
 
   return (
     <div className="border-b border-gray-100 p-4 bg-white">
-      <div className="flex space-x-3 flex-row-reverse">
+      <div className="flex flex-row-reverse gap-3">
         {/* Avatar - Now on the right */}
         <Avatar className="w-10 h-10 flex-shrink-0">
           <AvatarImage src={tweet.author.avatar} />
@@ -62,7 +60,7 @@ export const MobileTweetCard: React.FC<MobileTweetCardProps> = ({
         </Avatar>
 
         {/* Content - Now on the left but text-aligned right */}
-        <div className="flex-1 min-w-0 text-right">
+        <div className="flex-1 min-w-0 text-right mr-1">
           {/* Header */}
           <div className="flex items-center justify-between mb-1">
             {/* More Options - Now on the left */}
