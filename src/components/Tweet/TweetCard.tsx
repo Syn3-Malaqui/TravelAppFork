@@ -54,7 +54,7 @@ export const TweetCard: React.FC<TweetCardProps> = ({
 
   return (
     <div className="border-b border-gray-200 p-4 hover:bg-gray-50 transition-colors">
-      <div className="flex flex-row-reverse gap-8">
+      <div className="flex flex-row-reverse gap-5">
         {/* Avatar - Now on the right */}
         <Avatar className="w-12 h-12 flex-shrink-0">
           <AvatarImage src={tweet.author.avatar} />
