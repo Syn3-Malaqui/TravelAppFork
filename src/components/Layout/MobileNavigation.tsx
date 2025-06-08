@@ -21,19 +21,19 @@ export const MobileNavigation: React.FC = () => {
   };
 
   return (
-    <div className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 px-4 py-6 z-50">
+    <div className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 px-4 py-4 z-50">
       <div className="flex items-center justify-around">
         {navItems.map((item) => (
           <Button
             key={item.label}
             variant="ghost"
             size="lg"
-            className={`flex flex-col items-center p-6 min-w-0 h-auto min-h-[60px] ${
+            className={`flex flex-col items-center p-4 min-w-0 h-auto ${
               item.active ? 'text-black' : 'text-gray-500'
             }`}
             onClick={() => handleNavClick(item.label)}
           >
-            <item.icon className="w-8 h-8" />
+            <item.icon className="w-7 h-7" />
           </Button>
         ))}
       </div>
