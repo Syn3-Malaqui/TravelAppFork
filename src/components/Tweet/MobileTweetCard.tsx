@@ -17,6 +17,7 @@ import {
   DropdownMenuTrigger,
 } from '../ui/dropdown-menu';
 import { Tweet } from '../../types';
+import { useTweets } from '../../hooks/useTweets';
 
 interface MobileTweetCardProps {
   tweet: Tweet;
@@ -33,6 +34,8 @@ export const MobileTweetCard: React.FC<MobileTweetCardProps> = ({
   onBookmark, 
   currentUserId 
 }) => {
+  const { deleteTweet } = useTweets();
+
   const formatNumber = (num: number): string => {
     if (num >= 1000000) {
       return (num / 1000000).toFixed(1) + 'M';
@@ -44,11 +47,31 @@ export const MobileTweetCard: React.FC<MobileTweetCardProps> = ({
   };
 
   const handleDelete = async () => {
-    // Mock delete functionality
-    console.log('Delete tweet:', tweet.id);
+    await deleteTweet(tweet.id);
   };
 
   const isOwnTweet = currentUserId === tweet.author.id;
+
+  const renderContentWithTags = (content: string) => {
+    const words = content.split(' ');
+    return words.map((word, index) => {
+      if (word.startsWith('#')) {
+        return (
+          <span key={index} className="text-blue-500 hover:underline cursor-pointer">
+            {word}{' '}
+          </span>
+        );
+      }
+      if (word.startsWith('@')) {
+        return (
+          <span key={index} className="text-blue-500 hover:underline cursor-pointer">
+            {word}{' '}
+          </span>
+        );
+      }
+      return word + ' ';
+    });
+  };
 
   return (
     <div className="border-b border-gray-100 p-4 bg-white">
@@ -120,24 +143,22 @@ export const MobileTweetCard: React.FC<MobileTweetCardProps> = ({
 
           {/* Tweet Text */}
           <div className="text-gray-900 mb-3 text-sm leading-5 text-right">
-            {tweet.content.split(' ').map((word, index) => {
-              if (word.startsWith('#')) {
-                return (
-                  <span key={index} className="text-blue-500">
-                    {word}{' '}
-                  </span>
-                );
-              }
-              if (word.startsWith('@')) {
-                return (
-                  <span key={index} className="text-blue-500">
-                    {word}{' '}
-                  </span>
-                );
-              }
-              return word + ' ';
-            })}
+            {renderContentWithTags(tweet.content)}
           </div>
+
+          {/* Hashtags */}
+          {tweet.hashtags && tweet.hashtags.length > 0 && (
+            <div className="mb-3 flex flex-wrap justify-end gap-1">
+              {tweet.hashtags.map((tag, index) => (
+                <span 
+                  key={index} 
+                  className="inline-block bg-blue-50 text-blue-600 px-2 py-1 rounded-full text-xs font-medium hover:bg-blue-100 cursor-pointer"
+                >
+                  #{tag}
+                </span>
+              ))}
+            </div>
+          )}
 
           {/* Images */}
           {tweet.images && tweet.images.length > 0 && (
