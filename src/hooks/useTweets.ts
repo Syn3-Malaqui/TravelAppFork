@@ -16,7 +16,7 @@ export const useTweets = () => {
         .from('tweets')
         .select(`
           *,
-          profiles (*)
+          profiles!tweets_author_id_fkey (*)
         `)
         .order('created_at', { ascending: false });
 
@@ -45,7 +45,7 @@ export const useTweets = () => {
         })
         .select(`
           *,
-          profiles (*)
+          profiles!tweets_author_id_fkey (*)
         `)
         .single();
 
