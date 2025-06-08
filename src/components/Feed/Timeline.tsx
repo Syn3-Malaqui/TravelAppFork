@@ -16,7 +16,7 @@ const mockTweets: Tweet[] = [
       id: '1',
       username: 'mayi',
       displayName: 'Harley Queen',
-      avatar: 'https://images.pexels.com/photos/1040880/pexels-photo-1040880.jpeg?auto=compress&cs=tinysrgb&w=150',
+      avatar: 'https://scontent.fmnl4-3.fna.fbcdn.net/v/t39.30808-1/497914096_122163603392563091_2518584907985062167_n.jpg?stp=dst-jpg_s100x100_tt6&_nc_cat=109&ccb=1-7&_nc_sid=111fe6&_nc_eui2=AeFKv_BErCi0dj_08KxWVqCU2qOH3y0-boXao4ffLT5uhQZRcdgozkF5NfNGng4GaaxQa_I1P_6oA3L1SUwiCaHP&_nc_ohc=Yv98XVcm7dEQ7kNvwEIsHe_&_nc_oc=AdnadbE6wZURq5o7FrX-AlubcGf2uMwZjxrYIaYaKfNILsVOIAcJ3gdwX5nLqU1Sc5BfqHr6NeaeQGuw9txpumNW&_nc_ad=z-m&_nc_cid=0&_nc_zt=24&_nc_ht=scontent.fmnl4-3.fna&_nc_gid=XvrbQgGbm-SmUvf5ip37_A&oh=00_AfONQKSNyGQVGJcd2UIhmje_rcBpeT8PMVpCaRUCrL2V1g&oe=684B954D',
       bio: 'Full-stack developer passionate about React',
       verified: true,
       followers: 1250,
