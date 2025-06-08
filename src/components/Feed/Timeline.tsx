@@ -196,7 +196,7 @@ export const Timeline: React.FC = () => {
 
   return (
     <div className={`min-h-screen w-full flex ${isRTL ? 'justify-start' : 'justify-end'}`}>
-      <div className={`w-full max-w-2xl border-${isRTL ? 'l' : 'r'} border-gray-200`}>
+      <div className={`w-full max-w-2xl ${isRTL ? 'border-l' : 'border-r'} border-gray-200`}>
         {/* Desktop Header */}
         <div className={`hidden md:block sticky top-0 bg-white/80 backdrop-blur-md border-b border-gray-200 p-4`}>
           <h1 className={`text-xl font-bold ${isRTL ? 'text-left' : 'text-right'}`}>Home</h1>

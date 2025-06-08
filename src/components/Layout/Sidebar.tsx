@@ -37,7 +37,7 @@ export const Sidebar: React.FC = () => {
   };
 
   return (
-    <div className={`w-64 h-screen fixed ${isRTL ? 'right-0' : 'left-0'} top-0 border-${isRTL ? 'l' : 'r'} border-gray-200 bg-white p-4 flex flex-col`}>
+    <div className={`w-64 h-screen fixed ${isRTL ? 'right-0 border-l' : 'left-0 border-r'} top-0 border-gray-200 bg-white p-4 flex flex-col z-40`}>
       {/* Logo */}
       <div className="mb-8">
         <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center">
@@ -66,7 +66,7 @@ export const Sidebar: React.FC = () => {
         {/* Layout Direction Toggle */}
         <Button 
           variant="outline"
-          className={`w-full mt-4 ${isRTL ? 'justify-end' : 'justify-start'} text-lg py-3 px-4 h-auto border-gray-300 hover:bg-gray-50`}
+          className={`w-full mt-6 ${isRTL ? 'justify-end' : 'justify-start'} text-lg py-3 px-4 h-auto border-gray-300 hover:bg-gray-50`}
           onClick={toggleLayoutDirection}
         >
           <ArrowLeftRight className={`${isRTL ? 'ml-4' : 'mr-4'} h-5 w-5`} />
@@ -75,7 +75,7 @@ export const Sidebar: React.FC = () => {
 
         {/* Tweet Button */}
         <Button 
-          className="w-full mt-6 bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 rounded-full text-lg"
+          className="w-full mt-4 bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 rounded-full text-lg"
           onClick={handleTweetClick}
         >
           Tweet
