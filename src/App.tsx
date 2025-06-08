@@ -5,6 +5,7 @@ import { MobileNavigation } from './components/Layout/MobileNavigation';
 import { Timeline } from './components/Feed/Timeline';
 import { ComposePage } from './components/Tweet/ComposePage';
 import { LoginPage } from './components/Auth/LoginPage';
+import { AdminPanel } from './components/Admin/AdminPanel';
 import { FloatingActionButton } from './components/ui/FloatingActionButton';
 import { useAuth } from './hooks/useAuth';
 
@@ -27,11 +28,14 @@ function App() {
 
   return (
     <Router>
+      {/* Admin Panel - Always visible for development */}
+      <AdminPanel />
+      
       {!user ? (
         // Not authenticated - show login page
         <Routes>
-          <Route path="/login\" element={<LoginPage />} />
-          <Route path="*" element={<Navigate to="/login\" replace />} />
+          <Route path="/login" element={<LoginPage />} />
+          <Route path="*" element={<Navigate to="/login" replace />} />
         </Routes>
       ) : (
         // Authenticated - show main app
@@ -52,8 +56,8 @@ function App() {
                 <Route path="/messages" element={<div className="p-8 text-center text-gray-500">Messages Page</div>} />
                 <Route path="/bookmarks" element={<div className="p-8 text-center text-gray-500">Bookmarks Page</div>} />
                 <Route path="/profile" element={<div className="p-8 text-center text-gray-500">Profile Page</div>} />
-                <Route path="/login" element={<Navigate to="/\" replace />} />
-                <Route path="*" element={<Navigate to="/\" replace />} />
+                <Route path="/login" element={<Navigate to="/" replace />} />
+                <Route path="*" element={<Navigate to="/" replace />} />
               </Routes>
             </div>
           </div>
