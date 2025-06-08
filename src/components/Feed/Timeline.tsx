@@ -11,11 +11,11 @@ import { User, Tweet } from '../types';
 const mockTweets: Tweet[] = [
   {
     id: '1',
-    content: 'Just built an amazing Twitter clone! 🚀 The future of social media is here. #coding #react #typescript',
+    content: 'Daming condom na binigay',
     author: {
       id: '1',
-      username: 'techdev',
-      displayName: 'Tech Developer',
+      username: 'mayi',
+      displayName: 'Harley Queen',
       avatar: 'https://images.pexels.com/photos/1040880/pexels-photo-1040880.jpeg?auto=compress&cs=tinysrgb&w=150',
       bio: 'Full-stack developer passionate about React',
       verified: true,
