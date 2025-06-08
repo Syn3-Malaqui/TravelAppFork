@@ -54,33 +54,18 @@ export const TweetCard: React.FC<TweetCardProps> = ({
 
   return (
     <div className="border-b border-gray-200 p-4 hover:bg-gray-50 transition-colors">
-      <div className="flex gap-4">
-        {/* Avatar - Now on the left */}
+      <div className="flex flex-row-reverse gap-4">
+        {/* Avatar - Back on the right */}
         <Avatar className="w-12 h-12 flex-shrink-0">
           <AvatarImage src={tweet.author.avatar} />
           <AvatarFallback>{tweet.author.displayName[0]}</AvatarFallback>
         </Avatar>
 
-        {/* Tweet Content - Now on the right */}
-        <div className="flex-1 min-w-0">
+        {/* Tweet Content - Back on the left but text-aligned right */}
+        <div className="flex-1 min-w-0 text-right mr-1">
           {/* Header */}
           <div className="flex items-center justify-between mb-1">
-            {/* User info and timestamp - Now on the left */}
-            <div className="flex items-center space-x-2 min-w-0">
-              <span className="font-bold text-gray-900 hover:underline cursor-pointer truncate">
-                {tweet.author.displayName}
-              </span>
-              {tweet.author.verified && (
-                <CheckCircle className="w-4 h-4 text-blue-500 fill-current flex-shrink-0" />
-              )}
-              <span className="text-gray-500 truncate">@{tweet.author.username}</span>
-              <span className="text-gray-500">·</span>
-              <span className="text-gray-500 hover:underline cursor-pointer text-sm flex-shrink-0">
-                {formatDistanceToNow(tweet.createdAt, { addSuffix: true })}
-              </span>
-            </div>
-            
-            {/* More Options - Now on the right */}
+            {/* More Options - Back on the left */}
             <div className="relative">
               <DropdownMenu modal={false}>
                 <DropdownMenuTrigger asChild>
@@ -89,7 +74,7 @@ export const TweetCard: React.FC<TweetCardProps> = ({
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent 
-                  align="end" 
+                  align="start" 
                   side="bottom"
                   className="w-48 z-50"
                   sideOffset={4}
@@ -116,10 +101,25 @@ export const TweetCard: React.FC<TweetCardProps> = ({
                 </DropdownMenuContent>
               </DropdownMenu>
             </div>
+            
+            {/* User info and timestamp - Back on the right */}
+            <div className="flex items-center space-x-2 flex-row-reverse min-w-0">
+              <span className="text-gray-500 hover:underline cursor-pointer text-sm flex-shrink-0">
+                {formatDistanceToNow(tweet.createdAt, { addSuffix: true })}
+              </span>
+              <span className="text-gray-500">·</span>
+              <span className="text-gray-500 truncate">@{tweet.author.username}</span>
+              {tweet.author.verified && (
+                <CheckCircle className="w-4 h-4 text-blue-500 fill-current flex-shrink-0" />
+              )}
+              <span className="font-bold text-gray-900 hover:underline cursor-pointer truncate">
+                {tweet.author.displayName}
+              </span>
+            </div>
           </div>
 
           {/* Tweet Text */}
-          <div className="text-gray-900 mb-3 text-[15px] leading-5">
+          <div className="text-gray-900 mb-3 text-[15px] leading-5 text-right">
             {tweet.content.split(' ').map((word, index) => {
               if (word.startsWith('#')) {
                 return (
@@ -150,7 +150,7 @@ export const TweetCard: React.FC<TweetCardProps> = ({
             </div>
           )}
 
-          {/* Actions */}
+          {/* Actions - Now aligned to the right */}
           <div className="flex items-center justify-end space-x-4 mt-3">
             {/* Reply */}
             <Button variant="ghost" size="sm" className="text-gray-500 hover:text-blue-500 hover:bg-blue-50 p-2 flex items-center">
