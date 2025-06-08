@@ -24,13 +24,15 @@ export const LoginPage: React.FC = () => {
       if (isSignUp) {
         const { error } = await signUp(email, password, username, displayName);
         if (error) throw error;
+        // Don't navigate immediately, let the auth state change handle it
       } else {
         const { error } = await signIn(email, password);
         if (error) throw error;
+        // Don't navigate immediately, let the auth state change handle it
       }
-      navigate('/');
     } catch (error: any) {
-      setError(error.message);
+      console.error('Authentication error:', error);
+      setError(error.message || 'An error occurred during authentication');
     } finally {
       setLoading(false);
     }
@@ -74,6 +76,7 @@ export const LoginPage: React.FC = () => {
                   onChange={(e) => setDisplayName(e.target.value)}
                   className="w-full p-4 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-lg"
                   required
+                  disabled={loading}
                 />
               </div>
               <div>
@@ -84,6 +87,7 @@ export const LoginPage: React.FC = () => {
                   onChange={(e) => setUsername(e.target.value)}
                   className="w-full p-4 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-lg"
                   required
+                  disabled={loading}
                 />
               </div>
             </>
@@ -97,6 +101,7 @@ export const LoginPage: React.FC = () => {
               onChange={(e) => setEmail(e.target.value)}
               className="w-full p-4 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-lg"
               required
+              disabled={loading}
             />
           </div>
           
@@ -108,6 +113,7 @@ export const LoginPage: React.FC = () => {
               onChange={(e) => setPassword(e.target.value)}
               className="w-full p-4 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-lg"
               required
+              disabled={loading}
             />
           </div>
 
@@ -120,9 +126,16 @@ export const LoginPage: React.FC = () => {
           <Button
             type="submit"
             disabled={loading}
-            className="w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-4 rounded-full text-lg"
+            className="w-full bg-blue-500 hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold py-4 rounded-full text-lg"
           >
-            {loading ? 'Loading...' : (isSignUp ? 'Sign up' : 'Sign in')}
+            {loading ? (
+              <div className="flex items-center justify-center space-x-2">
+                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                <span>Loading...</span>
+              </div>
+            ) : (
+              isSignUp ? 'Sign up' : 'Sign in'
+            )}
           </Button>
         </form>
 
@@ -131,7 +144,8 @@ export const LoginPage: React.FC = () => {
           <button
             type="button"
             onClick={toggleMode}
-            className="text-blue-500 hover:underline text-lg"
+            disabled={loading}
+            className="text-blue-500 hover:underline text-lg disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {isSignUp ? 'Already have an account? Sign in' : "Don't have an account? Sign up"}
           </button>
