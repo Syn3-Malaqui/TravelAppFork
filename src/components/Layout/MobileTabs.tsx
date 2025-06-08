@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Button } from '../ui/button';
+import { useStore } from '../../store/useStore';
 
 const tabs = [
   { id: 'for-you', label: 'For you' },
@@ -8,10 +9,11 @@ const tabs = [
 
 export const MobileTabs: React.FC = () => {
   const [activeTab, setActiveTab] = useState('for-you');
+  const { isRTL } = useStore();
 
   return (
     <div className="md:hidden border-b border-gray-200 bg-white">
-      <div className="flex flex-row-reverse">
+      <div className={`flex ${isRTL ? 'flex-row' : 'flex-row-reverse'}`}>
         {tabs.map((tab) => (
           <Button
             key={tab.id}

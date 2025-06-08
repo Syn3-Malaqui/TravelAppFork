@@ -18,6 +18,7 @@ import {
   DropdownMenuTrigger,
 } from '../ui/dropdown-menu';
 import { Tweet } from '../../types';
+import { useStore } from '../../store/useStore';
 
 interface MobileTweetCardProps {
   tweet: Tweet;
@@ -34,6 +35,8 @@ export const MobileTweetCard: React.FC<MobileTweetCardProps> = ({
   onBookmark, 
   currentUserId 
 }) => {
+  const { isRTL } = useStore();
+
   const formatNumber = (num: number): string => {
     if (num >= 1000000) {
       return (num / 1000000).toFixed(1) + 'M';
@@ -53,18 +56,18 @@ export const MobileTweetCard: React.FC<MobileTweetCardProps> = ({
 
   return (
     <div className="border-b border-gray-100 p-4 bg-white">
-      <div className="flex flex-row-reverse gap-3">
-        {/* Avatar - Back on the right */}
+      <div className={`flex gap-3 ${isRTL ? '' : 'flex-row-reverse'}`}>
+        {/* Avatar */}
         <Avatar className="w-10 h-10 flex-shrink-0">
           <AvatarImage src={tweet.author.avatar} />
           <AvatarFallback>{tweet.author.displayName[0]}</AvatarFallback>
         </Avatar>
 
-        {/* Content - Back on the left but text-aligned right */}
-        <div className="flex-1 min-w-0 text-right mr-1">
+        {/* Content */}
+        <div className={`flex-1 min-w-0 ${isRTL ? 'text-left ml-1' : 'text-right mr-1'}`}>
           {/* Header */}
           <div className="flex items-center justify-between mb-1">
-            {/* More Options - Back on the left */}
+            {/* More Options */}
             <div className="relative">
               <DropdownMenu modal={false}>
                 <DropdownMenuTrigger asChild>
@@ -101,8 +104,8 @@ export const MobileTweetCard: React.FC<MobileTweetCardProps> = ({
               </DropdownMenu>
             </div>
 
-            {/* User info and timestamp - Back on the right */}
-            <div className="flex items-center space-x-1 flex-row-reverse min-w-0">
+            {/* User info and timestamp */}
+            <div className={`flex items-center space-x-1 ${isRTL ? '' : 'flex-row-reverse'} min-w-0`}>
               <span className="text-gray-500 text-sm flex-shrink-0">
                 {formatDistanceToNow(tweet.createdAt, { addSuffix: true }).replace('about ', '')}
               </span>
@@ -120,7 +123,7 @@ export const MobileTweetCard: React.FC<MobileTweetCardProps> = ({
           </div>
 
           {/* Tweet Text */}
-          <div className="text-gray-900 mb-3 text-sm leading-5 text-right">
+          <div className={`text-gray-900 mb-3 text-sm leading-5 ${isRTL ? 'text-left' : 'text-right'}`}>
             {tweet.content.split(' ').map((word, index) => {
               if (word.startsWith('#')) {
                 return (
@@ -142,13 +145,13 @@ export const MobileTweetCard: React.FC<MobileTweetCardProps> = ({
 
           {/* Tags */}
           {tweet.tags && tweet.tags.length > 0 && (
-            <div className="mb-3 flex flex-wrap gap-1 justify-end">
+            <div className={`mb-3 flex flex-wrap gap-1 ${isRTL ? 'justify-start' : 'justify-end'}`}>
               {tweet.tags.map((tag, index) => (
                 <span
                   key={index}
                   className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-50 text-blue-700 border border-blue-200"
                 >
-                  <Tag className="w-2.5 h-2.5 mr-1" />
+                  <Tag className={`w-2.5 h-2.5 ${isRTL ? 'ml-1' : 'mr-1'}`} />
                   {tag}
                 </span>
               ))}
@@ -168,12 +171,12 @@ export const MobileTweetCard: React.FC<MobileTweetCardProps> = ({
             </div>
           )}
 
-          {/* Actions - Now aligned to the right */}
-          <div className="flex items-center justify-end space-x-4 mt-2">
+          {/* Actions */}
+          <div className={`flex items-center ${isRTL ? 'justify-start' : 'justify-end'} space-x-4 mt-2`}>
             {/* Reply */}
             <Button variant="ghost" size="sm" className="text-gray-500 p-1 h-8 flex items-center">
               <MessageCircle className="w-4 h-4" />
-              <span className="text-xs ml-1">{formatNumber(tweet.replies)}</span>
+              <span className={`text-xs ${isRTL ? 'mr-1' : 'ml-1'}`}>{formatNumber(tweet.replies)}</span>
             </Button>
 
             {/* Retweet */}
@@ -188,7 +191,7 @@ export const MobileTweetCard: React.FC<MobileTweetCardProps> = ({
               onClick={onRetweet}
             >
               <Repeat2 className="w-4 h-4" />
-              <span className="text-xs ml-1">{formatNumber(tweet.retweets)}</span>
+              <span className={`text-xs ${isRTL ? 'mr-1' : 'ml-1'}`}>{formatNumber(tweet.retweets)}</span>
             </Button>
 
             {/* Like */}
@@ -203,7 +206,7 @@ export const MobileTweetCard: React.FC<MobileTweetCardProps> = ({
               onClick={onLike}
             >
               <Heart className={`w-4 h-4 ${tweet.isLiked ? 'fill-current' : ''}`} />
-              <span className="text-xs ml-1">{formatNumber(tweet.likes)}</span>
+              <span className={`text-xs ${isRTL ? 'mr-1' : 'ml-1'}`}>{formatNumber(tweet.likes)}</span>
             </Button>
 
             {/* Share */}

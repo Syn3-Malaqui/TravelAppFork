@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { X, Image, Smile, Calendar, MapPin, ArrowLeft, Tag } from 'lucide-react';
 import { Button } from '../ui/button';
 import { TWEET_TAGS, TweetTag } from '../../types';
+import { useStore } from '../../store/useStore';
 
 export const ComposePage: React.FC = () => {
   const navigate = useNavigate();
@@ -10,6 +11,7 @@ export const ComposePage: React.FC = () => {
   const [images, setImages] = useState<string[]>([]);
   const [selectedTags, setSelectedTags] = useState<TweetTag[]>([]);
   const [loading, setLoading] = useState(false);
+  const { isRTL } = useStore();
 
   const handleSubmit = async () => {
     if (!content.trim()) return;
@@ -58,7 +60,7 @@ export const ComposePage: React.FC = () => {
     <div className="min-h-screen bg-white">
       {/* Header */}
       <div className="sticky top-0 bg-white border-b border-gray-200 px-4 py-3 flex items-center justify-between z-10">
-        <div className="flex items-center space-x-4">
+        <div className={`flex items-center space-x-4 ${isRTL ? 'flex-row-reverse space-x-reverse' : ''}`}>
           <Button
             variant="ghost"
             size="sm"
@@ -81,7 +83,7 @@ export const ComposePage: React.FC = () => {
 
       {/* Compose Area */}
       <div className="p-4">
-        <div className="flex space-x-4">
+        <div className={`flex space-x-4 ${isRTL ? 'flex-row-reverse space-x-reverse' : ''}`}>
           {/* Avatar */}
           <div className="w-12 h-12 bg-gray-300 rounded-full flex-shrink-0"></div>
 
@@ -91,17 +93,18 @@ export const ComposePage: React.FC = () => {
               value={content}
               onChange={(e) => setContent(e.target.value)}
               placeholder="What's happening?"
-              className="w-full text-xl placeholder-gray-500 border-none outline-none resize-none min-h-[200px] bg-transparent focus:ring-0 focus:border-none focus:outline-none"
+              className={`w-full text-xl placeholder-gray-500 border-none outline-none resize-none min-h-[200px] bg-transparent focus:ring-0 focus:border-none focus:outline-none ${isRTL ? 'text-right' : 'text-left'}`}
               autoFocus
+              dir={isRTL ? 'rtl' : 'ltr'}
             />
 
             {/* Tags Selection */}
             <div className="mt-4">
-              <div className="flex items-center space-x-2 mb-3">
+              <div className={`flex items-center space-x-2 mb-3 ${isRTL ? 'flex-row-reverse space-x-reverse' : ''}`}>
                 <Tag className="h-5 w-5 text-gray-500" />
                 <span className="text-sm font-medium text-gray-700">Add tags:</span>
               </div>
-              <div className="flex flex-wrap gap-2">
+              <div className={`flex flex-wrap gap-2 ${isRTL ? 'justify-end' : 'justify-start'}`}>
                 {TWEET_TAGS.map((tag) => (
                   <Button
                     key={tag}
@@ -122,19 +125,19 @@ export const ComposePage: React.FC = () => {
 
             {/* Selected Tags Display */}
             {selectedTags.length > 0 && (
-              <div className="mt-3 flex flex-wrap gap-2">
+              <div className={`mt-3 flex flex-wrap gap-2 ${isRTL ? 'justify-end' : 'justify-start'}`}>
                 {selectedTags.map((tag) => (
                   <span
                     key={tag}
                     className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-50 text-blue-700 border border-blue-200"
                   >
-                    <Tag className="w-3 h-3 mr-1" />
+                    <Tag className={`w-3 h-3 ${isRTL ? 'ml-1' : 'mr-1'}`} />
                     {tag}
                     <Button
                       variant="ghost"
                       size="sm"
                       onClick={() => toggleTag(tag)}
-                      className="ml-1 h-4 w-4 p-0 hover:bg-blue-100 rounded-full"
+                      className={`${isRTL ? 'mr-1' : 'ml-1'} h-4 w-4 p-0 hover:bg-blue-100 rounded-full`}
                     >
                       <X className="h-3 w-3" />
                     </Button>
@@ -156,7 +159,7 @@ export const ComposePage: React.FC = () => {
                     <Button
                       variant="ghost"
                       size="sm"
-                      className="absolute top-2 right-2 bg-black/50 text-white hover:bg-black/70 p-1"
+                      className={`absolute top-2 ${isRTL ? 'left-2' : 'right-2'} bg-black/50 text-white hover:bg-black/70 p-1`}
                       onClick={() => setImages(prev => prev.filter((_, i) => i !== index))}
                     >
                       <X className="h-4 w-4" />
@@ -172,7 +175,7 @@ export const ComposePage: React.FC = () => {
       {/* Bottom Actions */}
       <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-4">
         <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-4">
+          <div className={`flex items-center space-x-4 ${isRTL ? 'flex-row-reverse space-x-reverse' : ''}`}>
             <label className="cursor-pointer">
               <input
                 type="file"
@@ -195,7 +198,7 @@ export const ComposePage: React.FC = () => {
           </div>
 
           {/* Character Count */}
-          <div className="flex items-center space-x-3">
+          <div className={`flex items-center space-x-3 ${isRTL ? 'flex-row-reverse space-x-reverse' : ''}`}>
             <div className={`text-sm ${isOverLimit ? 'text-red-500' : 'text-gray-500'}`}>
               {maxCharacters - characterCount}
             </div>

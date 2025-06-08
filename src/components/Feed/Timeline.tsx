@@ -6,6 +6,7 @@ import { MobileTabs } from '../Layout/MobileTabs';
 import { MobileTags } from '../Layout/MobileTags';
 import { useTweets } from '../../hooks/useTweets';
 import { User, Tweet } from '../types';
+import { useStore } from '../../store/useStore';
 
 // Mock data for demo purposes
 const mockTweets: Tweet[] = [
@@ -148,6 +149,7 @@ const mockTweets: Tweet[] = [
 export const Timeline: React.FC = () => {
   const navigate = useNavigate();
   const [tagFilter, setTagFilter] = useState<string | null>(null);
+  const { isRTL } = useStore();
 
   const handleComposeClick = () => {
     navigate('/compose');
@@ -193,11 +195,11 @@ export const Timeline: React.FC = () => {
   }, [tagFilter]);
 
   return (
-    <div className="min-h-screen w-full flex justify-end">
-      <div className="w-full max-w-2xl border-r border-gray-200">
+    <div className={`min-h-screen w-full flex ${isRTL ? 'justify-start' : 'justify-end'}`}>
+      <div className={`w-full max-w-2xl border-${isRTL ? 'l' : 'r'} border-gray-200`}>
         {/* Desktop Header */}
-        <div className="hidden md:block sticky top-0 bg-white/80 backdrop-blur-md border-b border-gray-200 p-4">
-          <h1 className="text-xl font-bold text-right">Home</h1>
+        <div className={`hidden md:block sticky top-0 bg-white/80 backdrop-blur-md border-b border-gray-200 p-4`}>
+          <h1 className={`text-xl font-bold ${isRTL ? 'text-left' : 'text-right'}`}>Home</h1>
         </div>
 
         {/* Mobile Tabs */}
@@ -208,10 +210,10 @@ export const Timeline: React.FC = () => {
 
         {/* Desktop Tweet Composer */}
         <div className="hidden md:block border-b border-gray-200 p-4">
-          <div className="flex space-x-4 justify-end">
+          <div className={`flex space-x-4 ${isRTL ? 'justify-start' : 'justify-end'} ${isRTL ? 'flex-row-reverse' : ''}`}>
             <div className="flex-1 max-w-lg">
               <div 
-                className="text-xl text-gray-500 py-3 cursor-pointer hover:bg-gray-50 rounded-lg px-4 text-right"
+                className={`text-xl text-gray-500 py-3 cursor-pointer hover:bg-gray-50 rounded-lg px-4 ${isRTL ? 'text-left' : 'text-right'}`}
                 onClick={handleComposeClick}
               >
                 What's happening?
@@ -224,11 +226,11 @@ export const Timeline: React.FC = () => {
         {/* Filter indicator */}
         {tagFilter && (
           <div className="hidden md:block bg-blue-50 border-b border-blue-200 px-4 py-2">
-            <div className="text-right text-sm text-blue-700">
+            <div className={`${isRTL ? 'text-left' : 'text-right'} text-sm text-blue-700`}>
               Showing tweets tagged with: <span className="font-semibold">{getTagLabel(tagFilter)}</span>
               <button 
                 onClick={() => setTagFilter(null)}
-                className="ml-2 text-blue-500 hover:text-blue-700 underline"
+                className={`${isRTL ? 'mr-2' : 'ml-2'} text-blue-500 hover:text-blue-700 underline`}
               >
                 Clear filter
               </button>
@@ -237,7 +239,7 @@ export const Timeline: React.FC = () => {
         )}
 
         {/* Timeline */}
-        <div className="flex flex-col items-end pb-20 md:pb-0">
+        <div className={`flex flex-col ${isRTL ? 'items-start' : 'items-end'} pb-20 md:pb-0`}>
           {filteredTweets.length === 0 ? (
             <div className="w-full text-center py-12 text-gray-500">
               <p className="text-lg">No tweets found with the selected tag.</p>
