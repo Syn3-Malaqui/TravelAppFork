@@ -139,14 +139,16 @@ export const MobileTweetCard: React.FC<MobileTweetCardProps> = ({
             })}
           </div>
 
-          {/* Images */}
+          {/* Images - Fixed aspect ratio */}
           {tweet.images && tweet.images.length > 0 && (
             <div className="mb-3 rounded-xl overflow-hidden">
-              <img 
-                src={tweet.images[0]} 
-                alt="Tweet image" 
-                className="w-full h-48 object-cover"
-              />
+              <div className="w-full aspect-[4/3]">
+                <img 
+                  src={tweet.images[0]} 
+                  alt="Tweet image" 
+                  className="w-full h-full object-cover"
+                />
+              </div>
             </div>
           )}
 

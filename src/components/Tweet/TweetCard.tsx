@@ -139,14 +139,16 @@ export const TweetCard: React.FC<TweetCardProps> = ({
             })}
           </div>
 
-          {/* Images */}
+          {/* Images - Fixed aspect ratio */}
           {tweet.images && tweet.images.length > 0 && (
             <div className="mb-3 rounded-2xl overflow-hidden border border-gray-200">
-              <img 
-                src={tweet.images[0]} 
-                alt="Tweet image" 
-                className="w-full h-64 object-cover"
-              />
+              <div className="w-full aspect-[16/9]">
+                <img 
+                  src={tweet.images[0]} 
+                  alt="Tweet image" 
+                  className="w-full h-full object-cover"
+                />
+              </div>
             </div>
           )}
 
