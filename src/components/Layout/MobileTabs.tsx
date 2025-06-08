@@ -16,7 +16,7 @@ export const MobileTabs: React.FC = () => {
           <Button
             key={tab.id}
             variant="ghost"
-            className={`flex-1 py-4 px-6 font-bold text-base rounded-none border-b-2 transition-colors ${
+            className={`flex-1 py-6 px-6 font-bold text-base rounded-none border-b-2 transition-colors ${
               activeTab === tab.id
                 ? 'border-blue-500 text-black'
                 : 'border-transparent text-gray-500 hover:bg-gray-50'
