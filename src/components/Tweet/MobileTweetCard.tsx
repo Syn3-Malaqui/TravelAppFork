@@ -6,7 +6,8 @@ import {
   Repeat2, 
   Share, 
   MoreHorizontal,
-  CheckCircle
+  CheckCircle,
+  Tag
 } from 'lucide-react';
 import { Button } from '../ui/button';
 import { Avatar, AvatarImage, AvatarFallback } from '../ui/avatar';
@@ -138,6 +139,21 @@ export const MobileTweetCard: React.FC<MobileTweetCardProps> = ({
               return word + ' ';
             })}
           </div>
+
+          {/* Tags */}
+          {tweet.tags && tweet.tags.length > 0 && (
+            <div className="mb-3 flex flex-wrap gap-1 justify-end">
+              {tweet.tags.map((tag, index) => (
+                <span
+                  key={index}
+                  className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-50 text-blue-700 border border-blue-200"
+                >
+                  <Tag className="w-2.5 h-2.5 mr-1" />
+                  {tag}
+                </span>
+              ))}
+            </div>
+          )}
 
           {/* Images - Fixed aspect ratio */}
           {tweet.images && tweet.images.length > 0 && (

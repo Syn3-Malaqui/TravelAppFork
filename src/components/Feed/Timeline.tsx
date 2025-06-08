@@ -34,6 +34,7 @@ const mockTweets: Tweet[] = [
     isBookmarked: false,
     hashtags: ['coding', 'react', 'typescript'],
     mentions: [],
+    tags: ['Hotels', 'Tourist Spots'],
   },
   {
     id: '2',
@@ -60,6 +61,7 @@ const mockTweets: Tweet[] = [
     isBookmarked: true,
     hashtags: [],
     mentions: [],
+    tags: ['Tourist Spots'],
   },
   {
     id: '3',
@@ -85,6 +87,7 @@ const mockTweets: Tweet[] = [
     isBookmarked: false,
     hashtags: [],
     mentions: [],
+    tags: ['Car Rentals'],
   },
 ];
 

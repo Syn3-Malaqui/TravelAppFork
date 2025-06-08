@@ -1,12 +1,14 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { X, Image, Smile, Calendar, MapPin, ArrowLeft } from 'lucide-react';
+import { X, Image, Smile, Calendar, MapPin, ArrowLeft, Tag } from 'lucide-react';
 import { Button } from '../ui/button';
+import { TWEET_TAGS, TweetTag } from '../../types';
 
 export const ComposePage: React.FC = () => {
   const navigate = useNavigate();
   const [content, setContent] = useState('');
   const [images, setImages] = useState<string[]>([]);
+  const [selectedTags, setSelectedTags] = useState<TweetTag[]>([]);
   const [loading, setLoading] = useState(false);
 
   const handleSubmit = async () => {
@@ -19,6 +21,7 @@ export const ComposePage: React.FC = () => {
       
       setContent('');
       setImages([]);
+      setSelectedTags([]);
       navigate('/');
     } catch (error) {
       console.error('Error creating tweet:', error);
@@ -37,6 +40,14 @@ export const ComposePage: React.FC = () => {
       );
       setImages(prev => [...prev, ...newImages]);
     }
+  };
+
+  const toggleTag = (tag: TweetTag) => {
+    setSelectedTags(prev => 
+      prev.includes(tag) 
+        ? prev.filter(t => t !== tag)
+        : [...prev, tag]
+    );
   };
 
   const characterCount = content.length;
@@ -83,6 +94,54 @@ export const ComposePage: React.FC = () => {
               className="w-full text-xl placeholder-gray-500 border-none outline-none resize-none min-h-[200px] bg-transparent focus:ring-0 focus:border-none focus:outline-none"
               autoFocus
             />
+
+            {/* Tags Selection */}
+            <div className="mt-4">
+              <div className="flex items-center space-x-2 mb-3">
+                <Tag className="h-5 w-5 text-gray-500" />
+                <span className="text-sm font-medium text-gray-700">Add tags:</span>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {TWEET_TAGS.map((tag) => (
+                  <Button
+                    key={tag}
+                    variant="outline"
+                    size="sm"
+                    onClick={() => toggleTag(tag)}
+                    className={`rounded-full px-3 py-1 text-sm transition-colors ${
+                      selectedTags.includes(tag)
+                        ? 'bg-blue-500 text-white border-blue-500 hover:bg-blue-600'
+                        : 'border-gray-300 text-gray-700 hover:bg-gray-50'
+                    }`}
+                  >
+                    {tag}
+                  </Button>
+                ))}
+              </div>
+            </div>
+
+            {/* Selected Tags Display */}
+            {selectedTags.length > 0 && (
+              <div className="mt-3 flex flex-wrap gap-2">
+                {selectedTags.map((tag) => (
+                  <span
+                    key={tag}
+                    className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-50 text-blue-700 border border-blue-200"
+                  >
+                    <Tag className="w-3 h-3 mr-1" />
+                    {tag}
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => toggleTag(tag)}
+                      className="ml-1 h-4 w-4 p-0 hover:bg-blue-100 rounded-full"
+                    >
+                      <X className="h-3 w-3" />
+                    </Button>
+                  </span>
+                ))}
+              </div>
+            )}
 
             {/* Image Preview */}
             {images.length > 0 && (

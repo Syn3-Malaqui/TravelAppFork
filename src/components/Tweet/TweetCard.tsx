@@ -8,7 +8,8 @@ import {
   Bookmark,
   MoreHorizontal,
   Eye,
-  CheckCircle
+  CheckCircle,
+  Tag
 } from 'lucide-react';
 import { Button } from '../ui/button';
 import { Avatar, AvatarImage, AvatarFallback } from '../ui/avatar';
@@ -138,6 +139,21 @@ export const TweetCard: React.FC<TweetCardProps> = ({
               return word + ' ';
             })}
           </div>
+
+          {/* Tags */}
+          {tweet.tags && tweet.tags.length > 0 && (
+            <div className="mb-3 flex flex-wrap gap-2 justify-end">
+              {tweet.tags.map((tag, index) => (
+                <span
+                  key={index}
+                  className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-50 text-blue-700 border border-blue-200 hover:bg-blue-100 cursor-pointer transition-colors"
+                >
+                  <Tag className="w-3 h-3 mr-1" />
+                  {tag}
+                </span>
+              ))}
+            </div>
+          )}
 
           {/* Images - Fixed aspect ratio */}
           {tweet.images && tweet.images.length > 0 && (

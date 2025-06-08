@@ -27,6 +27,7 @@ export interface Tweet {
   replyTo?: string;
   hashtags: string[];
   mentions: string[];
+  tags?: string[]; // New field for tweet tags
 }
 
 export interface Notification {
@@ -87,3 +88,12 @@ export interface TweetData {
 export interface TweetWithProfile extends TweetData {
   profiles: Profile;
 }
+
+// Available tweet tags
+export const TWEET_TAGS = [
+  'Car Rentals',
+  'Hotels', 
+  'Tourist Spots'
+] as const;
+
+export type TweetTag = typeof TWEET_TAGS[number];
