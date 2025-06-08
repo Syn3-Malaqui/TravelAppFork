@@ -52,7 +52,7 @@ export const MobileTweetCard: React.FC<MobileTweetCardProps> = ({
 
   return (
     <div className="border-b border-gray-100 p-4 bg-white">
-      <div className="flex space-x-3 flex-row-reverse">
+      <div className="flex space-x-5 flex-row-reverse">
         {/* Avatar - Now on the right */}
         <Avatar className="w-10 h-10 flex-shrink-0">
           <AvatarImage src={tweet.author.avatar} />
