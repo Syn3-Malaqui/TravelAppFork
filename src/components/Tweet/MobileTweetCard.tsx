@@ -17,14 +17,24 @@ import {
   DropdownMenuTrigger,
 } from '../ui/dropdown-menu';
 import { Tweet } from '../../types';
-import { useStore } from '../../store/useStore';
+import { useTweets } from '../../hooks/useTweets';
 
 interface MobileTweetCardProps {
   tweet: Tweet;
+  onLike: () => void;
+  onRetweet: () => void;
+  onBookmark: () => void;
+  currentUserId?: string;
 }
 
-export const MobileTweetCard: React.FC<MobileTweetCardProps> = ({ tweet }) => {
-  const { likeTweet, retweetTweet, deleteTweet, currentUser } = useStore();
+export const MobileTweetCard: React.FC<MobileTweetCardProps> = ({ 
+  tweet, 
+  onLike, 
+  onRetweet, 
+  onBookmark, 
+  currentUserId 
+}) => {
+  const { deleteTweet } = useTweets();
 
   const formatNumber = (num: number): string => {
     if (num >= 1000000) {
@@ -36,19 +46,11 @@ export const MobileTweetCard: React.FC<MobileTweetCardProps> = ({ tweet }) => {
     return num.toString();
   };
 
-  const handleLike = () => {
-    likeTweet(tweet.id);
+  const handleDelete = async () => {
+    await deleteTweet(tweet.id);
   };
 
-  const handleRetweet = () => {
-    retweetTweet(tweet.id);
-  };
-
-  const handleDelete = () => {
-    deleteTweet(tweet.id);
-  };
-
-  const isOwnTweet = currentUser?.id === tweet.author.id;
+  const isOwnTweet = currentUserId === tweet.author.id;
 
   return (
     <div className="border-b border-gray-100 p-4 bg-white">
@@ -166,7 +168,7 @@ export const MobileTweetCard: React.FC<MobileTweetCardProps> = ({ tweet }) => {
                   ? 'text-red-500' 
                   : 'text-gray-500'
               }`}
-              onClick={handleLike}
+              onClick={onLike}
             >
               <span className="text-xs mr-1">{formatNumber(tweet.likes)}</span>
               <Heart className={`w-4 h-4 ${tweet.isLiked ? 'fill-current' : ''}`} />
@@ -181,7 +183,7 @@ export const MobileTweetCard: React.FC<MobileTweetCardProps> = ({ tweet }) => {
                   ? 'text-green-500' 
                   : 'text-gray-500'
               }`}
-              onClick={handleRetweet}
+              onClick={onRetweet}
             >
               <span className="text-xs mr-1">{formatNumber(tweet.retweets)}</span>
               <Repeat2 className="w-4 h-4" />

@@ -24,7 +24,8 @@
     "@radix-ui/react-avatar": "^1.1.1",
     "class-variance-authority": "^0.7.0",
     "date-fns": "^3.6.0",
-    "zustand": "^4.5.5"
+    "zustand": "^4.5.5",
+    "@supabase/supabase-js": "^2.39.0"
   },
   "devDependencies": {
     "@types/react": "18.2.0",

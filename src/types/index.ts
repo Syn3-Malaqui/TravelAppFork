@@ -53,3 +53,37 @@ export interface Conversation {
   lastMessage: Message;
   unreadCount: number;
 }
+
+// Database types
+export interface Profile {
+  id: string;
+  username: string;
+  display_name: string;
+  avatar_url: string | null;
+  bio: string;
+  verified: boolean;
+  followers_count: number;
+  following_count: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface TweetData {
+  id: string;
+  content: string;
+  author_id: string;
+  reply_to: string | null;
+  image_urls: string[];
+  hashtags: string[];
+  mentions: string[];
+  likes_count: number;
+  retweets_count: number;
+  replies_count: number;
+  views_count: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface TweetWithProfile extends TweetData {
+  profiles: Profile;
+}

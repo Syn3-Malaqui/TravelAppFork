@@ -3,32 +3,44 @@ import { useNavigate } from 'react-router-dom';
 import { X, Image, Smile, Calendar, MapPin, ArrowLeft } from 'lucide-react';
 import { Button } from '../ui/button';
 import { Avatar, AvatarImage, AvatarFallback } from '../ui/avatar';
+import { AuthModal } from '../Auth/AuthModal';
+import { useAuth } from '../../hooks/useAuth';
+import { useTweets } from '../../hooks/useTweets';
 import { useStore } from '../../store/useStore';
 
 export const ComposePage: React.FC = () => {
   const navigate = useNavigate();
-  const { currentUser, addTweet } = useStore();
+  const { user, profile } = useAuth();
+  const { createTweet } = useTweets();
+  const { showAuthModal, setShowAuthModal } = useStore();
   const [content, setContent] = useState('');
   const [images, setImages] = useState<string[]>([]);
+  const [loading, setLoading] = useState(false);
 
-  const handleSubmit = () => {
-    if (!content.trim() || !currentUser) return;
+  const handleSubmit = async () => {
+    if (!content.trim() || !user) return;
 
-    // Extract hashtags and mentions
-    const hashtags = content.match(/#\w+/g)?.map(tag => tag.slice(1)) || [];
-    const mentions = content.match(/@\w+/g)?.map(mention => mention.slice(1)) || [];
+    setLoading(true);
+    try {
+      // Extract hashtags and mentions
+      const hashtags = content.match(/#\w+/g)?.map(tag => tag.slice(1)) || [];
+      const mentions = content.match(/@\w+/g)?.map(mention => mention.slice(1)) || [];
 
-    addTweet({
-      content: content.trim(),
-      author: currentUser,
-      images: images.length > 0 ? images : undefined,
-      hashtags,
-      mentions,
-    });
+      const { error } = await createTweet(content.trim(), images, hashtags, mentions);
+      
+      if (error) {
+        console.error('Error creating tweet:', error);
+        return;
+      }
 
-    setContent('');
-    setImages([]);
-    navigate('/');
+      setContent('');
+      setImages([]);
+      navigate('/');
+    } catch (error) {
+      console.error('Error creating tweet:', error);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -46,6 +58,29 @@ export const ComposePage: React.FC = () => {
   const characterCount = content.length;
   const maxCharacters = 280;
   const isOverLimit = characterCount > maxCharacters;
+
+  // Show auth modal if not logged in
+  if (!user) {
+    return (
+      <>
+        <div className="min-h-screen bg-white flex items-center justify-center">
+          <div className="text-center">
+            <h1 className="text-2xl font-bold mb-4">Sign in to compose tweets</h1>
+            <Button 
+              onClick={() => setShowAuthModal(true)}
+              className="bg-blue-500 hover:bg-blue-600 text-white font-bold px-6 py-2 rounded-full"
+            >
+              Sign In
+            </Button>
+          </div>
+        </div>
+        <AuthModal 
+          isOpen={showAuthModal} 
+          onClose={() => setShowAuthModal(false)} 
+        />
+      </>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-white">
@@ -65,10 +100,10 @@ export const ComposePage: React.FC = () => {
         
         <Button
           onClick={handleSubmit}
-          disabled={!content.trim() || isOverLimit}
+          disabled={!content.trim() || isOverLimit || loading}
           className="bg-blue-500 hover:bg-blue-600 text-white font-bold px-6 py-2 rounded-full disabled:opacity-50"
         >
-          Tweet
+          {loading ? 'Posting...' : 'Tweet'}
         </Button>
       </div>
 
@@ -76,10 +111,10 @@ export const ComposePage: React.FC = () => {
       <div className="p-4">
         <div className="flex space-x-4">
           {/* Avatar */}
-          {currentUser && (
+          {profile && (
             <Avatar className="w-12 h-12 flex-shrink-0">
-              <AvatarImage src={currentUser.avatar} />
-              <AvatarFallback>{currentUser.displayName[0]}</AvatarFallback>
+              <AvatarImage src={profile.avatar_url || undefined} />
+              <AvatarFallback>{profile.display_name[0]}</AvatarFallback>
             </Avatar>
           )}
 

@@ -19,14 +19,24 @@ import {
   DropdownMenuTrigger,
 } from '../ui/dropdown-menu';
 import { Tweet } from '../../types';
-import { useStore } from '../../store/useStore';
+import { useTweets } from '../../hooks/useTweets';
 
 interface TweetCardProps {
   tweet: Tweet;
+  onLike: () => void;
+  onRetweet: () => void;
+  onBookmark: () => void;
+  currentUserId?: string;
 }
 
-export const TweetCard: React.FC<TweetCardProps> = ({ tweet }) => {
-  const { likeTweet, retweetTweet, bookmarkTweet, deleteTweet, currentUser } = useStore();
+export const TweetCard: React.FC<TweetCardProps> = ({ 
+  tweet, 
+  onLike, 
+  onRetweet, 
+  onBookmark, 
+  currentUserId 
+}) => {
+  const { deleteTweet } = useTweets();
 
   const formatNumber = (num: number): string => {
     if (num >= 1000000) {
@@ -38,23 +48,11 @@ export const TweetCard: React.FC<TweetCardProps> = ({ tweet }) => {
     return num.toString();
   };
 
-  const handleLike = () => {
-    likeTweet(tweet.id);
+  const handleDelete = async () => {
+    await deleteTweet(tweet.id);
   };
 
-  const handleRetweet = () => {
-    retweetTweet(tweet.id);
-  };
-
-  const handleBookmark = () => {
-    bookmarkTweet(tweet.id);
-  };
-
-  const handleDelete = () => {
-    deleteTweet(tweet.id);
-  };
-
-  const isOwnTweet = currentUser?.id === tweet.author.id;
+  const isOwnTweet = currentUserId === tweet.author.id;
 
   return (
     <div className="border-b border-gray-200 p-4 hover:bg-gray-50 transition-colors">
@@ -169,7 +167,7 @@ export const TweetCard: React.FC<TweetCardProps> = ({ tweet }) => {
                     ? 'text-blue-500 hover:text-blue-600 hover:bg-blue-50' 
                     : 'text-gray-500 hover:text-blue-500 hover:bg-blue-50'
                 }`}
-                onClick={handleBookmark}
+                onClick={onBookmark}
               >
                 <Bookmark className={`w-5 h-5 ${tweet.isBookmarked ? 'fill-current' : ''}`} />
               </Button>
@@ -190,7 +188,7 @@ export const TweetCard: React.FC<TweetCardProps> = ({ tweet }) => {
                   ? 'text-red-500 hover:text-red-600 hover:bg-red-50' 
                   : 'text-gray-500 hover:text-red-500 hover:bg-red-50'
               }`}
-              onClick={handleLike}
+              onClick={onLike}
             >
               <span className="text-sm mr-1">{formatNumber(tweet.likes)}</span>
               <Heart className={`w-5 h-5 ${tweet.isLiked ? 'fill-current' : ''}`} />
@@ -205,7 +203,7 @@ export const TweetCard: React.FC<TweetCardProps> = ({ tweet }) => {
                   ? 'text-green-500 hover:text-green-600 hover:bg-green-50' 
                   : 'text-gray-500 hover:text-green-500 hover:bg-green-50'
               }`}
-              onClick={handleRetweet}
+              onClick={onRetweet}
             >
               <span className="text-sm mr-1">{formatNumber(tweet.retweets)}</span>
               <Repeat2 className="w-5 h-5" />
