@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { 
   Home, 
   Search, 
@@ -26,19 +26,20 @@ import { useStore } from '../../store/useStore';
 import { useAuth } from '../../hooks/useAuth';
 
 const sidebarItems = [
-  { icon: Home, label: 'Home', active: true },
-  { icon: Search, label: 'Explore' },
-  { icon: Bell, label: 'Notifications' },
-  { icon: Mail, label: 'Messages' },
-  { icon: Bookmark, label: 'Bookmarks' },
-  { icon: Hash, label: 'Lists' },
-  { icon: Users, label: 'Communities' },
-  { icon: User, label: 'Profile' },
-  { icon: MoreHorizontal, label: 'More' },
+  { icon: Home, label: 'Home', path: '/' },
+  { icon: Search, label: 'Explore', path: '/search' },
+  { icon: Bell, label: 'Notifications', path: '/notifications' },
+  { icon: Mail, label: 'Messages', path: '/messages' },
+  { icon: Bookmark, label: 'Bookmarks', path: '/bookmarks' },
+  { icon: Hash, label: 'Lists', path: '/lists' },
+  { icon: Users, label: 'Communities', path: '/communities' },
+  { icon: User, label: 'Profile', path: '/profile' },
+  { icon: MoreHorizontal, label: 'More', path: '/more' },
 ];
 
 export const Sidebar: React.FC = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { isRTL, toggleLayoutDirection } = useStore();
   const { user, signOut } = useAuth();
   const [settingsOpen, setSettingsOpen] = useState(false);
@@ -61,6 +62,10 @@ export const Sidebar: React.FC = () => {
     setSettingsOpen(false);
   };
 
+  const handleNavClick = (path: string) => {
+    navigate(path);
+  };
+
   return (
     <div className={`w-64 h-screen fixed ${isRTL ? 'right-0 border-l' : 'left-0 border-r'} top-0 border-gray-200 bg-white p-4 flex flex-col z-40`}>
       {/* Logo */}
@@ -73,19 +78,24 @@ export const Sidebar: React.FC = () => {
       {/* Navigation */}
       <nav className="flex-1">
         <ul className="space-y-2">
-          {sidebarItems.map((item) => (
-            <li key={item.label}>
-              <Button
-                variant="ghost"
-                className={`w-full ${isRTL ? 'justify-end' : 'justify-start'} text-xl py-3 px-4 h-auto ${
-                  item.active ? 'font-bold' : 'font-normal'
-                }`}
-              >
-                <item.icon className={`${isRTL ? 'ml-4' : 'mr-4'} h-6 w-6`} />
-                {item.label}
-              </Button>
-            </li>
-          ))}
+          {sidebarItems.map((item) => {
+            const isActive = location.pathname === item.path;
+            
+            return (
+              <li key={item.label}>
+                <Button
+                  variant="ghost"
+                  onClick={() => handleNavClick(item.path)}
+                  className={`w-full ${isRTL ? 'justify-end' : 'justify-start'} text-xl py-3 px-4 h-auto ${
+                    isActive ? 'font-bold text-blue-500' : 'font-normal text-gray-700 hover:bg-gray-100'
+                  }`}
+                >
+                  <item.icon className={`${isRTL ? 'ml-4' : 'mr-4'} h-6 w-6`} />
+                  {item.label}
+                </Button>
+              </li>
+            );
+          })}
         </ul>
 
         {/* Settings Dropdown */}
