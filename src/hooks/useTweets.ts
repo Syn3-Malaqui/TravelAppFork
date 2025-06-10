@@ -12,7 +12,6 @@ export const useTweets = () => {
       setLoading(true);
       setError(null);
       
-      // Fetch all tweets (including replies) and their profiles
       const { data, error } = await supabase
         .from('tweets')
         .select(`
@@ -29,7 +28,8 @@ export const useTweets = () => {
             created_at
           )
         `)
-        .order('created_at', { ascending: false });
+        .order('created_at', { ascending: false })
+        .limit(50);
 
       if (error) throw error;
 
@@ -78,13 +78,10 @@ export const useTweets = () => {
         isBookmarked: userBookmarks.includes(tweet.id),
         hashtags: tweet.hashtags,
         mentions: tweet.mentions,
-        tags: tweet.tags || [],
-        replyTo: tweet.reply_to,
+        tags: tweet.tags || [], // Use tags from database
       }));
 
-      // Organize tweets with replies
-      const organizedTweets = organizeTweetsWithReplies(formattedTweets);
-      setTweets(organizedTweets);
+      setTweets(formattedTweets);
     } catch (err: any) {
       setError(err.message);
       console.error('Error fetching tweets:', err);
@@ -93,40 +90,7 @@ export const useTweets = () => {
     }
   };
 
-  // Organize tweets to show replies below their parent tweets
-  const organizeTweetsWithReplies = (allTweets: Tweet[]): Tweet[] => {
-    const tweetMap = new Map<string, Tweet>();
-    const rootTweets: Tweet[] = [];
-    const replies: Tweet[] = [];
-
-    // Separate root tweets and replies
-    allTweets.forEach(tweet => {
-      tweetMap.set(tweet.id, tweet);
-      if (tweet.replyTo) {
-        replies.push(tweet);
-      } else {
-        rootTweets.push(tweet);
-      }
-    });
-
-    // Build the organized list
-    const organized: Tweet[] = [];
-    
-    rootTweets.forEach(rootTweet => {
-      organized.push(rootTweet);
-      
-      // Find and add replies to this tweet
-      const tweetReplies = replies
-        .filter(reply => reply.replyTo === rootTweet.id)
-        .sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime());
-      
-      organized.push(...tweetReplies);
-    });
-
-    return organized;
-  };
-
-  const createTweet = async (content: string, imageUrls: string[] = [], tags: TweetTag[] = [], replyTo?: string) => {
+  const createTweet = async (content: string, imageUrls: string[] = [], tags: TweetTag[] = []) => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('User not authenticated');
@@ -140,11 +104,10 @@ export const useTweets = () => {
         .insert({
           content,
           author_id: user.id,
-          reply_to: replyTo || null,
           image_urls: imageUrls,
           hashtags,
           mentions,
-          tags,
+          tags, // Include tags in the database insert
         })
         .select()
         .single();
@@ -173,20 +136,14 @@ export const useTweets = () => {
         });
 
       if (error) {
+        // If it's a duplicate key error, the user already liked this tweet
         if (error.code === '23505') {
           throw new Error('Tweet already liked');
         }
         throw error;
       }
       
-      // Update local state immediately for better UX
-      setTweets(prevTweets => 
-        prevTweets.map(tweet => 
-          tweet.id === tweetId 
-            ? { ...tweet, isLiked: true, likes: tweet.likes + 1 }
-            : tweet
-        )
-      );
+      await fetchTweets();
     } catch (err: any) {
       throw new Error(err.message);
     }
@@ -206,15 +163,7 @@ export const useTweets = () => {
         });
 
       if (error) throw error;
-      
-      // Update local state immediately for better UX
-      setTweets(prevTweets => 
-        prevTweets.map(tweet => 
-          tweet.id === tweetId 
-            ? { ...tweet, isLiked: false, likes: Math.max(0, tweet.likes - 1) }
-            : tweet
-        )
-      );
+      await fetchTweets();
     } catch (err: any) {
       throw new Error(err.message);
     }
@@ -239,14 +188,7 @@ export const useTweets = () => {
         throw error;
       }
       
-      // Update local state immediately for better UX
-      setTweets(prevTweets => 
-        prevTweets.map(tweet => 
-          tweet.id === tweetId 
-            ? { ...tweet, isRetweeted: true, retweets: tweet.retweets + 1 }
-            : tweet
-        )
-      );
+      await fetchTweets();
     } catch (err: any) {
       throw new Error(err.message);
     }
@@ -266,15 +208,7 @@ export const useTweets = () => {
         });
 
       if (error) throw error;
-      
-      // Update local state immediately for better UX
-      setTweets(prevTweets => 
-        prevTweets.map(tweet => 
-          tweet.id === tweetId 
-            ? { ...tweet, isRetweeted: false, retweets: Math.max(0, tweet.retweets - 1) }
-            : tweet
-        )
-      );
+      await fetchTweets();
     } catch (err: any) {
       throw new Error(err.message);
     }
@@ -299,14 +233,7 @@ export const useTweets = () => {
         throw error;
       }
       
-      // Update local state immediately for better UX
-      setTweets(prevTweets => 
-        prevTweets.map(tweet => 
-          tweet.id === tweetId 
-            ? { ...tweet, isBookmarked: true }
-            : tweet
-        )
-      );
+      await fetchTweets();
     } catch (err: any) {
       throw new Error(err.message);
     }
@@ -326,15 +253,7 @@ export const useTweets = () => {
         });
 
       if (error) throw error;
-      
-      // Update local state immediately for better UX
-      setTweets(prevTweets => 
-        prevTweets.map(tweet => 
-          tweet.id === tweetId 
-            ? { ...tweet, isBookmarked: false }
-            : tweet
-        )
-      );
+      await fetchTweets();
     } catch (err: any) {
       throw new Error(err.message);
     }
