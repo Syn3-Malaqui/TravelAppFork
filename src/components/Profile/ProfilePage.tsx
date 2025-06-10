@@ -8,6 +8,7 @@ import { MobileTweetCard } from '../Tweet/MobileTweetCard';
 import { useStore } from '../../store/useStore';
 import { useAuth } from '../../hooks/useAuth';
 import { useFollow } from '../../hooks/useFollow';
+import { useTweets } from '../../hooks/useTweets';
 import { supabase } from '../../lib/supabase';
 import { Tweet, User } from '../../types';
 
@@ -17,6 +18,7 @@ export const ProfilePage: React.FC = () => {
   const { isRTL } = useStore();
   const { user: currentUser } = useAuth();
   const { followUser, unfollowUser, isFollowing, loading: followLoading } = useFollow();
+  const { likeTweet, unlikeTweet, retweetTweet, unretweetTweet, bookmarkTweet, unbookmarkTweet } = useTweets();
   
   const [profile, setProfile] = useState<User | null>(null);
   const [tweets, setTweets] = useState<Tweet[]>([]);
@@ -44,13 +46,25 @@ export const ProfilePage: React.FC = () => {
 
       if (profileError) throw profileError;
 
-      // Fetch user's tweets (simplified query)
+      // Fetch user's tweets
       const { data: tweetsData, error: tweetsError } = await supabase
         .from('tweets')
-        .select('*')
+        .select(`
+          *,
+          profiles (
+            id,
+            username,
+            display_name,
+            avatar_url,
+            bio,
+            verified,
+            followers_count,
+            following_count,
+            created_at
+          )
+        `)
         .eq('author_id', profileData.id)
-        .order('created_at', { ascending: false })
-        .limit(50);
+        .order('created_at', { ascending: false });
 
       if (tweetsError) throw tweetsError;
 
@@ -84,11 +98,21 @@ export const ProfilePage: React.FC = () => {
         joinedDate: new Date(profileData.created_at),
       };
 
-      // Format tweets data (simplified - all tweets use the same author)
+      // Format tweets data
       const formattedTweets: Tweet[] = tweetsData.map(tweet => ({
         id: tweet.id,
         content: tweet.content,
-        author: formattedProfile, // Use the profile we already have
+        author: {
+          id: tweet.profiles.id,
+          username: tweet.profiles.username,
+          displayName: tweet.profiles.display_name,
+          avatar: tweet.profiles.avatar_url || '',
+          bio: tweet.profiles.bio,
+          verified: tweet.profiles.verified,
+          followers: tweet.profiles.followers_count,
+          following: tweet.profiles.following_count,
+          joinedDate: new Date(tweet.profiles.created_at),
+        },
         createdAt: new Date(tweet.created_at),
         likes: tweet.likes_count,
         retweets: tweet.retweets_count,
@@ -101,8 +125,6 @@ export const ProfilePage: React.FC = () => {
         hashtags: tweet.hashtags,
         mentions: tweet.mentions,
         tags: tweet.tags || [],
-        replyTo: tweet.reply_to,
-        isRetweet: tweet.is_retweet || false,
       }));
 
       setProfile(formattedProfile);
@@ -134,8 +156,12 @@ export const ProfilePage: React.FC = () => {
   const handleLike = async (tweetId: string) => {
     try {
       const tweet = tweets.find(t => t.id === tweetId);
-      
-      // Optimistic update
+      if (tweet?.isLiked) {
+        await unlikeTweet(tweetId);
+      } else {
+        await likeTweet(tweetId);
+      }
+      // Update local state
       setTweets(prevTweets => 
         prevTweets.map(t => 
           t.id === tweetId 
@@ -147,41 +173,20 @@ export const ProfilePage: React.FC = () => {
             : t
         )
       );
-
-      // Make API call
-      if (tweet?.isLiked) {
-        await supabase.from('likes').delete().match({
-          user_id: currentUser?.id,
-          tweet_id: tweetId,
-        });
-      } else {
-        await supabase.from('likes').insert({
-          user_id: currentUser?.id,
-          tweet_id: tweetId,
-        });
-      }
     } catch (error) {
       console.error('Error toggling like:', error);
-      // Revert optimistic update on error
-      setTweets(prevTweets => 
-        prevTweets.map(t => 
-          t.id === tweetId 
-            ? { 
-                ...t, 
-                isLiked: !t.isLiked, 
-                likes: t.isLiked ? t.likes + 1 : Math.max(0, t.likes - 1)
-              }
-            : t
-        )
-      );
     }
   };
 
   const handleRetweet = async (tweetId: string) => {
     try {
       const tweet = tweets.find(t => t.id === tweetId);
-      
-      // Optimistic update
+      if (tweet?.isRetweeted) {
+        await unretweetTweet(tweetId);
+      } else {
+        await retweetTweet(tweetId);
+      }
+      // Update local state
       setTweets(prevTweets => 
         prevTweets.map(t => 
           t.id === tweetId 
@@ -193,41 +198,20 @@ export const ProfilePage: React.FC = () => {
             : t
         )
       );
-
-      // Make API call
-      if (tweet?.isRetweeted) {
-        await supabase.from('retweets').delete().match({
-          user_id: currentUser?.id,
-          tweet_id: tweetId,
-        });
-      } else {
-        await supabase.from('retweets').insert({
-          user_id: currentUser?.id,
-          tweet_id: tweetId,
-        });
-      }
     } catch (error) {
       console.error('Error toggling retweet:', error);
-      // Revert optimistic update on error
-      setTweets(prevTweets => 
-        prevTweets.map(t => 
-          t.id === tweetId 
-            ? { 
-                ...t, 
-                isRetweeted: !t.isRetweeted, 
-                retweets: t.isRetweeted ? t.retweets + 1 : Math.max(0, t.retweets - 1)
-              }
-            : t
-        )
-      );
     }
   };
 
   const handleBookmark = async (tweetId: string) => {
     try {
       const tweet = tweets.find(t => t.id === tweetId);
-      
-      // Optimistic update
+      if (tweet?.isBookmarked) {
+        await unbookmarkTweet(tweetId);
+      } else {
+        await bookmarkTweet(tweetId);
+      }
+      // Update local state
       setTweets(prevTweets => 
         prevTweets.map(t => 
           t.id === tweetId 
@@ -235,29 +219,8 @@ export const ProfilePage: React.FC = () => {
             : t
         )
       );
-
-      // Make API call
-      if (tweet?.isBookmarked) {
-        await supabase.from('bookmarks').delete().match({
-          user_id: currentUser?.id,
-          tweet_id: tweetId,
-        });
-      } else {
-        await supabase.from('bookmarks').insert({
-          user_id: currentUser?.id,
-          tweet_id: tweetId,
-        });
-      }
     } catch (error) {
       console.error('Error toggling bookmark:', error);
-      // Revert optimistic update on error
-      setTweets(prevTweets => 
-        prevTweets.map(t => 
-          t.id === tweetId 
-            ? { ...t, isBookmarked: !t.isBookmarked }
-            : t
-        )
-      );
     }
   };
 

@@ -30,7 +30,7 @@ export const RetweetModal: React.FC<RetweetModalProps> = ({
   const [showQuoteForm, setShowQuoteForm] = useState(false);
   const { isRTL } = useStore();
   const { user } = useAuth();
-  const { createRetweet } = useTweets();
+  const { createTweet } = useTweets();
 
   const handleQuickRetweet = () => {
     onQuickRetweet();
@@ -51,8 +51,9 @@ export const RetweetModal: React.FC<RetweetModalProps> = ({
     setError('');
     
     try {
-      // Create a retweet with comment
-      await createRetweet(tweet.id, content);
+      // Create a quote tweet by including the original tweet's content and author
+      const quoteContent = `${content}\n\nRT @${tweet.author.username}: ${tweet.content}`;
+      await createTweet(quoteContent, [], []);
       
       // Reset form and close modal
       setContent('');
