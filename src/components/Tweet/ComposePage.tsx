@@ -4,6 +4,7 @@ import { X, Image, Smile, Calendar, MapPin, ArrowLeft, Tag } from 'lucide-react'
 import { Button } from '../ui/button';
 import { TWEET_TAGS, TweetTag } from '../../types';
 import { useStore } from '../../store/useStore';
+import { useTweets } from '../../hooks/useTweets';
 
 export const ComposePage: React.FC = () => {
   const navigate = useNavigate();
@@ -11,22 +12,31 @@ export const ComposePage: React.FC = () => {
   const [images, setImages] = useState<string[]>([]);
   const [selectedTags, setSelectedTags] = useState<TweetTag[]>([]);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
   const { isRTL } = useStore();
+  const { createTweet } = useTweets();
 
   const handleSubmit = async () => {
-    if (!content.trim()) return;
+    if (!content.trim()) {
+      setError('Tweet content cannot be empty');
+      return;
+    }
 
     setLoading(true);
+    setError('');
+    
     try {
-      // Simulate posting
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      await createTweet(content, images, selectedTags);
       
+      // Reset form
       setContent('');
       setImages([]);
       setSelectedTags([]);
+      
+      // Navigate back to timeline
       navigate('/');
-    } catch (error) {
-      console.error('Error creating tweet:', error);
+    } catch (err: any) {
+      setError(err.message || 'Failed to create tweet');
     } finally {
       setLoading(false);
     }
@@ -80,6 +90,13 @@ export const ComposePage: React.FC = () => {
           {loading ? 'Posting...' : 'Tweet'}
         </Button>
       </div>
+
+      {/* Error Message */}
+      {error && (
+        <div className="mx-4 mt-4 p-4 bg-red-50 border border-red-200 rounded-lg">
+          <p className="text-red-700 text-sm">{error}</p>
+        </div>
+      )}
 
       {/* Compose Area */}
       <div className="p-4">

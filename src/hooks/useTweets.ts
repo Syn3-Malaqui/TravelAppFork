@@ -10,6 +10,8 @@ export const useTweets = () => {
   const fetchTweets = async () => {
     try {
       setLoading(true);
+      setError(null);
+      
       const { data, error } = await supabase
         .from('tweets')
         .select(`
@@ -31,6 +33,26 @@ export const useTweets = () => {
 
       if (error) throw error;
 
+      // Get current user to check likes/retweets/bookmarks
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      // Get user's likes, retweets, and bookmarks if authenticated
+      let userLikes: string[] = [];
+      let userRetweets: string[] = [];
+      let userBookmarks: string[] = [];
+      
+      if (user) {
+        const [likesResult, retweetsResult, bookmarksResult] = await Promise.all([
+          supabase.from('likes').select('tweet_id').eq('user_id', user.id),
+          supabase.from('retweets').select('tweet_id').eq('user_id', user.id),
+          supabase.from('bookmarks').select('tweet_id').eq('user_id', user.id)
+        ]);
+        
+        userLikes = likesResult.data?.map(like => like.tweet_id) || [];
+        userRetweets = retweetsResult.data?.map(retweet => retweet.tweet_id) || [];
+        userBookmarks = bookmarksResult.data?.map(bookmark => bookmark.tweet_id) || [];
+      }
+
       const formattedTweets: Tweet[] = (data as TweetWithProfile[]).map(tweet => ({
         id: tweet.id,
         content: tweet.content,
@@ -51,9 +73,9 @@ export const useTweets = () => {
         replies: tweet.replies_count,
         views: tweet.views_count,
         images: tweet.image_urls,
-        isLiked: false, // TODO: Check if current user liked this tweet
-        isRetweeted: false, // TODO: Check if current user retweeted this tweet
-        isBookmarked: false, // TODO: Check if current user bookmarked this tweet
+        isLiked: userLikes.includes(tweet.id),
+        isRetweeted: userRetweets.includes(tweet.id),
+        isBookmarked: userBookmarks.includes(tweet.id),
         hashtags: tweet.hashtags,
         mentions: tweet.mentions,
         tags: [], // TODO: Add tags support to database
@@ -62,6 +84,7 @@ export const useTweets = () => {
       setTweets(formattedTweets);
     } catch (err: any) {
       setError(err.message);
+      console.error('Error fetching tweets:', err);
     } finally {
       setLoading(false);
     }
@@ -111,7 +134,14 @@ export const useTweets = () => {
           tweet_id: tweetId,
         });
 
-      if (error) throw error;
+      if (error) {
+        // If it's a duplicate key error, the user already liked this tweet
+        if (error.code === '23505') {
+          throw new Error('Tweet already liked');
+        }
+        throw error;
+      }
+      
       await fetchTweets();
     } catch (err: any) {
       throw new Error(err.message);
@@ -138,6 +168,96 @@ export const useTweets = () => {
     }
   };
 
+  const retweetTweet = async (tweetId: string) => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('User not authenticated');
+
+      const { error } = await supabase
+        .from('retweets')
+        .insert({
+          user_id: user.id,
+          tweet_id: tweetId,
+        });
+
+      if (error) {
+        if (error.code === '23505') {
+          throw new Error('Tweet already retweeted');
+        }
+        throw error;
+      }
+      
+      await fetchTweets();
+    } catch (err: any) {
+      throw new Error(err.message);
+    }
+  };
+
+  const unretweetTweet = async (tweetId: string) => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('User not authenticated');
+
+      const { error } = await supabase
+        .from('retweets')
+        .delete()
+        .match({
+          user_id: user.id,
+          tweet_id: tweetId,
+        });
+
+      if (error) throw error;
+      await fetchTweets();
+    } catch (err: any) {
+      throw new Error(err.message);
+    }
+  };
+
+  const bookmarkTweet = async (tweetId: string) => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('User not authenticated');
+
+      const { error } = await supabase
+        .from('bookmarks')
+        .insert({
+          user_id: user.id,
+          tweet_id: tweetId,
+        });
+
+      if (error) {
+        if (error.code === '23505') {
+          throw new Error('Tweet already bookmarked');
+        }
+        throw error;
+      }
+      
+      await fetchTweets();
+    } catch (err: any) {
+      throw new Error(err.message);
+    }
+  };
+
+  const unbookmarkTweet = async (tweetId: string) => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('User not authenticated');
+
+      const { error } = await supabase
+        .from('bookmarks')
+        .delete()
+        .match({
+          user_id: user.id,
+          tweet_id: tweetId,
+        });
+
+      if (error) throw error;
+      await fetchTweets();
+    } catch (err: any) {
+      throw new Error(err.message);
+    }
+  };
+
   useEffect(() => {
     fetchTweets();
   }, []);
@@ -150,5 +270,9 @@ export const useTweets = () => {
     createTweet,
     likeTweet,
     unlikeTweet,
+    retweetTweet,
+    unretweetTweet,
+    bookmarkTweet,
+    unbookmarkTweet,
   };
 };
