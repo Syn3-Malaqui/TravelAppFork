@@ -92,11 +92,47 @@ export interface TweetWithProfile extends TweetData {
   profiles: Profile;
 }
 
-// Available tweet tags
-export const TWEET_TAGS = [
-  'Car Rentals',
-  'Hotels', 
-  'Tourist Spots'
+// Available tweet categories
+export const TWEET_CATEGORIES = [
+  'General Discussions',
+  'Visas',
+  'Hotels',
+  'Car Rental',
+  'Tourist Schedules',
+  'Flights',
+  'Restaurants and Coffees',
+  'Images and Creators',
+  'Real Estate'
 ] as const;
 
-export type TweetTag = typeof TWEET_TAGS[number];
+export type TweetCategory = typeof TWEET_CATEGORIES[number];
+
+// Available countries for filtering
+export const FILTER_COUNTRIES = [
+  { code: 'ALL', name: 'All Countries', flag: '🌍' },
+  { code: 'US', name: 'United States', flag: '🇺🇸' },
+  { code: 'GB', name: 'United Kingdom', flag: '🇬🇧' },
+  { code: 'CA', name: 'Canada', flag: '🇨🇦' },
+  { code: 'AU', name: 'Australia', flag: '🇦🇺' },
+  { code: 'DE', name: 'Germany', flag: '🇩🇪' },
+  { code: 'FR', name: 'France', flag: '🇫🇷' },
+  { code: 'JP', name: 'Japan', flag: '🇯🇵' },
+  { code: 'KR', name: 'South Korea', flag: '🇰🇷' },
+  { code: 'IN', name: 'India', flag: '🇮🇳' },
+  { code: 'BR', name: 'Brazil', flag: '🇧🇷' },
+  { code: 'MX', name: 'Mexico', flag: '🇲🇽' },
+  { code: 'ES', name: 'Spain', flag: '🇪🇸' },
+  { code: 'IT', name: 'Italy', flag: '🇮🇹' },
+  { code: 'NL', name: 'Netherlands', flag: '🇳🇱' },
+  { code: 'SE', name: 'Sweden', flag: '🇸🇪' },
+  { code: 'NO', name: 'Norway', flag: '🇳🇴' },
+  { code: 'DK', name: 'Denmark', flag: '🇩🇰' },
+  { code: 'FI', name: 'Finland', flag: '🇫🇮' },
+  { code: 'CH', name: 'Switzerland', flag: '🇨🇭' },
+] as const;
+
+export type FilterCountry = typeof FILTER_COUNTRIES[number];
+
+// Legacy type for backward compatibility
+export type TweetTag = TweetCategory;
+export const TWEET_TAGS = TWEET_CATEGORIES;

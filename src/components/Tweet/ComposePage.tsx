@@ -2,14 +2,14 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { X, Image, Smile, Calendar, MapPin, ArrowLeft, Tag } from 'lucide-react';
 import { Button } from '../ui/button';
-import { TWEET_TAGS, TweetTag } from '../../types';
+import { TWEET_CATEGORIES, TweetCategory } from '../../types';
 import { useTweets } from '../../hooks/useTweets';
 
 export const ComposePage: React.FC = () => {
   const navigate = useNavigate();
   const [content, setContent] = useState('');
   const [images, setImages] = useState<string[]>([]);
-  const [selectedTags, setSelectedTags] = useState<TweetTag[]>([]);
+  const [selectedCategories, setSelectedCategories] = useState<TweetCategory[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const { createTweet } = useTweets();
@@ -24,12 +24,12 @@ export const ComposePage: React.FC = () => {
     setError('');
     
     try {
-      await createTweet(content, images, selectedTags);
+      await createTweet(content, images, selectedCategories);
       
       // Reset form
       setContent('');
       setImages([]);
-      setSelectedTags([]);
+      setSelectedCategories([]);
       
       // Navigate back to timeline
       navigate('/');
@@ -52,11 +52,11 @@ export const ComposePage: React.FC = () => {
     }
   };
 
-  const toggleTag = (tag: TweetTag) => {
-    setSelectedTags(prev => 
-      prev.includes(tag) 
-        ? prev.filter(t => t !== tag)
-        : [...prev, tag]
+  const toggleCategory = (category: TweetCategory) => {
+    setSelectedCategories(prev => 
+      prev.includes(category) 
+        ? prev.filter(c => c !== category)
+        : [...prev, category]
     );
   };
 
@@ -112,45 +112,45 @@ export const ComposePage: React.FC = () => {
               autoFocus
             />
 
-            {/* Tags Selection */}
+            {/* Categories Selection */}
             <div className="mt-4">
               <div className="flex items-center space-x-2 mb-3">
                 <Tag className="h-5 w-5 text-gray-500" />
-                <span className="text-sm font-medium text-gray-700">Add tags:</span>
+                <span className="text-sm font-medium text-gray-700">Add categories:</span>
               </div>
               <div className="flex flex-wrap gap-2">
-                {TWEET_TAGS.map((tag) => (
+                {TWEET_CATEGORIES.map((category) => (
                   <Button
-                    key={tag}
+                    key={category}
                     variant="outline"
                     size="sm"
-                    onClick={() => toggleTag(tag)}
+                    onClick={() => toggleCategory(category)}
                     className={`rounded-full px-3 py-1 text-sm transition-colors ${
-                      selectedTags.includes(tag)
+                      selectedCategories.includes(category)
                         ? 'bg-blue-500 text-white border-blue-500 hover:bg-blue-600'
                         : 'border-gray-300 text-gray-700 hover:bg-gray-50'
                     }`}
                   >
-                    {tag}
+                    {category}
                   </Button>
                 ))}
               </div>
             </div>
 
-            {/* Selected Tags Display */}
-            {selectedTags.length > 0 && (
+            {/* Selected Categories Display */}
+            {selectedCategories.length > 0 && (
               <div className="mt-3 flex flex-wrap gap-2">
-                {selectedTags.map((tag) => (
+                {selectedCategories.map((category) => (
                   <span
-                    key={tag}
+                    key={category}
                     className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-50 text-blue-700 border border-blue-200"
                   >
                     <Tag className="w-3 h-3 mr-1" />
-                    {tag}
+                    {category}
                     <Button
                       variant="ghost"
                       size="sm"
-                      onClick={() => toggleTag(tag)}
+                      onClick={() => toggleCategory(category)}
                       className="ml-1 h-4 w-4 p-0 hover:bg-blue-100 rounded-full"
                     >
                       <X className="h-3 w-3" />

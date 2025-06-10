@@ -1,0 +1,69 @@
+import React, { useState } from 'react';
+import { Globe, ChevronDown, Check } from 'lucide-react';
+import { Button } from '../ui/button';
+import { 
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '../ui/dropdown-menu';
+import { FILTER_COUNTRIES, FilterCountry } from '../../types';
+
+interface MobileCountryFilterProps {
+  selectedCountry: string;
+  onCountryChange: (countryCode: string) => void;
+}
+
+export const MobileCountryFilter: React.FC<MobileCountryFilterProps> = ({ 
+  selectedCountry, 
+  onCountryChange 
+}) => {
+  const [open, setOpen] = useState(false);
+
+  const selectedCountryData = FILTER_COUNTRIES.find(c => c.code === selectedCountry) || FILTER_COUNTRIES[0];
+
+  const handleCountrySelect = (countryCode: string) => {
+    onCountryChange(countryCode);
+    setOpen(false);
+  };
+
+  return (
+    <div className="md:hidden bg-white border-b border-gray-200 px-4 py-2">
+      <DropdownMenu open={open} onOpenChange={setOpen}>
+        <DropdownMenuTrigger asChild>
+          <Button 
+            variant="outline" 
+            className="w-full flex items-center justify-between px-4 py-3 border-gray-300 hover:bg-gray-50"
+          >
+            <div className="flex items-center space-x-3">
+              <Globe className="h-4 w-4 text-gray-500" />
+              <span className="text-lg">{selectedCountryData.flag}</span>
+              <span className="text-sm font-medium">{selectedCountryData.name}</span>
+            </div>
+            <ChevronDown className="h-4 w-4 text-gray-500" />
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent 
+          align="center" 
+          side="bottom"
+          className="w-80 max-h-64 overflow-y-auto"
+          sideOffset={4}
+        >
+          {FILTER_COUNTRIES.map((country) => (
+            <DropdownMenuItem
+              key={country.code}
+              onClick={() => handleCountrySelect(country.code)}
+              className="flex items-center space-x-3 px-3 py-3 hover:bg-gray-50 cursor-pointer"
+            >
+              <span className="text-lg">{country.flag}</span>
+              <span className="flex-1 text-sm font-medium">{country.name}</span>
+              {selectedCountry === country.code && (
+                <Check className="h-4 w-4 text-blue-600" />
+              )}
+            </DropdownMenuItem>
+          ))}
+        </DropdownMenuContent>
+      </DropdownMenu>
+    </div>
+  );
+};

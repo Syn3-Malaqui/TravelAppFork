@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../lib/supabase';
-import { Tweet, TweetWithProfile, TweetTag } from '../types';
+import { Tweet, TweetWithProfile, TweetCategory } from '../types';
 
 export const useTweets = () => {
   const [tweets, setTweets] = useState<Tweet[]>([]);
@@ -25,6 +25,7 @@ export const useTweets = () => {
             verified,
             followers_count,
             following_count,
+            country,
             created_at
           )
         `)
@@ -65,6 +66,7 @@ export const useTweets = () => {
           verified: tweet.profiles.verified,
           followers: tweet.profiles.followers_count,
           following: tweet.profiles.following_count,
+          country: tweet.profiles.country,
           joinedDate: new Date(tweet.profiles.created_at),
         },
         createdAt: new Date(tweet.created_at),
@@ -78,7 +80,7 @@ export const useTweets = () => {
         isBookmarked: userBookmarks.includes(tweet.id),
         hashtags: tweet.hashtags,
         mentions: tweet.mentions,
-        tags: tweet.tags || [], // Use tags from database
+        tags: tweet.tags || [],
       }));
 
       setTweets(formattedTweets);
@@ -88,9 +90,9 @@ export const useTweets = () => {
     } finally {
       setLoading(false);
     }
-  }, []); // Empty dependency array since this function doesn't depend on any external values
+  }, []);
 
-  const createTweet = async (content: string, imageUrls: string[] = [], tags: TweetTag[] = []) => {
+  const createTweet = async (content: string, imageUrls: string[] = [], categories: TweetCategory[] = []) => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('User not authenticated');
@@ -107,7 +109,7 @@ export const useTweets = () => {
           image_urls: imageUrls,
           hashtags,
           mentions,
-          tags, // Include tags in the database insert
+          tags: categories,
         })
         .select()
         .single();
