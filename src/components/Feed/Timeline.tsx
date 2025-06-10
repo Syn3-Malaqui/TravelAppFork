@@ -196,6 +196,7 @@ export const Timeline: React.FC = () => {
                       onRetweet={() => handleRetweet(tweet.id)}
                       onBookmark={() => handleBookmark(tweet.id)}
                       currentUserId={user?.id}
+                      isReply={!!tweet.replyTo}
                     />
                   </div>
                   {/* Mobile Tweet Card */}
@@ -206,6 +207,7 @@ export const Timeline: React.FC = () => {
                       onRetweet={() => handleRetweet(tweet.id)}
                       onBookmark={() => handleBookmark(tweet.id)}
                       currentUserId={user?.id}
+                      isReply={!!tweet.replyTo}
                     />
                   </div>
                 </div>

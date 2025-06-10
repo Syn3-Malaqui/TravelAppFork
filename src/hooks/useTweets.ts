@@ -12,6 +12,7 @@ export const useTweets = () => {
       setLoading(true);
       setError(null);
       
+      // Fetch all tweets (including replies) and their profiles
       const { data, error } = await supabase
         .from('tweets')
         .select(`
@@ -28,8 +29,7 @@ export const useTweets = () => {
             created_at
           )
         `)
-        .order('created_at', { ascending: false })
-        .limit(50);
+        .order('created_at', { ascending: false });
 
       if (error) throw error;
 
@@ -79,15 +79,51 @@ export const useTweets = () => {
         hashtags: tweet.hashtags,
         mentions: tweet.mentions,
         tags: tweet.tags || [],
+        replyTo: tweet.reply_to,
       }));
 
-      setTweets(formattedTweets);
+      // Organize tweets with replies
+      const organizedTweets = organizeTweetsWithReplies(formattedTweets);
+      setTweets(organizedTweets);
     } catch (err: any) {
       setError(err.message);
       console.error('Error fetching tweets:', err);
     } finally {
       setLoading(false);
     }
+  };
+
+  // Organize tweets to show replies below their parent tweets
+  const organizeTweetsWithReplies = (allTweets: Tweet[]): Tweet[] => {
+    const tweetMap = new Map<string, Tweet>();
+    const rootTweets: Tweet[] = [];
+    const replies: Tweet[] = [];
+
+    // Separate root tweets and replies
+    allTweets.forEach(tweet => {
+      tweetMap.set(tweet.id, tweet);
+      if (tweet.replyTo) {
+        replies.push(tweet);
+      } else {
+        rootTweets.push(tweet);
+      }
+    });
+
+    // Build the organized list
+    const organized: Tweet[] = [];
+    
+    rootTweets.forEach(rootTweet => {
+      organized.push(rootTweet);
+      
+      // Find and add replies to this tweet
+      const tweetReplies = replies
+        .filter(reply => reply.replyTo === rootTweet.id)
+        .sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime());
+      
+      organized.push(...tweetReplies);
+    });
+
+    return organized;
   };
 
   const createTweet = async (content: string, imageUrls: string[] = [], tags: TweetTag[] = [], replyTo?: string) => {

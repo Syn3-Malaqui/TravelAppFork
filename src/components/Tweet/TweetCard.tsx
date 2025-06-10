@@ -20,6 +20,7 @@ import {
   DropdownMenuTrigger,
 } from '../ui/dropdown-menu';
 import { ReplyModal } from './ReplyModal';
+import { RetweetModal } from './RetweetModal';
 import { Tweet } from '../../types';
 import { useStore } from '../../store/useStore';
 import { useNavigate } from 'react-router-dom';
@@ -30,6 +31,7 @@ interface TweetCardProps {
   onRetweet: () => void;
   onBookmark: () => void;
   currentUserId?: string;
+  isReply?: boolean;
 }
 
 export const TweetCard: React.FC<TweetCardProps> = ({ 
@@ -37,11 +39,13 @@ export const TweetCard: React.FC<TweetCardProps> = ({
   onLike, 
   onRetweet, 
   onBookmark, 
-  currentUserId 
+  currentUserId,
+  isReply = false
 }) => {
   const { isRTL } = useStore();
   const navigate = useNavigate();
   const [showReplyModal, setShowReplyModal] = useState(false);
+  const [showRetweetModal, setShowRetweetModal] = useState(false);
 
   const formatNumber = (num: number): string => {
     if (num >= 1000000) {
@@ -67,7 +71,12 @@ export const TweetCard: React.FC<TweetCardProps> = ({
   };
 
   const handleRetweet = () => {
+    setShowRetweetModal(true);
+  };
+
+  const handleQuickRetweet = () => {
     onRetweet();
+    setShowRetweetModal(false);
   };
 
   const handleLike = () => {
@@ -82,7 +91,16 @@ export const TweetCard: React.FC<TweetCardProps> = ({
 
   return (
     <>
-      <div className="border-b border-gray-200 p-4 hover:bg-gray-50 transition-colors">
+      <div className={`border-b border-gray-200 hover:bg-gray-50 transition-colors ${
+        isReply ? 'pl-16 border-l-2 border-l-gray-300 ml-4' : 'p-4'
+      } ${!isReply ? 'p-4' : 'py-3 pr-4'}`}>
+        {isReply && (
+          <div className={`flex items-center mb-2 text-gray-500 text-sm ${isRTL ? 'justify-end' : 'justify-start'}`}>
+            <MessageCircle className="w-4 h-4 mr-2" />
+            <span>Replying to @{tweet.author.username}</span>
+          </div>
+        )}
+        
         <div className={`flex gap-4 ${isRTL ? '' : 'flex-row-reverse'}`}>
           {/* Avatar - Position changes based on RTL/LTR */}
           <Avatar className="w-12 h-12 flex-shrink-0 cursor-pointer" onClick={handleProfileClick}>
@@ -281,6 +299,15 @@ export const TweetCard: React.FC<TweetCardProps> = ({
         tweet={tweet}
         isOpen={showReplyModal}
         onClose={() => setShowReplyModal(false)}
+      />
+
+      {/* Retweet Modal */}
+      <RetweetModal 
+        tweet={tweet}
+        isOpen={showRetweetModal}
+        onClose={() => setShowRetweetModal(false)}
+        onQuickRetweet={handleQuickRetweet}
+        isRetweeted={tweet.isRetweeted}
       />
     </>
   );
