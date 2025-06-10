@@ -21,11 +21,9 @@ export const Timeline: React.FC = () => {
     navigate('/compose');
   };
 
-  const handleLike = async (tweetId: string) => {
+  const handleLike = async (tweetId: string, isCurrentlyLiked: boolean) => {
     try {
-      // Check if tweet is already liked by finding it in the tweets array
-      const tweet = tweets.find(t => t.id === tweetId);
-      if (tweet?.isLiked) {
+      if (isCurrentlyLiked) {
         await unlikeTweet(tweetId);
       } else {
         await likeTweet(tweetId);
@@ -256,7 +254,7 @@ export const Timeline: React.FC = () => {
                   <div className="hidden md:block">
                     <TweetCard 
                       tweet={tweet} 
-                      onLike={() => handleLike(tweet.id)}
+                      onLike={() => handleLike(tweet.id, tweet.isLiked)}
                       onRetweet={() => handleRetweet(tweet.id)}
                       onBookmark={() => handleBookmark(tweet.id)}
                       currentUserId={user?.id}
@@ -266,7 +264,7 @@ export const Timeline: React.FC = () => {
                   <div className="md:hidden">
                     <MobileTweetCard 
                       tweet={tweet}
-                      onLike={() => handleLike(tweet.id)}
+                      onLike={() => handleLike(tweet.id, tweet.isLiked)}
                       onRetweet={() => handleRetweet(tweet.id)}
                       onBookmark={() => handleBookmark(tweet.id)}
                       currentUserId={user?.id}
