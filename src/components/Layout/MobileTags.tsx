@@ -26,8 +26,8 @@ export const MobileTags: React.FC<MobileTagsProps> = ({ onTagFilter, activeFilte
   };
 
   return (
-    <div className="md:hidden bg-white border-b border-gray-200 px-4 py-3">
-      <div className={`flex space-x-3 overflow-x-auto ${isRTL ? 'flex-row-reverse space-x-reverse' : ''}`}>
+    <div className="md:hidden bg-white border-b border-gray-200 px-4 py-3 flex-shrink-0">
+      <div className={`flex space-x-3 overflow-x-auto scrollbar-hide ${isRTL ? 'flex-row-reverse space-x-reverse' : ''}`}>
         {tags.map((tag) => (
           <Button
             key={tag.id}

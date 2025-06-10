@@ -9,7 +9,9 @@ import {
   MoreHorizontal,
   Eye,
   CheckCircle,
-  Tag
+  Tag,
+  UserPlus,
+  UserMinus
 } from 'lucide-react';
 import { Button } from '../ui/button';
 import { Avatar, AvatarImage, AvatarFallback } from '../ui/avatar';
@@ -21,6 +23,7 @@ import {
 } from '../ui/dropdown-menu';
 import { Tweet } from '../../types';
 import { useStore } from '../../store/useStore';
+import { useFollow } from '../../hooks/useFollow';
 
 interface TweetCardProps {
   tweet: Tweet;
@@ -38,6 +41,7 @@ export const TweetCard: React.FC<TweetCardProps> = ({
   currentUserId 
 }) => {
   const { isRTL } = useStore();
+  const { followUser, unfollowUser, isFollowing, loading: followLoading } = useFollow();
 
   const formatNumber = (num: number): string => {
     if (num >= 1000000) {
@@ -54,7 +58,20 @@ export const TweetCard: React.FC<TweetCardProps> = ({
     console.log('Delete tweet:', tweet.id);
   };
 
+  const handleFollow = async () => {
+    try {
+      if (isFollowing(tweet.author.id)) {
+        await unfollowUser(tweet.author.id);
+      } else {
+        await followUser(tweet.author.id);
+      }
+    } catch (error: any) {
+      console.error('Error toggling follow:', error.message);
+    }
+  };
+
   const isOwnTweet = currentUserId === tweet.author.id;
+  const userIsFollowing = isFollowing(tweet.author.id);
 
   return (
     <div className="border-b border-gray-200 p-4 hover:bg-gray-50 transition-colors">
@@ -91,8 +108,24 @@ export const TweetCard: React.FC<TweetCardProps> = ({
                     </DropdownMenuItem>
                   ) : (
                     <>
-                      <DropdownMenuItem className="hover:bg-gray-50">
-                        Unfollow @{tweet.author.username}
+                      <DropdownMenuItem 
+                        onClick={handleFollow}
+                        disabled={followLoading}
+                        className="hover:bg-gray-50"
+                      >
+                        <div className={`flex items-center space-x-2 ${isRTL ? 'flex-row-reverse space-x-reverse' : ''}`}>
+                          {userIsFollowing ? (
+                            <>
+                              <UserMinus className="h-4 w-4" />
+                              <span>Unfollow @{tweet.author.username}</span>
+                            </>
+                          ) : (
+                            <>
+                              <UserPlus className="h-4 w-4" />
+                              <span>Follow @{tweet.author.username}</span>
+                            </>
+                          )}
+                        </div>
                       </DropdownMenuItem>
                       <DropdownMenuItem className="hover:bg-gray-50">
                         Mute @{tweet.author.username}
@@ -119,6 +152,22 @@ export const TweetCard: React.FC<TweetCardProps> = ({
               <span className="font-bold text-gray-900 hover:underline cursor-pointer truncate">
                 {tweet.author.displayName}
               </span>
+              {/* Follow button for non-own tweets */}
+              {!isOwnTweet && (
+                <Button
+                  variant={userIsFollowing ? "outline" : "default"}
+                  size="sm"
+                  onClick={handleFollow}
+                  disabled={followLoading}
+                  className={`${isRTL ? 'mr-2' : 'ml-2'} px-3 py-1 text-xs font-medium rounded-full transition-colors ${
+                    userIsFollowing 
+                      ? 'border-gray-300 text-gray-700 hover:bg-red-50 hover:text-red-600 hover:border-red-300' 
+                      : 'bg-blue-500 text-white hover:bg-blue-600'
+                  }`}
+                >
+                  {followLoading ? '...' : userIsFollowing ? 'Following' : 'Follow'}
+                </Button>
+              )}
             </div>
           </div>
 

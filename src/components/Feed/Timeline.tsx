@@ -73,9 +73,9 @@ export const Timeline: React.FC = () => {
   if (loading) {
     return (
       <div className={`min-h-screen w-full flex ${isRTL ? 'justify-start' : 'justify-end'}`}>
-        <div className={`w-full max-w-2xl ${isRTL ? 'border-l' : 'border-r'} border-gray-200`}>
+        <div className={`w-full max-w-2xl ${isRTL ? 'border-l' : 'border-r'} border-gray-200 overflow-hidden`}>
           {/* Desktop Header */}
-          <div className={`hidden md:block sticky top-0 bg-white/80 backdrop-blur-md border-b border-gray-200 p-4`}>
+          <div className={`hidden md:block sticky top-0 bg-white/80 backdrop-blur-md border-b border-gray-200 p-4 z-10`}>
             <h1 className={`text-xl font-bold ${isRTL ? 'text-left' : 'text-right'}`}>Home</h1>
           </div>
 
@@ -95,9 +95,9 @@ export const Timeline: React.FC = () => {
   if (error) {
     return (
       <div className={`min-h-screen w-full flex ${isRTL ? 'justify-start' : 'justify-end'}`}>
-        <div className={`w-full max-w-2xl ${isRTL ? 'border-l' : 'border-r'} border-gray-200`}>
+        <div className={`w-full max-w-2xl ${isRTL ? 'border-l' : 'border-r'} border-gray-200 overflow-hidden`}>
           {/* Desktop Header */}
-          <div className={`hidden md:block sticky top-0 bg-white/80 backdrop-blur-md border-b border-gray-200 p-4`}>
+          <div className={`hidden md:block sticky top-0 bg-white/80 backdrop-blur-md border-b border-gray-200 p-4 z-10`}>
             <h1 className={`text-xl font-bold ${isRTL ? 'text-left' : 'text-right'}`}>Home</h1>
           </div>
 
@@ -118,9 +118,9 @@ export const Timeline: React.FC = () => {
 
   return (
     <div className={`min-h-screen w-full flex ${isRTL ? 'justify-start' : 'justify-end'}`}>
-      <div className={`w-full max-w-2xl ${isRTL ? 'border-l' : 'border-r'} border-gray-200`}>
+      <div className={`w-full max-w-2xl ${isRTL ? 'border-l' : 'border-r'} border-gray-200 overflow-hidden flex flex-col`}>
         {/* Desktop Header */}
-        <div className={`hidden md:block sticky top-0 bg-white/80 backdrop-blur-md border-b border-gray-200 p-4`}>
+        <div className={`hidden md:block sticky top-0 bg-white/80 backdrop-blur-md border-b border-gray-200 p-4 z-10`}>
           <h1 className={`text-xl font-bold ${isRTL ? 'text-left' : 'text-right'}`}>Home</h1>
         </div>
 
@@ -131,7 +131,7 @@ export const Timeline: React.FC = () => {
         <MobileTags onTagFilter={handleTagFilter} activeFilter={tagFilter} />
 
         {/* Desktop Tweet Composer */}
-        <div className="hidden md:block border-b border-gray-200 p-4">
+        <div className="hidden md:block border-b border-gray-200 p-4 flex-shrink-0">
           <div className={`flex space-x-4 ${isRTL ? 'justify-start' : 'justify-end'} ${isRTL ? 'flex-row-reverse' : ''}`}>
             <div className="flex-1 max-w-lg">
               <div 
@@ -147,7 +147,7 @@ export const Timeline: React.FC = () => {
 
         {/* Filter indicator */}
         {tagFilter && (
-          <div className="hidden md:block bg-blue-50 border-b border-blue-200 px-4 py-2">
+          <div className="hidden md:block bg-blue-50 border-b border-blue-200 px-4 py-2 flex-shrink-0">
             <div className={`${isRTL ? 'text-left' : 'text-right'} text-sm text-blue-700`}>
               Showing tweets tagged with: <span className="font-semibold">{getTagLabel(tagFilter)}</span>
               <button 
@@ -160,59 +160,61 @@ export const Timeline: React.FC = () => {
           </div>
         )}
 
-        {/* Timeline */}
-        <div className={`flex flex-col ${isRTL ? 'items-start' : 'items-end'} pb-20 md:pb-0`}>
-          {filteredTweets.length === 0 ? (
-            <div className="w-full text-center py-12 text-gray-500">
-              {tagFilter ? (
-                <>
-                  <p className="text-lg">No tweets found with the selected tag.</p>
-                  <button 
-                    onClick={() => setTagFilter(null)}
-                    className="mt-2 text-blue-500 hover:text-blue-700 underline"
-                  >
-                    Show all tweets
-                  </button>
-                </>
-              ) : (
-                <>
-                  <p className="text-lg mb-4">No tweets yet!</p>
-                  <p className="text-sm text-gray-400 mb-4">Be the first to share something.</p>
-                  <button 
-                    onClick={handleComposeClick}
-                    className="bg-blue-500 hover:bg-blue-600 text-white px-6 py-2 rounded-full font-medium transition-colors"
-                  >
-                    Create your first tweet
-                  </button>
-                </>
-              )}
-            </div>
-          ) : (
-            filteredTweets.map((tweet) => (
-              <div key={tweet.id} className="w-full max-w-2xl">
-                {/* Desktop Tweet Card */}
-                <div className="hidden md:block">
-                  <TweetCard 
-                    tweet={tweet} 
-                    onLike={() => handleLike(tweet.id)}
-                    onRetweet={() => handleRetweet(tweet.id)}
-                    onBookmark={() => handleBookmark(tweet.id)}
-                    currentUserId={user?.id}
-                  />
-                </div>
-                {/* Mobile Tweet Card */}
-                <div className="md:hidden">
-                  <MobileTweetCard 
-                    tweet={tweet}
-                    onLike={() => handleLike(tweet.id)}
-                    onRetweet={() => handleRetweet(tweet.id)}
-                    onBookmark={() => handleBookmark(tweet.id)}
-                    currentUserId={user?.id}
-                  />
-                </div>
+        {/* Timeline - Scrollable container */}
+        <div className="flex-1 overflow-y-auto">
+          <div className={`flex flex-col ${isRTL ? 'items-start' : 'items-end'} pb-20 md:pb-0`}>
+            {filteredTweets.length === 0 ? (
+              <div className="w-full text-center py-12 text-gray-500">
+                {tagFilter ? (
+                  <>
+                    <p className="text-lg">No tweets found with the selected tag.</p>
+                    <button 
+                      onClick={() => setTagFilter(null)}
+                      className="mt-2 text-blue-500 hover:text-blue-700 underline"
+                    >
+                      Show all tweets
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <p className="text-lg mb-4">No tweets yet!</p>
+                    <p className="text-sm text-gray-400 mb-4">Be the first to share something.</p>
+                    <button 
+                      onClick={handleComposeClick}
+                      className="bg-blue-500 hover:bg-blue-600 text-white px-6 py-2 rounded-full font-medium transition-colors"
+                    >
+                      Create your first tweet
+                    </button>
+                  </>
+                )}
               </div>
-            ))
-          )}
+            ) : (
+              filteredTweets.map((tweet) => (
+                <div key={tweet.id} className="w-full max-w-2xl">
+                  {/* Desktop Tweet Card */}
+                  <div className="hidden md:block">
+                    <TweetCard 
+                      tweet={tweet} 
+                      onLike={() => handleLike(tweet.id)}
+                      onRetweet={() => handleRetweet(tweet.id)}
+                      onBookmark={() => handleBookmark(tweet.id)}
+                      currentUserId={user?.id}
+                    />
+                  </div>
+                  {/* Mobile Tweet Card */}
+                  <div className="md:hidden">
+                    <MobileTweetCard 
+                      tweet={tweet}
+                      onLike={() => handleLike(tweet.id)}
+                      onRetweet={() => handleRetweet(tweet.id)}
+                      onBookmark={() => handleBookmark(tweet.id)}
+                      currentUserId={user?.id}
+                    />
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
         </div>
       </div>
     </div>
