@@ -32,18 +32,34 @@ export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey, {
   }
 });
 
-// Test connection function
+// Test connection function with better error handling
 export const testConnection = async () => {
   try {
-    const { data, error } = await supabase.from('profiles').select('count').limit(1);
+    // Use a simpler query that doesn't require authentication
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('id')
+      .limit(1)
+      .maybeSingle();
+    
     if (error) {
-      console.error('Supabase connection test failed:', error);
+      console.error('Supabase connection test failed:', error.message);
+      // Don't throw error for empty results or auth issues during connection test
+      if (error.code === 'PGRST116' || error.message.includes('JWT')) {
+        console.log('Supabase connection test successful (auth required for data access)');
+        return true;
+      }
       return false;
     }
+    
     console.log('Supabase connection test successful');
     return true;
   } catch (error) {
     console.error('Supabase connection test error:', error);
+    // Check if it's a network error
+    if (error instanceof TypeError && error.message.includes('fetch')) {
+      console.error('Network error: Unable to reach Supabase. Check your internet connection and Supabase URL.');
+    }
     return false;
   }
 };

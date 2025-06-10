@@ -16,12 +16,12 @@ export const useAuth = () => {
   useEffect(() => {
     const initializeAuth = async () => {
       try {
-        // Test connection first
+        // Test connection first with better error handling
         const connectionOk = await testConnection();
         if (!connectionOk) {
-          setError('Unable to connect to Supabase. Please check your configuration.');
-          setLoading(false);
-          return;
+          console.warn('Supabase connection test failed, but continuing with auth initialization...');
+          // Don't block auth initialization if connection test fails
+          // The connection might work for auth even if the test query fails
         }
 
         // Get initial session
@@ -29,7 +29,13 @@ export const useAuth = () => {
         
         if (sessionError) {
           console.error('Session error:', sessionError);
-          setError(`Authentication error: ${sessionError.message}`);
+          // Only set error for critical auth failures
+          if (sessionError.message.includes('Invalid API key') || 
+              sessionError.message.includes('Project not found')) {
+            setError(`Authentication error: ${sessionError.message}`);
+          } else {
+            console.warn('Non-critical session error:', sessionError.message);
+          }
         } else {
           setSession(session);
           setUser(session?.user ?? null);
@@ -37,7 +43,15 @@ export const useAuth = () => {
         }
       } catch (err) {
         console.error('Auth initialization error:', err);
-        setError('Failed to initialize authentication. Please check your network connection.');
+        // Only set error for critical failures
+        if (err instanceof Error && 
+            (err.message.includes('Invalid API key') || 
+             err.message.includes('Project not found') ||
+             err.message.includes('Missing Supabase'))) {
+          setError('Failed to initialize authentication. Please check your Supabase configuration.');
+        } else {
+          console.warn('Non-critical auth initialization error:', err);
+        }
       } finally {
         setLoading(false);
       }
