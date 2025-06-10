@@ -137,16 +137,29 @@ export const Timeline: React.FC = () => {
         {/* Mobile Tabs */}
         <MobileTabs />
 
-        {/* Mobile Filters */}
-        <div className="md:hidden">
-          <MobileCountryFilter 
-            selectedCountry={countryFilter}
-            onCountryChange={handleCountryFilter}
-          />
-          <MobileTags 
-            onCategoryFilter={handleCategoryFilter} 
-            activeFilter={categoryFilter} 
-          />
+        {/* Mobile Filters - Compact Icon Row */}
+        <div className="md:hidden bg-white border-b border-gray-200 px-4 py-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-3">
+              <span className="text-sm font-medium text-gray-700">Filters:</span>
+              <MobileCountryFilter 
+                selectedCountry={countryFilter}
+                onCountryChange={handleCountryFilter}
+              />
+              <MobileTags 
+                onCategoryFilter={handleCategoryFilter} 
+                activeFilter={categoryFilter} 
+              />
+            </div>
+            
+            {/* Active Filters Indicator */}
+            {(categoryFilter || countryFilter !== 'ALL') && (
+              <div className="flex items-center space-x-1">
+                <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                <span className="text-xs text-blue-600 font-medium">Active</span>
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Desktop Tweet Composer */}
