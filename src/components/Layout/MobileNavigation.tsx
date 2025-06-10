@@ -40,52 +40,55 @@ export const MobileNavigation: React.FC = () => {
   };
 
   return (
-    <div className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 py-1 z-50">
-      <div className="flex items-center justify-around px-2">
+    <div className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 py-3 z-50 shadow-lg">
+      <div className="flex items-center justify-around px-4">
         {/* Search */}
         <Button
           variant="ghost"
-          size="sm"
-          className={`flex flex-col items-center p-3 min-w-0 ${
-            location.pathname === '/search' ? 'text-blue-500' : 'text-gray-500'
+          size="lg"
+          className={`flex flex-col items-center p-4 min-w-0 rounded-xl transition-colors ${
+            location.pathname === '/search' ? 'text-blue-500 bg-blue-50' : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
           }`}
           onClick={() => handleNavClick('/search')}
         >
-          <Search className="w-6 h-6" />
+          <Search className="w-7 h-7 mb-1" />
+          <span className="text-xs font-medium">Search</span>
         </Button>
 
         {/* Notifications */}
         <Button
           variant="ghost"
-          size="sm"
-          className={`flex flex-col items-center p-3 min-w-0 ${
-            location.pathname === '/notifications' ? 'text-blue-500' : 'text-gray-500'
+          size="lg"
+          className={`flex flex-col items-center p-4 min-w-0 rounded-xl transition-colors ${
+            location.pathname === '/notifications' ? 'text-blue-500 bg-blue-50' : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
           }`}
           onClick={() => handleNavClick('/notifications')}
         >
-          <Bell className="w-6 h-6" />
+          <Bell className="w-7 h-7 mb-1" />
+          <span className="text-xs font-medium">Alerts</span>
         </Button>
 
-        {/* Compose Button - Centered */}
+        {/* Compose Button - Centered and Larger */}
         <Button
           variant="default"
-          size="sm"
-          className="bg-blue-500 hover:bg-blue-600 text-white rounded-full p-3 shadow-lg"
+          size="lg"
+          className="bg-blue-500 hover:bg-blue-600 text-white rounded-full p-5 shadow-lg transform hover:scale-105 transition-all duration-200"
           onClick={handleComposeClick}
         >
-          <Plus className="w-6 h-6" />
+          <Plus className="w-8 h-8" />
         </Button>
 
         {/* Profile */}
         <Button
           variant="ghost"
-          size="sm"
-          className={`flex flex-col items-center p-3 min-w-0 ${
-            location.pathname === '/profile' ? 'text-blue-500' : 'text-gray-500'
+          size="lg"
+          className={`flex flex-col items-center p-4 min-w-0 rounded-xl transition-colors ${
+            location.pathname === '/profile' ? 'text-blue-500 bg-blue-50' : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
           }`}
           onClick={() => handleNavClick('/profile')}
         >
-          <User className="w-6 h-6" />
+          <User className="w-7 h-7 mb-1" />
+          <span className="text-xs font-medium">Profile</span>
         </Button>
 
         {/* Settings Dropdown */}
@@ -93,22 +96,23 @@ export const MobileNavigation: React.FC = () => {
           <DropdownMenuTrigger asChild>
             <Button
               variant="ghost"
-              size="sm"
-              className="flex flex-col items-center p-3 min-w-0 text-gray-500"
+              size="lg"
+              className="flex flex-col items-center p-4 min-w-0 rounded-xl text-gray-500 hover:text-gray-700 hover:bg-gray-50 transition-colors"
               title="Settings"
             >
-              <Settings className="w-6 h-6" />
+              <Settings className="w-7 h-7 mb-1" />
+              <span className="text-xs font-medium">More</span>
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent 
             align="center" 
             side="top"
-            className="w-48 mb-2"
-            sideOffset={8}
+            className="w-48 mb-4"
+            sideOffset={12}
           >
-            <DropdownMenuItem onClick={handleSignOut} className="text-red-600 hover:bg-red-50 cursor-pointer">
-              <LogOut className="mr-2 h-4 w-4" />
-              Sign Out
+            <DropdownMenuItem onClick={handleSignOut} className="text-red-600 hover:bg-red-50 cursor-pointer py-3">
+              <LogOut className="mr-3 h-5 w-5" />
+              <span className="font-medium">Sign Out</span>
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
