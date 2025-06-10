@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../lib/supabase';
 import { Tweet, TweetWithProfile, TweetTag } from '../types';
 
@@ -7,7 +7,7 @@ export const useTweets = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchTweets = async () => {
+  const fetchTweets = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
@@ -88,7 +88,7 @@ export const useTweets = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, []); // Empty dependency array since this function doesn't depend on any external values
 
   const createTweet = async (content: string, imageUrls: string[] = [], tags: TweetTag[] = []) => {
     try {
@@ -143,7 +143,14 @@ export const useTweets = () => {
         throw error;
       }
       
-      await fetchTweets();
+      // Update local state immediately for better UX
+      setTweets(prevTweets => 
+        prevTweets.map(tweet => 
+          tweet.id === tweetId 
+            ? { ...tweet, isLiked: true, likes: tweet.likes + 1 }
+            : tweet
+        )
+      );
     } catch (err: any) {
       throw new Error(err.message);
     }
@@ -163,7 +170,15 @@ export const useTweets = () => {
         });
 
       if (error) throw error;
-      await fetchTweets();
+      
+      // Update local state immediately for better UX
+      setTweets(prevTweets => 
+        prevTweets.map(tweet => 
+          tweet.id === tweetId 
+            ? { ...tweet, isLiked: false, likes: Math.max(0, tweet.likes - 1) }
+            : tweet
+        )
+      );
     } catch (err: any) {
       throw new Error(err.message);
     }
@@ -188,7 +203,14 @@ export const useTweets = () => {
         throw error;
       }
       
-      await fetchTweets();
+      // Update local state immediately for better UX
+      setTweets(prevTweets => 
+        prevTweets.map(tweet => 
+          tweet.id === tweetId 
+            ? { ...tweet, isRetweeted: true, retweets: tweet.retweets + 1 }
+            : tweet
+        )
+      );
     } catch (err: any) {
       throw new Error(err.message);
     }
@@ -208,7 +230,15 @@ export const useTweets = () => {
         });
 
       if (error) throw error;
-      await fetchTweets();
+      
+      // Update local state immediately for better UX
+      setTweets(prevTweets => 
+        prevTweets.map(tweet => 
+          tweet.id === tweetId 
+            ? { ...tweet, isRetweeted: false, retweets: Math.max(0, tweet.retweets - 1) }
+            : tweet
+        )
+      );
     } catch (err: any) {
       throw new Error(err.message);
     }
@@ -233,7 +263,14 @@ export const useTweets = () => {
         throw error;
       }
       
-      await fetchTweets();
+      // Update local state immediately for better UX
+      setTweets(prevTweets => 
+        prevTweets.map(tweet => 
+          tweet.id === tweetId 
+            ? { ...tweet, isBookmarked: true }
+            : tweet
+        )
+      );
     } catch (err: any) {
       throw new Error(err.message);
     }
@@ -253,15 +290,24 @@ export const useTweets = () => {
         });
 
       if (error) throw error;
-      await fetchTweets();
+      
+      // Update local state immediately for better UX
+      setTweets(prevTweets => 
+        prevTweets.map(tweet => 
+          tweet.id === tweetId 
+            ? { ...tweet, isBookmarked: false }
+            : tweet
+        )
+      );
     } catch (err: any) {
       throw new Error(err.message);
     }
   };
 
+  // Only fetch tweets once when the hook is first used
   useEffect(() => {
     fetchTweets();
-  }, []);
+  }, [fetchTweets]);
 
   return {
     tweets,

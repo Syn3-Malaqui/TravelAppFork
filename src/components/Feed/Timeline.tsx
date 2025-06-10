@@ -145,21 +145,6 @@ export const Timeline: React.FC = () => {
           </div>
         </div>
 
-        {/* Filter indicator */}
-        {tagFilter && (
-          <div className="hidden md:block bg-blue-50 border-b border-blue-200 px-4 py-2 flex-shrink-0">
-            <div className={`${isRTL ? 'text-left' : 'text-right'} text-sm text-blue-700`}>
-              Showing tweets tagged with: <span className="font-semibold">{getTagLabel(tagFilter)}</span>
-              <button 
-                onClick={() => setTagFilter(null)}
-                className={`${isRTL ? 'mr-2' : 'ml-2'} text-blue-500 hover:text-blue-700 underline`}
-              >
-                Clear filter
-              </button>
-            </div>
-          </div>
-        )}
-
         {/* Timeline - Scrollable container */}
         <div className="flex-1 overflow-y-auto">
           <div className={`flex flex-col ${isRTL ? 'items-start' : 'items-end'} pb-20 md:pb-0`}>
