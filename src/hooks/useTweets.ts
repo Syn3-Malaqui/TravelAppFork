@@ -12,8 +12,8 @@ export const useTweets = () => {
       setLoading(true);
       setError(null);
       
-      // Fetch all tweets with their profiles and original tweets for retweets
-      const { data, error } = await supabase
+      // First, fetch basic tweets with profiles
+      const { data: tweetsData, error: tweetsError } = await supabase
         .from('tweets')
         .select(`
           *,
@@ -27,30 +27,17 @@ export const useTweets = () => {
             followers_count,
             following_count,
             created_at
-          ),
-          original_tweet:tweets!original_tweet_id (
-            *,
-            profiles (
-              id,
-              username,
-              display_name,
-              avatar_url,
-              bio,
-              verified,
-              followers_count,
-              following_count,
-              created_at
-            )
           )
         `)
-        .order('created_at', { ascending: false });
+        .order('created_at', { ascending: false })
+        .limit(50);
 
-      if (error) throw error;
+      if (tweetsError) throw tweetsError;
 
       // Get current user to check likes/retweets/bookmarks
       const { data: { user } } = await supabase.auth.getUser();
       
-      // Get user's likes, retweets, and bookmarks if authenticated
+      // Get user's interactions if authenticated
       let userLikes: string[] = [];
       let userRetweets: string[] = [];
       let userBookmarks: string[] = [];
@@ -67,6 +54,36 @@ export const useTweets = () => {
         userBookmarks = bookmarksResult.data?.map(bookmark => bookmark.tweet_id) || [];
       }
 
+      // Get original tweets for retweets
+      const retweetIds = tweetsData
+        .filter(tweet => tweet.is_retweet && tweet.original_tweet_id)
+        .map(tweet => tweet.original_tweet_id);
+
+      let originalTweets: any[] = [];
+      if (retweetIds.length > 0) {
+        const { data: originalData, error: originalError } = await supabase
+          .from('tweets')
+          .select(`
+            *,
+            profiles (
+              id,
+              username,
+              display_name,
+              avatar_url,
+              bio,
+              verified,
+              followers_count,
+              following_count,
+              created_at
+            )
+          `)
+          .in('id', retweetIds);
+
+        if (!originalError) {
+          originalTweets = originalData || [];
+        }
+      }
+
       const formatUser = (profile: any): User => ({
         id: profile.id,
         username: profile.username,
@@ -79,7 +96,7 @@ export const useTweets = () => {
         joinedDate: new Date(profile.created_at),
       });
 
-      const formatTweet = (tweetData: any, isOriginal = false): Tweet => {
+      const formatTweet = (tweetData: any): Tweet => {
         const tweet: Tweet = {
           id: tweetData.id,
           content: tweetData.content,
@@ -100,18 +117,37 @@ export const useTweets = () => {
           isRetweet: tweetData.is_retweet || false,
         };
 
-        // If this is a retweet and has original tweet data
-        if (tweetData.is_retweet && tweetData.original_tweet && !isOriginal) {
-          tweet.originalTweet = formatTweet(tweetData.original_tweet, true);
-          tweet.retweetedBy = tweet.author;
-          // For retweets, the main content should be empty or a comment
-          // The original tweet content is in originalTweet
+        // If this is a retweet, find and attach the original tweet
+        if (tweetData.is_retweet && tweetData.original_tweet_id) {
+          const originalTweet = originalTweets.find(ot => ot.id === tweetData.original_tweet_id);
+          if (originalTweet) {
+            tweet.originalTweet = {
+              id: originalTweet.id,
+              content: originalTweet.content,
+              author: formatUser(originalTweet.profiles),
+              createdAt: new Date(originalTweet.created_at),
+              likes: originalTweet.likes_count,
+              retweets: originalTweet.retweets_count,
+              replies: originalTweet.replies_count,
+              views: originalTweet.views_count,
+              images: originalTweet.image_urls,
+              isLiked: userLikes.includes(originalTweet.id),
+              isRetweeted: userRetweets.includes(originalTweet.id),
+              isBookmarked: userBookmarks.includes(originalTweet.id),
+              hashtags: originalTweet.hashtags,
+              mentions: originalTweet.mentions,
+              tags: originalTweet.tags || [],
+              replyTo: originalTweet.reply_to,
+              isRetweet: false,
+            };
+            tweet.retweetedBy = tweet.author;
+          }
         }
 
         return tweet;
       };
 
-      const formattedTweets: Tweet[] = (data as TweetWithProfile[]).map(tweet => formatTweet(tweet));
+      const formattedTweets: Tweet[] = tweetsData.map(tweet => formatTweet(tweet));
 
       // Organize tweets with replies
       const organizedTweets = organizeTweetsWithReplies(formattedTweets);
@@ -252,11 +288,22 @@ export const useTweets = () => {
       
       // Update local state immediately for better UX
       setTweets(prevTweets => 
-        prevTweets.map(tweet => 
-          tweet.id === tweetId 
-            ? { ...tweet, isLiked: true, likes: tweet.likes + 1 }
-            : tweet
-        )
+        prevTweets.map(tweet => {
+          if (tweet.id === tweetId) {
+            return { ...tweet, isLiked: true, likes: tweet.likes + 1 };
+          }
+          if (tweet.originalTweet?.id === tweetId) {
+            return {
+              ...tweet,
+              originalTweet: {
+                ...tweet.originalTweet,
+                isLiked: true,
+                likes: tweet.originalTweet.likes + 1
+              }
+            };
+          }
+          return tweet;
+        })
       );
     } catch (err: any) {
       throw new Error(err.message);
@@ -280,11 +327,22 @@ export const useTweets = () => {
       
       // Update local state immediately for better UX
       setTweets(prevTweets => 
-        prevTweets.map(tweet => 
-          tweet.id === tweetId 
-            ? { ...tweet, isLiked: false, likes: Math.max(0, tweet.likes - 1) }
-            : tweet
-        )
+        prevTweets.map(tweet => {
+          if (tweet.id === tweetId) {
+            return { ...tweet, isLiked: false, likes: Math.max(0, tweet.likes - 1) };
+          }
+          if (tweet.originalTweet?.id === tweetId) {
+            return {
+              ...tweet,
+              originalTweet: {
+                ...tweet.originalTweet,
+                isLiked: false,
+                likes: Math.max(0, tweet.originalTweet.likes - 1)
+              }
+            };
+          }
+          return tweet;
+        })
       );
     } catch (err: any) {
       throw new Error(err.message);
@@ -301,11 +359,22 @@ export const useTweets = () => {
       
       // Update local state immediately for better UX
       setTweets(prevTweets => 
-        prevTweets.map(tweet => 
-          tweet.id === tweetId 
-            ? { ...tweet, isRetweeted: true, retweets: tweet.retweets + 1 }
-            : tweet
-        )
+        prevTweets.map(tweet => {
+          if (tweet.id === tweetId) {
+            return { ...tweet, isRetweeted: true, retweets: tweet.retweets + 1 };
+          }
+          if (tweet.originalTweet?.id === tweetId) {
+            return {
+              ...tweet,
+              originalTweet: {
+                ...tweet.originalTweet,
+                isRetweeted: true,
+                retweets: tweet.originalTweet.retweets + 1
+              }
+            };
+          }
+          return tweet;
+        })
       );
     } catch (err: any) {
       throw new Error(err.message);
@@ -342,11 +411,22 @@ export const useTweets = () => {
       
       // Update local state immediately for better UX
       setTweets(prevTweets => 
-        prevTweets.map(tweet => 
-          tweet.id === tweetId 
-            ? { ...tweet, isRetweeted: false, retweets: Math.max(0, tweet.retweets - 1) }
-            : tweet
-        )
+        prevTweets.map(tweet => {
+          if (tweet.id === tweetId) {
+            return { ...tweet, isRetweeted: false, retweets: Math.max(0, tweet.retweets - 1) };
+          }
+          if (tweet.originalTweet?.id === tweetId) {
+            return {
+              ...tweet,
+              originalTweet: {
+                ...tweet.originalTweet,
+                isRetweeted: false,
+                retweets: Math.max(0, tweet.originalTweet.retweets - 1)
+              }
+            };
+          }
+          return tweet;
+        })
       );
 
       // Refresh to remove the retweet from timeline
@@ -377,11 +457,21 @@ export const useTweets = () => {
       
       // Update local state immediately for better UX
       setTweets(prevTweets => 
-        prevTweets.map(tweet => 
-          tweet.id === tweetId 
-            ? { ...tweet, isBookmarked: true }
-            : tweet
-        )
+        prevTweets.map(tweet => {
+          if (tweet.id === tweetId) {
+            return { ...tweet, isBookmarked: true };
+          }
+          if (tweet.originalTweet?.id === tweetId) {
+            return {
+              ...tweet,
+              originalTweet: {
+                ...tweet.originalTweet,
+                isBookmarked: true
+              }
+            };
+          }
+          return tweet;
+        })
       );
     } catch (err: any) {
       throw new Error(err.message);
@@ -405,11 +495,21 @@ export const useTweets = () => {
       
       // Update local state immediately for better UX
       setTweets(prevTweets => 
-        prevTweets.map(tweet => 
-          tweet.id === tweetId 
-            ? { ...tweet, isBookmarked: false }
-            : tweet
-        )
+        prevTweets.map(tweet => {
+          if (tweet.id === tweetId) {
+            return { ...tweet, isBookmarked: false };
+          }
+          if (tweet.originalTweet?.id === tweetId) {
+            return {
+              ...tweet,
+              originalTweet: {
+                ...tweet.originalTweet,
+                isBookmarked: false
+              }
+            };
+          }
+          return tweet;
+        })
       );
     } catch (err: any) {
       throw new Error(err.message);
