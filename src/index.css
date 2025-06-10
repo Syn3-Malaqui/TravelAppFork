@@ -118,3 +118,18 @@ textarea:focus-visible {
 .flex-shrink-0 {
   flex-shrink: 0;
 }
+
+/* Mobile tag container width fix */
+@media (max-width: 768px) {
+  .mobile-tags-container {
+    width: 100vw;
+    max-width: 100%;
+    overflow-x: hidden;
+  }
+  
+  .mobile-tags-scroll {
+    width: 100%;
+    overflow-x: auto;
+    overflow-y: hidden;
+  }
+}

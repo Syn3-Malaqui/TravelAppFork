@@ -23,7 +23,7 @@ import {
 } from '../ui/dropdown-menu';
 import { Tweet } from '../../types';
 import { useStore } from '../../store/useStore';
-import { useFollow } from '../../hooks/useFollow';
+import { useNavigate } from 'react-router-dom';
 
 interface TweetCardProps {
   tweet: Tweet;
@@ -41,7 +41,7 @@ export const TweetCard: React.FC<TweetCardProps> = ({
   currentUserId 
 }) => {
   const { isRTL } = useStore();
-  const { followUser, unfollowUser, isFollowing, loading: followLoading } = useFollow();
+  const navigate = useNavigate();
 
   const formatNumber = (num: number): string => {
     if (num >= 1000000) {
@@ -58,26 +58,17 @@ export const TweetCard: React.FC<TweetCardProps> = ({
     console.log('Delete tweet:', tweet.id);
   };
 
-  const handleFollow = async () => {
-    try {
-      if (isFollowing(tweet.author.id)) {
-        await unfollowUser(tweet.author.id);
-      } else {
-        await followUser(tweet.author.id);
-      }
-    } catch (error: any) {
-      console.error('Error toggling follow:', error.message);
-    }
+  const handleProfileClick = () => {
+    navigate(`/profile/${tweet.author.username}`);
   };
 
   const isOwnTweet = currentUserId === tweet.author.id;
-  const userIsFollowing = isFollowing(tweet.author.id);
 
   return (
     <div className="border-b border-gray-200 p-4 hover:bg-gray-50 transition-colors">
       <div className={`flex gap-4 ${isRTL ? '' : 'flex-row-reverse'}`}>
         {/* Avatar - Position changes based on RTL/LTR */}
-        <Avatar className="w-12 h-12 flex-shrink-0">
+        <Avatar className="w-12 h-12 flex-shrink-0 cursor-pointer" onClick={handleProfileClick}>
           <AvatarImage src={tweet.author.avatar} />
           <AvatarFallback>{tweet.author.displayName[0]}</AvatarFallback>
         </Avatar>
@@ -108,24 +99,8 @@ export const TweetCard: React.FC<TweetCardProps> = ({
                     </DropdownMenuItem>
                   ) : (
                     <>
-                      <DropdownMenuItem 
-                        onClick={handleFollow}
-                        disabled={followLoading}
-                        className="hover:bg-gray-50"
-                      >
-                        <div className={`flex items-center space-x-2 ${isRTL ? 'flex-row-reverse space-x-reverse' : ''}`}>
-                          {userIsFollowing ? (
-                            <>
-                              <UserMinus className="h-4 w-4" />
-                              <span>Unfollow @{tweet.author.username}</span>
-                            </>
-                          ) : (
-                            <>
-                              <UserPlus className="h-4 w-4" />
-                              <span>Follow @{tweet.author.username}</span>
-                            </>
-                          )}
-                        </div>
+                      <DropdownMenuItem onClick={handleProfileClick} className="hover:bg-gray-50">
+                        View Profile
                       </DropdownMenuItem>
                       <DropdownMenuItem className="hover:bg-gray-50">
                         Mute @{tweet.author.username}
@@ -145,29 +120,21 @@ export const TweetCard: React.FC<TweetCardProps> = ({
                 {formatDistanceToNow(tweet.createdAt, { addSuffix: true })}
               </span>
               <span className="text-gray-500">·</span>
-              <span className="text-gray-500 truncate">@{tweet.author.username}</span>
+              <span 
+                className="text-gray-500 truncate cursor-pointer hover:underline"
+                onClick={handleProfileClick}
+              >
+                @{tweet.author.username}
+              </span>
               {tweet.author.verified && (
                 <CheckCircle className="w-4 h-4 text-blue-500 fill-current flex-shrink-0" />
               )}
-              <span className="font-bold text-gray-900 hover:underline cursor-pointer truncate">
+              <span 
+                className="font-bold text-gray-900 hover:underline cursor-pointer truncate"
+                onClick={handleProfileClick}
+              >
                 {tweet.author.displayName}
               </span>
-              {/* Follow button for non-own tweets */}
-              {!isOwnTweet && (
-                <Button
-                  variant={userIsFollowing ? "outline" : "default"}
-                  size="sm"
-                  onClick={handleFollow}
-                  disabled={followLoading}
-                  className={`${isRTL ? 'mr-2' : 'ml-2'} px-3 py-1 text-xs font-medium rounded-full transition-colors ${
-                    userIsFollowing 
-                      ? 'border-gray-300 text-gray-700 hover:bg-red-50 hover:text-red-600 hover:border-red-300' 
-                      : 'bg-blue-500 text-white hover:bg-blue-600'
-                  }`}
-                >
-                  {followLoading ? '...' : userIsFollowing ? 'Following' : 'Follow'}
-                </Button>
-              )}
             </div>
           </div>
 

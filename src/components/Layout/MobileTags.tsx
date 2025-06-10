@@ -26,31 +26,33 @@ export const MobileTags: React.FC<MobileTagsProps> = ({ onTagFilter, activeFilte
   };
 
   return (
-    <div className="md:hidden bg-white border-b border-gray-200 px-4 py-3 flex-shrink-0">
-      <div className={`flex space-x-3 overflow-x-auto scrollbar-hide ${isRTL ? 'flex-row-reverse space-x-reverse' : ''}`}>
-        {tags.map((tag) => (
-          <Button
-            key={tag.id}
-            variant="outline"
-            size="sm"
-            className={`flex-shrink-0 border-black text-black rounded-full px-4 py-2 text-sm font-medium hover:bg-gray-50 transition-colors ${
-              activeFilter === tag.id ? 'bg-blue-500 text-white border-blue-500' : 'bg-white'
-            }`}
-            onClick={() => handleTagClick(tag.id)}
-          >
-            {tag.label}
-          </Button>
-        ))}
-        {activeFilter && (
-          <Button
-            variant="outline"
-            size="sm"
-            className="flex-shrink-0 border-gray-300 text-gray-500 rounded-full px-4 py-2 text-sm font-medium hover:bg-gray-50 transition-colors bg-white"
-            onClick={() => onTagFilter(null)}
-          >
-            Clear Filter
-          </Button>
-        )}
+    <div className="md:hidden bg-white border-b border-gray-200 flex-shrink-0">
+      <div className="px-4 py-3 w-full overflow-hidden">
+        <div className={`flex space-x-3 overflow-x-auto scrollbar-hide ${isRTL ? 'flex-row-reverse space-x-reverse' : ''}`} style={{ width: '100%' }}>
+          {tags.map((tag) => (
+            <Button
+              key={tag.id}
+              variant="outline"
+              size="sm"
+              className={`flex-shrink-0 whitespace-nowrap border-black text-black rounded-full px-4 py-2 text-sm font-medium hover:bg-gray-50 transition-colors ${
+                activeFilter === tag.id ? 'bg-blue-500 text-white border-blue-500' : 'bg-white'
+              }`}
+              onClick={() => handleTagClick(tag.id)}
+            >
+              {tag.label}
+            </Button>
+          ))}
+          {activeFilter && (
+            <Button
+              variant="outline"
+              size="sm"
+              className="flex-shrink-0 whitespace-nowrap border-gray-300 text-gray-500 rounded-full px-4 py-2 text-sm font-medium hover:bg-gray-50 transition-colors bg-white"
+              onClick={() => onTagFilter(null)}
+            >
+              Clear Filter
+            </Button>
+          )}
+        </div>
       </div>
     </div>
   );
