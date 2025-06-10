@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
-import { Tweet, TweetWithProfile } from '../types';
+import { Tweet, TweetWithProfile, TweetTag } from '../types';
 
 export const useTweets = () => {
   const [tweets, setTweets] = useState<Tweet[]>([]);
@@ -78,7 +78,7 @@ export const useTweets = () => {
         isBookmarked: userBookmarks.includes(tweet.id),
         hashtags: tweet.hashtags,
         mentions: tweet.mentions,
-        tags: [], // TODO: Add tags support to database
+        tags: tweet.tags || [], // Use tags from database
       }));
 
       setTweets(formattedTweets);
@@ -90,7 +90,7 @@ export const useTweets = () => {
     }
   };
 
-  const createTweet = async (content: string, imageUrls: string[] = [], tags: string[] = []) => {
+  const createTweet = async (content: string, imageUrls: string[] = [], tags: TweetTag[] = []) => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('User not authenticated');
@@ -107,6 +107,7 @@ export const useTweets = () => {
           image_urls: imageUrls,
           hashtags,
           mentions,
+          tags, // Include tags in the database insert
         })
         .select()
         .single();

@@ -48,6 +48,7 @@ export interface Database {
           image_urls: string[];
           hashtags: string[];
           mentions: string[];
+          tags: string[]; // Added tags field
           likes_count: number;
           retweets_count: number;
           replies_count: number;
@@ -63,6 +64,7 @@ export interface Database {
           image_urls?: string[];
           hashtags?: string[];
           mentions?: string[];
+          tags?: string[]; // Added tags field
           likes_count?: number;
           retweets_count?: number;
           replies_count?: number;
@@ -78,6 +80,7 @@ export interface Database {
           image_urls?: string[];
           hashtags?: string[];
           mentions?: string[];
+          tags?: string[]; // Added tags field
           likes_count?: number;
           retweets_count?: number;
           replies_count?: number;

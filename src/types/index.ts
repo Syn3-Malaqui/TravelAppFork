@@ -27,7 +27,7 @@ export interface Tweet {
   replyTo?: string;
   hashtags: string[];
   mentions: string[];
-  tags?: string[]; // New field for tweet tags
+  tags?: string[]; // Tweet tags from database
 }
 
 export interface Notification {
@@ -77,6 +77,7 @@ export interface TweetData {
   image_urls: string[];
   hashtags: string[];
   mentions: string[];
+  tags: string[]; // Added tags field
   likes_count: number;
   retweets_count: number;
   replies_count: number;
