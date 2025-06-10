@@ -48,30 +48,33 @@ export const MobileNavigation: React.FC = () => {
   };
 
   return (
-    <div className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 px-2 py-1 z-50">
-      <div className="flex items-center justify-between">
-        {/* Left side navigation items */}
-        <div className="flex items-center space-x-2">
-          {navItems.slice(0, 2).map((item) => {
-            const isActive = location.pathname === item.path;
-            
-            return (
-              <Button
-                key={item.label}
-                variant="ghost"
-                size="sm"
-                className={`flex flex-col items-center p-3 min-w-0 ${
-                  isActive ? 'text-blue-500' : 'text-gray-500'
-                }`}
-                onClick={() => handleNavClick(item.path)}
-              >
-                <item.icon className="w-6 h-6" />
-              </Button>
-            );
-          })}
-        </div>
+    <div className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 py-1 z-50">
+      <div className="flex items-center justify-around px-2">
+        {/* Search */}
+        <Button
+          variant="ghost"
+          size="sm"
+          className={`flex flex-col items-center p-3 min-w-0 ${
+            location.pathname === '/search' ? 'text-blue-500' : 'text-gray-500'
+          }`}
+          onClick={() => handleNavClick('/search')}
+        >
+          <Search className="w-6 h-6" />
+        </Button>
 
-        {/* Center - Compose Button */}
+        {/* Notifications */}
+        <Button
+          variant="ghost"
+          size="sm"
+          className={`flex flex-col items-center p-3 min-w-0 ${
+            location.pathname === '/notifications' ? 'text-blue-500' : 'text-gray-500'
+          }`}
+          onClick={() => handleNavClick('/notifications')}
+        >
+          <Bell className="w-6 h-6" />
+        </Button>
+
+        {/* Compose Button - Centered */}
         <Button
           variant="default"
           size="sm"
@@ -81,56 +84,47 @@ export const MobileNavigation: React.FC = () => {
           <Plus className="w-6 h-6" />
         </Button>
 
-        {/* Right side navigation items */}
-        <div className="flex items-center space-x-2">
-          {navItems.slice(2).map((item) => {
-            const isActive = location.pathname === item.path;
-            
-            return (
-              <Button
-                key={item.label}
-                variant="ghost"
-                size="sm"
-                className={`flex flex-col items-center p-3 min-w-0 ${
-                  isActive ? 'text-blue-500' : 'text-gray-500'
-                }`}
-                onClick={() => handleNavClick(item.path)}
-              >
-                <item.icon className="w-6 h-6" />
-              </Button>
-            );
-          })}
-          
-          {/* Mobile Settings Dropdown */}
-          <DropdownMenu open={settingsOpen} onOpenChange={setSettingsOpen}>
-            <DropdownMenuTrigger asChild>
-              <Button
-                variant="ghost"
-                size="sm"
-                className="flex flex-col items-center p-3 min-w-0 text-gray-500"
-                title="Settings"
-              >
-                <Settings className="w-6 h-6" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent 
-              align="center" 
-              side="top"
-              className="w-48 mb-2"
-              sideOffset={8}
+        {/* Profile */}
+        <Button
+          variant="ghost"
+          size="sm"
+          className={`flex flex-col items-center p-3 min-w-0 ${
+            location.pathname === '/profile' ? 'text-blue-500' : 'text-gray-500'
+          }`}
+          onClick={() => handleNavClick('/profile')}
+        >
+          <User className="w-6 h-6" />
+        </Button>
+
+        {/* Settings Dropdown */}
+        <DropdownMenu open={settingsOpen} onOpenChange={setSettingsOpen}>
+          <DropdownMenuTrigger asChild>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="flex flex-col items-center p-3 min-w-0 text-gray-500"
+              title="Settings"
             >
-              <DropdownMenuItem onClick={handleLayoutToggle} className="hover:bg-gray-50 cursor-pointer">
-                <ArrowLeftRight className={`${isRTL ? 'ml-2' : 'mr-2'} h-4 w-4`} />
-                {isRTL ? 'Switch to LTR' : 'Switch to RTL'}
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={handleSignOut} className="text-red-600 hover:bg-red-50 cursor-pointer">
-                <LogOut className={`${isRTL ? 'ml-2' : 'mr-2'} h-4 w-4`} />
-                Sign Out
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
+              <Settings className="w-6 h-6" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent 
+            align="center" 
+            side="top"
+            className="w-48 mb-2"
+            sideOffset={8}
+          >
+            <DropdownMenuItem onClick={handleLayoutToggle} className="hover:bg-gray-50 cursor-pointer">
+              <ArrowLeftRight className={`${isRTL ? 'ml-2' : 'mr-2'} h-4 w-4`} />
+              {isRTL ? 'Switch to LTR' : 'Switch to RTL'}
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem onClick={handleSignOut} className="text-red-600 hover:bg-red-50 cursor-pointer">
+              <LogOut className={`${isRTL ? 'ml-2' : 'mr-2'} h-4 w-4`} />
+              Sign Out
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
     </div>
   );
