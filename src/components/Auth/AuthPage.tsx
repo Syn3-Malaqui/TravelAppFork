@@ -162,7 +162,7 @@ export const AuthPage: React.FC = () => {
           {/* Action Buttons */}
           <div className="space-y-4">
             <Button
-              onClick={() => setMode('country')}
+              onClick={() => setMode('login')}
               className="w-full bg-black hover:bg-gray-800 text-white font-bold py-4 rounded-full text-lg"
             >
               Login
@@ -192,7 +192,7 @@ export const AuthPage: React.FC = () => {
     );
   }
 
-  // Country Selection Screen
+  // Country Selection Screen (only for signup)
   if (mode === 'country') {
     return (
       <div className="min-h-screen bg-white flex flex-col">
@@ -273,7 +273,7 @@ export const AuthPage: React.FC = () => {
 
             {/* Proceed Button */}
             <Button
-              onClick={() => switchMode('login')}
+              onClick={() => switchMode('signup')}
               disabled={!selectedCountry}
               className="w-full bg-black hover:bg-gray-800 text-white font-bold py-4 rounded-full text-lg disabled:opacity-50 disabled:cursor-not-allowed"
             >
@@ -292,7 +292,15 @@ export const AuthPage: React.FC = () => {
       <div className="flex items-center justify-between p-4 border-b border-gray-100">
         <Button
           variant="ghost"
-          onClick={() => mode === 'forgot-password' ? setMode('login') : setMode('country')}
+          onClick={() => {
+            if (mode === 'forgot-password') {
+              setMode('login');
+            } else if (mode === 'signup') {
+              setMode('country');
+            } else {
+              setMode('welcome');
+            }
+          }}
           className="p-2"
         >
           <ArrowLeft className="h-5 w-5" />
@@ -312,7 +320,7 @@ export const AuthPage: React.FC = () => {
               {mode === 'signup' && 'Create your account'}
               {mode === 'forgot-password' && 'Reset your password'}
             </h1>
-            {selectedCountryData && (
+            {mode === 'signup' && selectedCountryData && (
               <div className="flex items-center justify-center space-x-2 text-gray-600">
                 <span>{selectedCountryData.flag}</span>
                 <span className="text-sm">{selectedCountryData.name}</span>
@@ -471,7 +479,7 @@ export const AuthPage: React.FC = () => {
                   Don't have an account?{' '}
                   <Button
                     variant="ghost"
-                    onClick={() => switchMode('signup')}
+                    onClick={() => switchMode('country')}
                     className="text-black hover:text-gray-600 p-0 h-auto font-medium underline"
                   >
                     Sign up
