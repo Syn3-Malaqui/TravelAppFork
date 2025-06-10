@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { X, Image, Smile } from 'lucide-react';
 import { Button } from '../ui/button';
 import { Avatar, AvatarImage, AvatarFallback } from '../ui/avatar';
-import { Dialog, DialogContent, DialogHeader } from '../ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../ui/dialog';
 import { Tweet } from '../../types';
 import { useStore } from '../../store/useStore';
 import { useAuth } from '../../hooks/useAuth';
@@ -62,7 +62,7 @@ export const ReplyModal: React.FC<ReplyModalProps> = ({ tweet, isOpen, onClose }
             >
               <X className="h-5 w-5" />
             </Button>
-            <h2 className="text-lg font-semibold">Reply to Tweet</h2>
+            <DialogTitle className="text-lg font-semibold">Reply to Tweet</DialogTitle>
             <div></div>
           </div>
         </DialogHeader>
