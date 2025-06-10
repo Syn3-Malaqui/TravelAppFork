@@ -40,55 +40,52 @@ export const MobileNavigation: React.FC = () => {
   };
 
   return (
-    <div className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 py-3 z-50 shadow-lg">
-      <div className="flex items-center justify-around px-4">
+    <div className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 py-4 z-50 shadow-lg">
+      <div className="flex items-center justify-around px-6">
         {/* Search */}
         <Button
           variant="ghost"
           size="lg"
-          className={`flex flex-col items-center p-4 min-w-0 rounded-xl transition-colors ${
+          className={`p-4 min-w-0 rounded-xl transition-colors ${
             location.pathname === '/search' ? 'text-blue-500 bg-blue-50' : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
           }`}
           onClick={() => handleNavClick('/search')}
         >
-          <Search className="w-7 h-7 mb-1" />
-          <span className="text-xs font-medium">Search</span>
+          <Search className="w-8 h-8" />
         </Button>
 
         {/* Notifications */}
         <Button
           variant="ghost"
           size="lg"
-          className={`flex flex-col items-center p-4 min-w-0 rounded-xl transition-colors ${
+          className={`p-4 min-w-0 rounded-xl transition-colors ${
             location.pathname === '/notifications' ? 'text-blue-500 bg-blue-50' : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
           }`}
           onClick={() => handleNavClick('/notifications')}
         >
-          <Bell className="w-7 h-7 mb-1" />
-          <span className="text-xs font-medium">Alerts</span>
+          <Bell className="w-8 h-8" />
         </Button>
 
         {/* Compose Button - Centered and Larger */}
         <Button
           variant="default"
           size="lg"
-          className="bg-blue-500 hover:bg-blue-600 text-white rounded-full p-5 shadow-lg transform hover:scale-105 transition-all duration-200"
+          className="bg-blue-500 hover:bg-blue-600 text-white rounded-full p-6 shadow-lg transform hover:scale-105 transition-all duration-200"
           onClick={handleComposeClick}
         >
-          <Plus className="w-8 h-8" />
+          <Plus className="w-9 h-9" />
         </Button>
 
         {/* Profile */}
         <Button
           variant="ghost"
           size="lg"
-          className={`flex flex-col items-center p-4 min-w-0 rounded-xl transition-colors ${
+          className={`p-4 min-w-0 rounded-xl transition-colors ${
             location.pathname === '/profile' ? 'text-blue-500 bg-blue-50' : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
           }`}
           onClick={() => handleNavClick('/profile')}
         >
-          <User className="w-7 h-7 mb-1" />
-          <span className="text-xs font-medium">Profile</span>
+          <User className="w-8 h-8" />
         </Button>
 
         {/* Settings Dropdown */}
@@ -97,11 +94,10 @@ export const MobileNavigation: React.FC = () => {
             <Button
               variant="ghost"
               size="lg"
-              className="flex flex-col items-center p-4 min-w-0 rounded-xl text-gray-500 hover:text-gray-700 hover:bg-gray-50 transition-colors"
+              className="p-4 min-w-0 rounded-xl text-gray-500 hover:text-gray-700 hover:bg-gray-50 transition-colors"
               title="Settings"
             >
-              <Settings className="w-7 h-7 mb-1" />
-              <span className="text-xs font-medium">More</span>
+              <Settings className="w-8 h-8" />
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent 
