@@ -11,10 +11,13 @@ import {
   MoreHorizontal,
   Hash,
   Users,
-  ArrowLeftRight
+  ArrowLeftRight,
+  LogOut,
+  LogIn
 } from 'lucide-react';
 import { Button } from '../ui/button';
 import { useStore } from '../../store/useStore';
+import { useAuth } from '../../hooks/useAuth';
 
 const sidebarItems = [
   { icon: Home, label: 'Home', active: true },
@@ -30,10 +33,27 @@ const sidebarItems = [
 
 export const Sidebar: React.FC = () => {
   const navigate = useNavigate();
-  const { isRTL, toggleLayoutDirection } = useStore();
+  const { isRTL, toggleLayoutDirection, setShowAuthModal } = useStore();
+  const { user, signOut } = useAuth();
 
   const handleTweetClick = () => {
+    if (!user) {
+      setShowAuthModal(true);
+      return;
+    }
     navigate('/compose');
+  };
+
+  const handleSignOut = async () => {
+    try {
+      await signOut();
+    } catch (error) {
+      console.error('Error signing out:', error);
+    }
+  };
+
+  const handleAuthClick = () => {
+    setShowAuthModal(true);
   };
 
   return (
@@ -73,25 +93,48 @@ export const Sidebar: React.FC = () => {
           {isRTL ? 'Switch to LTR' : 'Switch to RTL'}
         </Button>
 
+        {/* Auth Button */}
+        {user ? (
+          <Button 
+            variant="outline"
+            className={`w-full mt-4 ${isRTL ? 'justify-end' : 'justify-start'} text-lg py-3 px-4 h-auto border-red-300 text-red-600 hover:bg-red-50`}
+            onClick={handleSignOut}
+          >
+            <LogOut className={`${isRTL ? 'ml-4' : 'mr-4'} h-5 w-5`} />
+            Sign Out
+          </Button>
+        ) : (
+          <Button 
+            variant="outline"
+            className={`w-full mt-4 ${isRTL ? 'justify-end' : 'justify-start'} text-lg py-3 px-4 h-auto border-blue-300 text-blue-600 hover:bg-blue-50`}
+            onClick={handleAuthClick}
+          >
+            <LogIn className={`${isRTL ? 'ml-4' : 'mr-4'} h-5 w-5`} />
+            Sign In
+          </Button>
+        )}
+
         {/* Tweet Button */}
         <Button 
           className="w-full mt-4 bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 rounded-full text-lg"
           onClick={handleTweetClick}
         >
-          Tweet
+          {user ? 'Tweet' : 'Sign in to Tweet'}
         </Button>
       </nav>
 
       {/* User Profile */}
-      <div className="mt-auto">
-        <div className={`flex items-center p-3 ${isRTL ? 'flex-row-reverse' : ''}`}>
-          <div className={`w-10 h-10 bg-gray-300 rounded-full ${isRTL ? 'ml-3' : 'mr-3'}`}></div>
-          <div className={`flex-1 ${isRTL ? 'text-right' : 'text-left'}`}>
-            <div className="font-bold text-sm">Demo User</div>
-            <div className="text-gray-500 text-sm">@demouser</div>
+      {user && (
+        <div className="mt-auto">
+          <div className={`flex items-center p-3 ${isRTL ? 'flex-row-reverse' : ''}`}>
+            <div className={`w-10 h-10 bg-gray-300 rounded-full ${isRTL ? 'ml-3' : 'mr-3'}`}></div>
+            <div className={`flex-1 ${isRTL ? 'text-right' : 'text-left'}`}>
+              <div className="font-bold text-sm">{user.user_metadata?.display_name || 'User'}</div>
+              <div className="text-gray-500 text-sm">@{user.user_metadata?.username || 'user'}</div>
+            </div>
           </div>
         </div>
-      </div>
+      )}
     </div>
   );
 };

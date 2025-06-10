@@ -5,6 +5,7 @@ import { MobileNavigation } from './components/Layout/MobileNavigation';
 import { Timeline } from './components/Feed/Timeline';
 import { ComposePage } from './components/Tweet/ComposePage';
 import { FloatingActionButton } from './components/ui/FloatingActionButton';
+import { AuthModal } from './components/Auth/AuthModal';
 import { useStore } from './store/useStore';
 
 function App() {
@@ -38,6 +39,9 @@ function App() {
         
         {/* Floating Action Button */}
         <FloatingActionButton />
+
+        {/* Auth Modal */}
+        <AuthModal />
       </div>
     </Router>
   );

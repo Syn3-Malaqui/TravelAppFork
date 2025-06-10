@@ -1,8 +1,9 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Home, Search, Plus, Bell, User, ArrowLeftRight } from 'lucide-react';
+import { Home, Search, Plus, Bell, User, ArrowLeftRight, LogIn, LogOut } from 'lucide-react';
 import { Button } from '../ui/button';
 import { useStore } from '../../store/useStore';
+import { useAuth } from '../../hooks/useAuth';
 
 const navItems = [
   { icon: Home, label: 'Home', active: true },
@@ -14,11 +15,28 @@ const navItems = [
 
 export const MobileNavigation: React.FC = () => {
   const navigate = useNavigate();
-  const { isRTL, toggleLayoutDirection } = useStore();
+  const { isRTL, toggleLayoutDirection, setShowAuthModal } = useStore();
+  const { user, signOut } = useAuth();
 
   const handleNavClick = (label: string) => {
     if (label === 'Add Post') {
+      if (!user) {
+        setShowAuthModal(true);
+        return;
+      }
       navigate('/compose');
+    }
+  };
+
+  const handleAuthClick = async () => {
+    if (user) {
+      try {
+        await signOut();
+      } catch (error) {
+        console.error('Error signing out:', error);
+      }
+    } else {
+      setShowAuthModal(true);
     }
   };
 
@@ -48,6 +66,17 @@ export const MobileNavigation: React.FC = () => {
           title={isRTL ? 'Switch to LTR' : 'Switch to RTL'}
         >
           <ArrowLeftRight className="w-6 h-6" />
+        </Button>
+
+        {/* Mobile Auth Toggle */}
+        <Button
+          variant="ghost"
+          size="sm"
+          className={`flex flex-col items-center p-3 min-w-0 ${user ? 'text-red-500' : 'text-green-500'}`}
+          onClick={handleAuthClick}
+          title={user ? 'Sign Out' : 'Sign In'}
+        >
+          {user ? <LogOut className="w-6 h-6" /> : <LogIn className="w-6 h-6" />}
         </Button>
       </div>
     </div>
