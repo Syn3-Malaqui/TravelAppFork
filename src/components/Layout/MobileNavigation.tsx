@@ -1,15 +1,13 @@
 import React, { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Search, Plus, Bell, User, Settings, ArrowLeftRight, LogOut } from 'lucide-react';
+import { Search, Plus, Bell, User, Settings, LogOut } from 'lucide-react';
 import { Button } from '../ui/button';
 import { 
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-  DropdownMenuSeparator,
 } from '../ui/dropdown-menu';
-import { useStore } from '../../store/useStore';
 import { useAuth } from '../../hooks/useAuth';
 
 const navItems = [
@@ -21,7 +19,6 @@ const navItems = [
 export const MobileNavigation: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { isRTL, toggleLayoutDirection } = useStore();
   const { signOut } = useAuth();
   const [settingsOpen, setSettingsOpen] = useState(false);
 
@@ -40,11 +37,6 @@ export const MobileNavigation: React.FC = () => {
     } catch (error) {
       console.error('Error signing out:', error);
     }
-  };
-
-  const handleLayoutToggle = () => {
-    toggleLayoutDirection();
-    setSettingsOpen(false);
   };
 
   return (
@@ -114,13 +106,8 @@ export const MobileNavigation: React.FC = () => {
             className="w-48 mb-2"
             sideOffset={8}
           >
-            <DropdownMenuItem onClick={handleLayoutToggle} className="hover:bg-gray-50 cursor-pointer">
-              <ArrowLeftRight className={`${isRTL ? 'ml-2' : 'mr-2'} h-4 w-4`} />
-              {isRTL ? 'Switch to LTR' : 'Switch to RTL'}
-            </DropdownMenuItem>
-            <DropdownMenuSeparator />
             <DropdownMenuItem onClick={handleSignOut} className="text-red-600 hover:bg-red-50 cursor-pointer">
-              <LogOut className={`${isRTL ? 'ml-2' : 'mr-2'} h-4 w-4`} />
+              <LogOut className="mr-2 h-4 w-4" />
               Sign Out
             </DropdownMenuItem>
           </DropdownMenuContent>

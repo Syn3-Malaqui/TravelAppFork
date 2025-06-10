@@ -10,11 +10,9 @@ import { SearchPage } from './components/Search/SearchPage';
 import { FloatingActionButton } from './components/ui/FloatingActionButton';
 import { AuthPage } from './components/Auth/AuthPage';
 import { useAuth } from './hooks/useAuth';
-import { useStore } from './store/useStore';
 
 function App() {
   const { user, loading } = useAuth();
-  const { isRTL } = useStore();
 
   // Show loading spinner while checking auth state
   if (loading) {
@@ -33,7 +31,7 @@ function App() {
   // Show main app if user is logged in
   return (
     <Router>
-      <div className={`min-h-screen bg-white ${isRTL ? 'rtl' : 'ltr'}`} dir={isRTL ? 'rtl' : 'ltr'}>
+      <div className="min-h-screen bg-white">
         <div className="max-w-6xl mx-auto flex">
           {/* Desktop Sidebar */}
           <div className="hidden md:block">
@@ -41,7 +39,7 @@ function App() {
           </div>
           
           {/* Main Content */}
-          <div className={`flex-1 ${isRTL ? 'md:mr-64' : 'md:ml-64'}`}>
+          <div className="flex-1 md:ml-64">
             <Routes>
               <Route path="/" element={<Timeline />} />
               <Route path="/compose" element={<ComposePage />} />

@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { Button } from '../ui/button';
-import { useStore } from '../../store/useStore';
 
 const tags = [
   { id: 'car-rentals', label: 'Car Rentals' },
@@ -14,8 +13,6 @@ interface MobileTagsProps {
 }
 
 export const MobileTags: React.FC<MobileTagsProps> = ({ onTagFilter, activeFilter }) => {
-  const { isRTL } = useStore();
-
   const handleTagClick = (tagId: string) => {
     // If clicking the same tag, clear the filter
     if (activeFilter === tagId) {
@@ -28,7 +25,7 @@ export const MobileTags: React.FC<MobileTagsProps> = ({ onTagFilter, activeFilte
   return (
     <div className="md:hidden bg-white border-b border-gray-200 flex-shrink-0">
       <div className="px-4 py-3 w-full overflow-hidden">
-        <div className={`flex space-x-3 overflow-x-auto scrollbar-hide ${isRTL ? 'flex-row-reverse space-x-reverse' : ''}`} style={{ width: '100%' }}>
+        <div className="flex space-x-3 overflow-x-auto scrollbar-hide" style={{ width: '100%' }}>
           {tags.map((tag) => (
             <Button
               key={tag.id}

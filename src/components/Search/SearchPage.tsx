@@ -3,7 +3,6 @@ import { Search, X, TrendingUp, Hash, User } from 'lucide-react';
 import { Button } from '../ui/button';
 import { Avatar, AvatarImage, AvatarFallback } from '../ui/avatar';
 import { useNavigate } from 'react-router-dom';
-import { useStore } from '../../store/useStore';
 import { useAuth } from '../../hooks/useAuth';
 import { supabase } from '../../lib/supabase';
 import { User as UserType } from '../../types';
@@ -30,7 +29,6 @@ export const SearchPage: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [activeTab, setActiveTab] = useState<'top' | 'people' | 'hashtags'>('top');
   
-  const { isRTL } = useStore();
   const { user } = useAuth();
   const navigate = useNavigate();
 
@@ -122,21 +120,20 @@ export const SearchPage: React.FC = () => {
       {/* Header */}
       <div className="sticky top-0 bg-white/80 backdrop-blur-md border-b border-gray-200 px-4 py-3 z-10">
         <div className="relative">
-          <Search className={`absolute top-3 h-5 w-5 text-gray-400 ${isRTL ? 'right-3' : 'left-3'}`} />
+          <Search className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
           <input
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Search X"
-            className={`w-full ${isRTL ? 'pr-10 pl-10 text-right' : 'pl-10 pr-10 text-left'} py-3 bg-gray-100 rounded-full focus:bg-white focus:ring-2 focus:ring-blue-500 focus:outline-none transition-all`}
-            dir={isRTL ? 'rtl' : 'ltr'}
+            className="w-full pl-10 pr-10 py-3 bg-gray-100 rounded-full focus:bg-white focus:ring-2 focus:ring-blue-500 focus:outline-none transition-all"
           />
           {searchQuery && (
             <Button
               variant="ghost"
               size="sm"
               onClick={clearSearch}
-              className={`absolute top-2 ${isRTL ? 'left-2' : 'right-2'} p-2 hover:bg-gray-100 rounded-full`}
+              className="absolute right-2 top-2 p-2 hover:bg-gray-100 rounded-full"
             >
               <X className="h-4 w-4" />
             </Button>
@@ -147,7 +144,7 @@ export const SearchPage: React.FC = () => {
       {/* Search Tabs */}
       {searchQuery && (
         <div className="border-b border-gray-200">
-          <div className={`flex ${isRTL ? 'flex-row' : 'flex-row-reverse'}`}>
+          <div className="flex">
             {[
               { id: 'top', label: 'Top' },
               { id: 'people', label: 'People' },
@@ -175,7 +172,7 @@ export const SearchPage: React.FC = () => {
         {!searchQuery ? (
           /* Trending Section */
           <div className="p-4">
-            <h2 className={`text-xl font-bold mb-4 ${isRTL ? 'text-right' : 'text-left'}`}>
+            <h2 className="text-xl font-bold mb-4">
               Trending for you
             </h2>
             <div className="space-y-3">
@@ -185,12 +182,12 @@ export const SearchPage: React.FC = () => {
                   onClick={() => handleHashtagClick(topic.hashtag)}
                   className="p-3 hover:bg-gray-50 rounded-lg cursor-pointer transition-colors"
                 >
-                  <div className={`flex items-center justify-between ${isRTL ? 'flex-row-reverse' : ''}`}>
-                    <div className={`flex items-center space-x-3 ${isRTL ? 'flex-row-reverse space-x-reverse' : ''}`}>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-3">
                       <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
                         <Hash className="w-5 h-5 text-blue-500" />
                       </div>
-                      <div className={`${isRTL ? 'text-right' : 'text-left'}`}>
+                      <div>
                         <p className="font-bold text-gray-900">{topic.hashtag}</p>
                         <p className="text-sm text-gray-500">{topic.tweets} Tweets</p>
                       </div>
@@ -210,7 +207,7 @@ export const SearchPage: React.FC = () => {
             {loading ? (
               <div className="flex items-center justify-center py-12">
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
-                <span className={`${isRTL ? 'mr-3' : 'ml-3'} text-gray-500`}>Searching...</span>
+                <span className="ml-3 text-gray-500">Searching...</span>
               </div>
             ) : filteredResults.length === 0 ? (
               <div className="text-center py-12 text-gray-500">
@@ -226,12 +223,12 @@ export const SearchPage: React.FC = () => {
                         onClick={() => handleUserClick(result.data as UserType)}
                         className="p-4 hover:bg-gray-50 cursor-pointer transition-colors"
                       >
-                        <div className={`flex items-center space-x-3 ${isRTL ? 'flex-row-reverse space-x-reverse' : ''}`}>
+                        <div className="flex items-center space-x-3">
                           <Avatar className="w-12 h-12">
                             <AvatarImage src={(result.data as UserType).avatar} />
                             <AvatarFallback>{(result.data as UserType).displayName[0]}</AvatarFallback>
                           </Avatar>
-                          <div className={`flex-1 min-w-0 ${isRTL ? 'text-right' : 'text-left'}`}>
+                          <div className="flex-1 min-w-0">
                             <div className="flex items-center space-x-2">
                               <p className="font-bold text-gray-900 truncate">
                                 {(result.data as UserType).displayName}
@@ -259,11 +256,11 @@ export const SearchPage: React.FC = () => {
                         onClick={() => handleHashtagClick(result.data as string)}
                         className="p-4 hover:bg-gray-50 cursor-pointer transition-colors"
                       >
-                        <div className={`flex items-center space-x-3 ${isRTL ? 'flex-row-reverse space-x-reverse' : ''}`}>
+                        <div className="flex items-center space-x-3">
                           <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
                             <Hash className="w-6 h-6 text-blue-500" />
                           </div>
-                          <div className={`${isRTL ? 'text-right' : 'text-left'}`}>
+                          <div>
                             <p className="font-bold text-gray-900">{result.data as string}</p>
                             <p className="text-gray-500 text-sm">Hashtag</p>
                           </div>

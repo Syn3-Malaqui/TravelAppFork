@@ -5,7 +5,6 @@ import { Button } from '../ui/button';
 import { Avatar, AvatarImage, AvatarFallback } from '../ui/avatar';
 import { TweetCard } from '../Tweet/TweetCard';
 import { MobileTweetCard } from '../Tweet/MobileTweetCard';
-import { useStore } from '../../store/useStore';
 import { useAuth } from '../../hooks/useAuth';
 import { useFollow } from '../../hooks/useFollow';
 import { supabase } from '../../lib/supabase';
@@ -15,7 +14,6 @@ import { formatDistanceToNow } from 'date-fns';
 export const ProfilePage: React.FC = () => {
   const { username } = useParams<{ username: string }>();
   const navigate = useNavigate();
-  const { isRTL } = useStore();
   const { user: currentUser } = useAuth();
   const { followUser, unfollowUser, isFollowing, loading: followLoading } = useFollow();
   
@@ -170,7 +168,7 @@ export const ProfilePage: React.FC = () => {
       <div className="min-h-screen bg-white">
         <div className="flex items-center justify-center py-12">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
-          <span className={`${isRTL ? 'mr-3' : 'ml-3'} text-gray-500`}>Loading profile...</span>
+          <span className="ml-3 text-gray-500">Loading profile...</span>
         </div>
       </div>
     );
@@ -207,7 +205,7 @@ export const ProfilePage: React.FC = () => {
         >
           <ArrowLeft className="h-5 w-5" />
         </Button>
-        <div className={`${isRTL ? 'mr-4' : 'ml-4'}`}>
+        <div className="ml-4">
           <h1 className="text-lg font-bold">{profile.displayName}</h1>
           <p className="text-sm text-gray-500">{tweets.length} tweets</p>
         </div>
@@ -221,7 +219,7 @@ export const ProfilePage: React.FC = () => {
         {/* Profile Info */}
         <div className="px-4 pb-4">
           {/* Avatar and Follow Button */}
-          <div className={`flex items-end justify-between ${isRTL ? 'flex-row-reverse' : ''} -mt-16 mb-4`}>
+          <div className="flex items-end justify-between -mt-16 mb-4">
             <Avatar className="w-32 h-32 border-4 border-white bg-white">
               <AvatarImage src={profile.avatar} />
               <AvatarFallback className="text-2xl">{profile.displayName[0]}</AvatarFallback>
@@ -229,7 +227,7 @@ export const ProfilePage: React.FC = () => {
             
             {isOwnProfile ? (
               <Button variant="outline" className="mt-16 px-6 py-2 font-bold rounded-full">
-                <Settings className={`w-4 h-4 ${isRTL ? 'ml-2' : 'mr-2'}`} />
+                <Settings className="w-4 h-4 mr-2" />
                 Edit profile
               </Button>
             ) : (
@@ -247,12 +245,12 @@ export const ProfilePage: React.FC = () => {
                   '...'
                 ) : userIsFollowing ? (
                   <>
-                    <UserMinus className={`w-4 h-4 ${isRTL ? 'ml-2' : 'mr-2'}`} />
+                    <UserMinus className="w-4 h-4 mr-2" />
                     Following
                   </>
                 ) : (
                   <>
-                    <UserPlus className={`w-4 h-4 ${isRTL ? 'ml-2' : 'mr-2'}`} />
+                    <UserPlus className="w-4 h-4 mr-2" />
                     Follow
                   </>
                 )}
@@ -261,7 +259,7 @@ export const ProfilePage: React.FC = () => {
           </div>
 
           {/* User Info */}
-          <div className={`${isRTL ? 'text-right' : 'text-left'}`}>
+          <div>
             <div className="flex items-center space-x-2 mb-1">
               <h1 className="text-xl font-bold text-gray-900">{profile.displayName}</h1>
               {profile.verified && (
@@ -277,7 +275,7 @@ export const ProfilePage: React.FC = () => {
             )}
 
             {/* Join Date */}
-            <div className={`flex items-center space-x-4 text-gray-500 text-sm mb-3 ${isRTL ? 'flex-row-reverse space-x-reverse' : ''}`}>
+            <div className="flex items-center space-x-4 text-gray-500 text-sm mb-3">
               <div className="flex items-center space-x-1">
                 <Calendar className="w-4 h-4" />
                 <span>Joined {profile.joinedDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}</span>
@@ -285,7 +283,7 @@ export const ProfilePage: React.FC = () => {
             </div>
 
             {/* Follow Stats */}
-            <div className={`flex space-x-6 ${isRTL ? 'flex-row-reverse space-x-reverse' : ''}`}>
+            <div className="flex space-x-6">
               <div className="flex items-center space-x-1">
                 <span className="font-bold text-gray-900">{profile.following.toLocaleString()}</span>
                 <span className="text-gray-500">Following</span>
@@ -301,7 +299,7 @@ export const ProfilePage: React.FC = () => {
 
       {/* Tabs */}
       <div className="border-b border-gray-200">
-        <div className={`flex ${isRTL ? 'flex-row' : 'flex-row-reverse'}`}>
+        <div className="flex">
           {[
             { id: 'tweets', label: 'Tweets' },
             { id: 'replies', label: 'Replies' },

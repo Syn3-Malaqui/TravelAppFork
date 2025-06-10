@@ -6,7 +6,6 @@ interface AppState {
   isComposing: boolean;
   selectedTweet: Tweet | null;
   showAuthModal: boolean;
-  isRTL: boolean; // New state for layout direction
   
   // Notifications
   notifications: Notification[];
@@ -19,7 +18,6 @@ interface AppState {
   setComposing: (isComposing: boolean) => void;
   setSelectedTweet: (tweet: Tweet | null) => void;
   setShowAuthModal: (show: boolean) => void;
-  toggleLayoutDirection: () => void; // New action to toggle RTL/LTR
   addNotification: (notification: Omit<Notification, 'id'>) => void;
   markNotificationAsRead: (notificationId: string) => void;
 }
@@ -28,7 +26,6 @@ export const useStore = create<AppState>((set, get) => ({
   isComposing: false,
   selectedTweet: null,
   showAuthModal: false,
-  isRTL: true, // Default to RTL layout
   notifications: [],
   unreadNotifications: 0,
   conversations: [],
@@ -36,7 +33,6 @@ export const useStore = create<AppState>((set, get) => ({
   setComposing: (isComposing) => set({ isComposing }),
   setSelectedTweet: (tweet) => set({ selectedTweet: tweet }),
   setShowAuthModal: (show) => set({ showAuthModal: show }),
-  toggleLayoutDirection: () => set((state) => ({ isRTL: !state.isRTL })),
 
   addNotification: (notificationData) => {
     const newNotification: Notification = {

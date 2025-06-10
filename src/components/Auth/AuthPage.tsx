@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { Eye, EyeOff, Mail, Lock, User, ArrowLeft } from 'lucide-react';
 import { Button } from '../ui/button';
 import { useAuth } from '../../hooks/useAuth';
-import { useStore } from '../../store/useStore';
 
 type AuthMode = 'login' | 'signup' | 'forgot-password';
 
@@ -20,7 +19,6 @@ export const AuthPage: React.FC = () => {
   const [success, setSuccess] = useState('');
 
   const { signIn, signUp, resetPassword } = useAuth();
-  const { isRTL, toggleLayoutDirection } = useStore();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -72,10 +70,10 @@ export const AuthPage: React.FC = () => {
   };
 
   return (
-    <div className={`min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4 ${isRTL ? 'text-right' : 'text-left'}`} dir={isRTL ? 'rtl' : 'ltr'}>
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
       <div className="w-full max-w-md">
         {/* Logo and Header */}
-        <div className={`text-center mb-8 ${isRTL ? 'text-right' : 'text-left'}`}>
+        <div className="text-center mb-8">
           <div className="w-16 h-16 bg-blue-500 rounded-full flex items-center justify-center mx-auto mb-4">
             <span className="text-white font-bold text-2xl">X</span>
           </div>
@@ -95,12 +93,12 @@ export const AuthPage: React.FC = () => {
         <div className="bg-white rounded-2xl shadow-xl p-8">
           {/* Mode Navigation */}
           {mode !== 'login' && (
-            <div className={`flex items-center mb-6 ${isRTL ? 'justify-end' : 'justify-start'}`}>
+            <div className="flex items-center mb-6">
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={() => switchMode('login')}
-                className={`flex items-center space-x-2 text-blue-600 hover:text-blue-700 hover:bg-blue-50 ${isRTL ? 'flex-row-reverse space-x-reverse' : ''}`}
+                className="flex items-center space-x-2 text-blue-600 hover:text-blue-700 hover:bg-blue-50"
               >
                 <ArrowLeft className="h-4 w-4" />
                 <span>Back to sign in</span>
@@ -129,15 +127,14 @@ export const AuthPage: React.FC = () => {
                 Email address
               </label>
               <div className="relative">
-                <Mail className={`absolute top-3 h-5 w-5 text-gray-400 ${isRTL ? 'right-3' : 'left-3'}`} />
+                <Mail className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
                 <input
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className={`w-full ${isRTL ? 'pr-10 text-right' : 'pl-10 text-left'} py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-colors`}
+                  className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-colors"
                   placeholder="Enter your email"
                   required
-                  dir={isRTL ? 'rtl' : 'ltr'}
                 />
               </div>
             </div>
@@ -149,15 +146,14 @@ export const AuthPage: React.FC = () => {
                   Username
                 </label>
                 <div className="relative">
-                  <User className={`absolute top-3 h-5 w-5 text-gray-400 ${isRTL ? 'right-3' : 'left-3'}`} />
+                  <User className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
                   <input
                     type="text"
                     value={username}
                     onChange={(e) => setUsername(e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, ''))}
-                    className={`w-full ${isRTL ? 'pr-10 text-right' : 'pl-10 text-left'} py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-colors`}
+                    className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-colors"
                     placeholder="Choose a username"
                     required
-                    dir={isRTL ? 'rtl' : 'ltr'}
                   />
                 </div>
                 <p className="mt-1 text-xs text-gray-500">
@@ -173,15 +169,14 @@ export const AuthPage: React.FC = () => {
                   Display Name
                 </label>
                 <div className="relative">
-                  <User className={`absolute top-3 h-5 w-5 text-gray-400 ${isRTL ? 'right-3' : 'left-3'}`} />
+                  <User className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
                   <input
                     type="text"
                     value={displayName}
                     onChange={(e) => setDisplayName(e.target.value)}
-                    className={`w-full ${isRTL ? 'pr-10 text-right' : 'pl-10 text-left'} py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-colors`}
+                    className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-colors"
                     placeholder="Your display name"
                     required
-                    dir={isRTL ? 'rtl' : 'ltr'}
                   />
                 </div>
               </div>
@@ -194,22 +189,21 @@ export const AuthPage: React.FC = () => {
                   Password
                 </label>
                 <div className="relative">
-                  <Lock className={`absolute top-3 h-5 w-5 text-gray-400 ${isRTL ? 'right-3' : 'left-3'}`} />
+                  <Lock className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
                   <input
                     type={showPassword ? 'text' : 'password'}
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    className={`w-full ${isRTL ? 'pr-10 pl-10 text-right' : 'pl-10 pr-10 text-left'} py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-colors`}
+                    className="w-full pl-10 pr-10 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-colors"
                     placeholder="Enter your password"
                     required
-                    dir={isRTL ? 'rtl' : 'ltr'}
                   />
                   <Button
                     type="button"
                     variant="ghost"
                     size="sm"
                     onClick={() => setShowPassword(!showPassword)}
-                    className={`absolute top-2 ${isRTL ? 'left-2' : 'right-2'} p-2 hover:bg-gray-100 rounded-full`}
+                    className="absolute right-2 top-2 p-2 hover:bg-gray-100 rounded-full"
                   >
                     {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                   </Button>
@@ -229,22 +223,21 @@ export const AuthPage: React.FC = () => {
                   Confirm Password
                 </label>
                 <div className="relative">
-                  <Lock className={`absolute top-3 h-5 w-5 text-gray-400 ${isRTL ? 'right-3' : 'left-3'}`} />
+                  <Lock className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
                   <input
                     type={showConfirmPassword ? 'text' : 'password'}
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
-                    className={`w-full ${isRTL ? 'pr-10 pl-10 text-right' : 'pl-10 pr-10 text-left'} py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-colors`}
+                    className="w-full pl-10 pr-10 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-colors"
                     placeholder="Confirm your password"
                     required
-                    dir={isRTL ? 'rtl' : 'ltr'}
                   />
                   <Button
                     type="button"
                     variant="ghost"
                     size="sm"
                     onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                    className={`absolute top-2 ${isRTL ? 'left-2' : 'right-2'} p-2 hover:bg-gray-100 rounded-full`}
+                    className="absolute right-2 top-2 p-2 hover:bg-gray-100 rounded-full"
                   >
                     {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                   </Button>
@@ -277,7 +270,7 @@ export const AuthPage: React.FC = () => {
                 >
                   Forgot your password?
                 </Button>
-                <div className={`text-center text-gray-600 ${isRTL ? 'text-right' : 'text-left'}`}>
+                <div className="text-center text-gray-600">
                   Don't have an account?{' '}
                   <Button
                     variant="ghost"
@@ -291,7 +284,7 @@ export const AuthPage: React.FC = () => {
             )}
 
             {mode === 'signup' && (
-              <div className={`text-center text-gray-600 ${isRTL ? 'text-right' : 'text-left'}`}>
+              <div className="text-center text-gray-600">
                 Already have an account?{' '}
                 <Button
                   variant="ghost"
@@ -304,7 +297,7 @@ export const AuthPage: React.FC = () => {
             )}
 
             {mode === 'forgot-password' && (
-              <div className={`text-center text-gray-600 ${isRTL ? 'text-right' : 'text-left'}`}>
+              <div className="text-center text-gray-600">
                 Remember your password?{' '}
                 <Button
                   variant="ghost"
@@ -316,17 +309,6 @@ export const AuthPage: React.FC = () => {
               </div>
             )}
           </div>
-        </div>
-
-        {/* RTL/LTR Toggle */}
-        <div className="mt-8 text-center">
-          <Button
-            variant="outline"
-            onClick={toggleLayoutDirection}
-            className="bg-white/80 backdrop-blur-sm border-gray-300 text-gray-700 hover:bg-white hover:text-gray-900"
-          >
-            {isRTL ? 'Switch to LTR' : 'Switch to RTL'}
-          </Button>
         </div>
 
         {/* Footer */}
