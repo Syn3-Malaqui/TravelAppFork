@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { User, Session } from '@supabase/supabase-js';
-import { supabase } from '../lib/supabase';
+import { supabase, testConnection } from '../lib/supabase';
 
 interface AuthMetadata {
   username?: string;
@@ -11,14 +11,39 @@ export const useAuth = () => {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    // Get initial session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      setLoading(false);
-    });
+    const initializeAuth = async () => {
+      try {
+        // Test connection first
+        const connectionOk = await testConnection();
+        if (!connectionOk) {
+          setError('Unable to connect to Supabase. Please check your configuration.');
+          setLoading(false);
+          return;
+        }
+
+        // Get initial session
+        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+        
+        if (sessionError) {
+          console.error('Session error:', sessionError);
+          setError(`Authentication error: ${sessionError.message}`);
+        } else {
+          setSession(session);
+          setUser(session?.user ?? null);
+          setError(null);
+        }
+      } catch (err) {
+        console.error('Auth initialization error:', err);
+        setError('Failed to initialize authentication. Please check your network connection.');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    initializeAuth();
 
     // Listen for auth changes
     const {
@@ -26,6 +51,7 @@ export const useAuth = () => {
     } = supabase.auth.onAuthStateChange((_event, session) => {
       setSession(session);
       setUser(session?.user ?? null);
+      setError(null);
       setLoading(false);
     });
 
@@ -33,53 +59,89 @@ export const useAuth = () => {
   }, []);
 
   const signIn = async (email: string, password: string) => {
-    const { data, error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
+    try {
+      setError(null);
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
 
-    if (error) throw error;
-    return data;
+      if (error) throw error;
+      return data;
+    } catch (err: any) {
+      const errorMessage = err.message || 'Failed to sign in';
+      setError(errorMessage);
+      throw new Error(errorMessage);
+    }
   };
 
   const signUp = async (email: string, password: string, metadata?: AuthMetadata) => {
-    const { data, error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        data: {
-          username: metadata?.username || email.split('@')[0],
-          display_name: metadata?.displayName || email.split('@')[0],
+    try {
+      setError(null);
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: {
+            username: metadata?.username || email.split('@')[0],
+            display_name: metadata?.displayName || email.split('@')[0],
+          },
         },
-      },
-    });
+      });
 
-    if (error) throw error;
-    return data;
+      if (error) throw error;
+      return data;
+    } catch (err: any) {
+      const errorMessage = err.message || 'Failed to sign up';
+      setError(errorMessage);
+      throw new Error(errorMessage);
+    }
   };
 
   const signOut = async () => {
-    const { error } = await supabase.auth.signOut();
-    if (error) throw error;
+    try {
+      setError(null);
+      const { error } = await supabase.auth.signOut();
+      if (error) throw error;
+    } catch (err: any) {
+      const errorMessage = err.message || 'Failed to sign out';
+      setError(errorMessage);
+      throw new Error(errorMessage);
+    }
   };
 
   const resetPassword = async (email: string) => {
-    const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${window.location.origin}/reset-password`,
-    });
+    try {
+      setError(null);
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/reset-password`,
+      });
 
-    if (error) throw error;
+      if (error) throw error;
+    } catch (err: any) {
+      const errorMessage = err.message || 'Failed to reset password';
+      setError(errorMessage);
+      throw new Error(errorMessage);
+    }
   };
 
   const updatePassword = async (password: string) => {
-    const { error } = await supabase.auth.updateUser({ password });
-    if (error) throw error;
+    try {
+      setError(null);
+      const { error } = await supabase.auth.updateUser({ password });
+      if (error) throw error;
+    } catch (err: any) {
+      const errorMessage = err.message || 'Failed to update password';
+      setError(errorMessage);
+      throw new Error(errorMessage);
+    }
   };
 
   return {
     user,
     session,
     loading,
+    error,
     signIn,
     signUp,
     signOut,
