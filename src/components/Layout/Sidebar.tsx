@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
   Home, 
@@ -15,6 +15,13 @@ import {
   LogOut
 } from 'lucide-react';
 import { Button } from '../ui/button';
+import { 
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+  DropdownMenuSeparator,
+} from '../ui/dropdown-menu';
 import { useStore } from '../../store/useStore';
 import { useAuth } from '../../hooks/useAuth';
 
@@ -34,6 +41,7 @@ export const Sidebar: React.FC = () => {
   const navigate = useNavigate();
   const { isRTL, toggleLayoutDirection } = useStore();
   const { user, signOut } = useAuth();
+  const [settingsOpen, setSettingsOpen] = useState(false);
 
   const handleTweetClick = () => {
     navigate('/compose');
@@ -42,9 +50,15 @@ export const Sidebar: React.FC = () => {
   const handleSignOut = async () => {
     try {
       await signOut();
+      setSettingsOpen(false);
     } catch (error) {
       console.error('Error signing out:', error);
     }
+  };
+
+  const handleLayoutToggle = () => {
+    toggleLayoutDirection();
+    setSettingsOpen(false);
   };
 
   return (
@@ -74,25 +88,34 @@ export const Sidebar: React.FC = () => {
           ))}
         </ul>
 
-        {/* Layout Direction Toggle */}
-        <Button 
-          variant="outline"
-          className={`w-full mt-6 ${isRTL ? 'justify-end' : 'justify-start'} text-lg py-3 px-4 h-auto border-gray-300 hover:bg-gray-50`}
-          onClick={toggleLayoutDirection}
-        >
-          <ArrowLeftRight className={`${isRTL ? 'ml-4' : 'mr-4'} h-5 w-5`} />
-          {isRTL ? 'Switch to LTR' : 'Switch to RTL'}
-        </Button>
-
-        {/* Sign Out Button */}
-        <Button 
-          variant="outline"
-          className={`w-full mt-4 ${isRTL ? 'justify-end' : 'justify-start'} text-lg py-3 px-4 h-auto border-red-300 text-red-600 hover:bg-red-50`}
-          onClick={handleSignOut}
-        >
-          <LogOut className={`${isRTL ? 'ml-4' : 'mr-4'} h-5 w-5`} />
-          Sign Out
-        </Button>
+        {/* Settings Dropdown */}
+        <DropdownMenu open={settingsOpen} onOpenChange={setSettingsOpen}>
+          <DropdownMenuTrigger asChild>
+            <Button 
+              variant="outline"
+              className={`w-full mt-6 ${isRTL ? 'justify-end' : 'justify-start'} text-lg py-3 px-4 h-auto border-gray-300 hover:bg-gray-50`}
+            >
+              <Settings className={`${isRTL ? 'ml-4' : 'mr-4'} h-5 w-5`} />
+              Settings
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent 
+            align={isRTL ? "end" : "start"} 
+            side="top"
+            className="w-56 mb-2"
+            sideOffset={8}
+          >
+            <DropdownMenuItem onClick={handleLayoutToggle} className="hover:bg-gray-50 cursor-pointer">
+              <ArrowLeftRight className={`${isRTL ? 'ml-2' : 'mr-2'} h-4 w-4`} />
+              {isRTL ? 'Switch to LTR' : 'Switch to RTL'}
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem onClick={handleSignOut} className="text-red-600 hover:bg-red-50 cursor-pointer">
+              <LogOut className={`${isRTL ? 'ml-2' : 'mr-2'} h-4 w-4`} />
+              Sign Out
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
 
         {/* Tweet Button */}
         <Button 

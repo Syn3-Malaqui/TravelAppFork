@@ -1,7 +1,14 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Home, Search, Plus, Bell, User, ArrowLeftRight, LogOut } from 'lucide-react';
+import { Home, Search, Plus, Bell, User, Settings, ArrowLeftRight, LogOut } from 'lucide-react';
 import { Button } from '../ui/button';
+import { 
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+  DropdownMenuSeparator,
+} from '../ui/dropdown-menu';
 import { useStore } from '../../store/useStore';
 import { useAuth } from '../../hooks/useAuth';
 
@@ -17,6 +24,7 @@ export const MobileNavigation: React.FC = () => {
   const navigate = useNavigate();
   const { isRTL, toggleLayoutDirection } = useStore();
   const { signOut } = useAuth();
+  const [settingsOpen, setSettingsOpen] = useState(false);
 
   const handleNavClick = (label: string) => {
     if (label === 'Add Post') {
@@ -27,9 +35,15 @@ export const MobileNavigation: React.FC = () => {
   const handleSignOut = async () => {
     try {
       await signOut();
+      setSettingsOpen(false);
     } catch (error) {
       console.error('Error signing out:', error);
     }
+  };
+
+  const handleLayoutToggle = () => {
+    toggleLayoutDirection();
+    setSettingsOpen(false);
   };
 
   return (
@@ -49,27 +63,35 @@ export const MobileNavigation: React.FC = () => {
           </Button>
         ))}
         
-        {/* Mobile RTL/LTR Toggle */}
-        <Button
-          variant="ghost"
-          size="sm"
-          className="flex flex-col items-center p-3 min-w-0 text-blue-500"
-          onClick={toggleLayoutDirection}
-          title={isRTL ? 'Switch to LTR' : 'Switch to RTL'}
-        >
-          <ArrowLeftRight className="w-6 h-6" />
-        </Button>
-
-        {/* Mobile Sign Out */}
-        <Button
-          variant="ghost"
-          size="sm"
-          className="flex flex-col items-center p-3 min-w-0 text-red-500"
-          onClick={handleSignOut}
-          title="Sign Out"
-        >
-          <LogOut className="w-6 h-6" />
-        </Button>
+        {/* Mobile Settings Dropdown */}
+        <DropdownMenu open={settingsOpen} onOpenChange={setSettingsOpen}>
+          <DropdownMenuTrigger asChild>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="flex flex-col items-center p-3 min-w-0 text-gray-500"
+              title="Settings"
+            >
+              <Settings className="w-6 h-6" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent 
+            align="center" 
+            side="top"
+            className="w-48 mb-2"
+            sideOffset={8}
+          >
+            <DropdownMenuItem onClick={handleLayoutToggle} className="hover:bg-gray-50 cursor-pointer">
+              <ArrowLeftRight className={`${isRTL ? 'ml-2' : 'mr-2'} h-4 w-4`} />
+              {isRTL ? 'Switch to LTR' : 'Switch to RTL'}
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem onClick={handleSignOut} className="text-red-600 hover:bg-red-50 cursor-pointer">
+              <LogOut className={`${isRTL ? 'ml-2' : 'mr-2'} h-4 w-4`} />
+              Sign Out
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
     </div>
   );
