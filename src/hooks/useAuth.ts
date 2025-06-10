@@ -5,6 +5,7 @@ import { supabase } from '../lib/supabase';
 interface AuthMetadata {
   username?: string;
   displayName?: string;
+  country?: string;
 }
 
 export const useAuth = () => {
@@ -50,6 +51,7 @@ export const useAuth = () => {
         data: {
           username: metadata?.username || email.split('@')[0],
           display_name: metadata?.displayName || email.split('@')[0],
+          country: metadata?.country || 'US',
         },
       },
     });

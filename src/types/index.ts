@@ -9,6 +9,7 @@ export interface User {
   following: number;
   joinedDate: Date;
   coverImage?: string;
+  country?: string;
 }
 
 export interface Tweet {
@@ -27,7 +28,7 @@ export interface Tweet {
   replyTo?: string;
   hashtags: string[];
   mentions: string[];
-  tags?: string[]; // Tweet tags from database
+  tags?: string[];
 }
 
 export interface Notification {
@@ -65,6 +66,7 @@ export interface Profile {
   verified: boolean;
   followers_count: number;
   following_count: number;
+  country: string;
   created_at: string;
   updated_at: string;
 }
@@ -77,7 +79,7 @@ export interface TweetData {
   image_urls: string[];
   hashtags: string[];
   mentions: string[];
-  tags: string[]; // Added tags field
+  tags: string[];
   likes_count: number;
   retweets_count: number;
   replies_count: number;
