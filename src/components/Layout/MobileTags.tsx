@@ -42,16 +42,6 @@ export const MobileTags: React.FC<MobileTagsProps> = ({ onTagFilter, activeFilte
               {tag.label}
             </Button>
           ))}
-          {activeFilter && (
-            <Button
-              variant="outline"
-              size="sm"
-              className="flex-shrink-0 whitespace-nowrap border-gray-300 text-gray-500 rounded-full px-4 py-2 text-sm font-medium hover:bg-gray-50 transition-colors bg-white"
-              onClick={() => onTagFilter(null)}
-            >
-              Clear Filter
-            </Button>
-          )}
         </div>
       </div>
     </div>
