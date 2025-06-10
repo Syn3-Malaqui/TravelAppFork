@@ -5,12 +5,29 @@ import { MobileNavigation } from './components/Layout/MobileNavigation';
 import { Timeline } from './components/Feed/Timeline';
 import { ComposePage } from './components/Tweet/ComposePage';
 import { FloatingActionButton } from './components/ui/FloatingActionButton';
-import { AuthModal } from './components/Auth/AuthModal';
+import { AuthPage } from './components/Auth/AuthPage';
+import { useAuth } from './hooks/useAuth';
 import { useStore } from './store/useStore';
 
 function App() {
+  const { user, loading } = useAuth();
   const { isRTL } = useStore();
 
+  // Show loading spinner while checking auth state
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-white flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
+      </div>
+    );
+  }
+
+  // Show auth page if user is not logged in
+  if (!user) {
+    return <AuthPage />;
+  }
+
+  // Show main app if user is logged in
   return (
     <Router>
       <div className={`min-h-screen bg-white ${isRTL ? 'rtl' : 'ltr'}`} dir={isRTL ? 'rtl' : 'ltr'}>
@@ -39,9 +56,6 @@ function App() {
         
         {/* Floating Action Button */}
         <FloatingActionButton />
-
-        {/* Auth Modal */}
-        <AuthModal />
       </div>
     </Router>
   );
