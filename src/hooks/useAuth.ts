@@ -55,60 +55,35 @@ export const useAuth = () => {
   };
 
   useEffect(() => {
-    let mounted = true;
-
-    const initializeAuth = async () => {
-      try {
-        // Get initial session
-        const { data: { session }, error } = await supabase.auth.getSession();
-        
-        if (error) {
-          console.error('Error getting session:', error);
-          return;
-        }
-
-        if (mounted) {
-          setSession(session);
-          setUser(session?.user ?? null);
-          
-          // Ensure profile exists for authenticated user
-          if (session?.user) {
-            await ensureProfileExists(session.user);
-          }
-        }
-      } catch (error) {
-        console.error('Error initializing auth:', error);
-      } finally {
-        if (mounted) {
-          setLoading(false);
-        }
+    // Get initial session
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
+      setSession(session);
+      setUser(session?.user ?? null);
+      
+      // Ensure profile exists for authenticated user
+      if (session?.user) {
+        await ensureProfileExists(session.user);
       }
-    };
-
-    initializeAuth();
+      
+      setLoading(false);
+    });
 
     // Listen for auth changes
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange(async (event, session) => {
-      if (mounted) {
-        setSession(session);
-        setUser(session?.user ?? null);
-        
-        // Only ensure profile exists on sign in/sign up events
-        if ((event === 'SIGNED_IN' || event === 'SIGNED_UP') && session?.user) {
-          await ensureProfileExists(session.user);
-        }
-        
-        // Set loading to false after auth state change is processed
-        setLoading(false);
+    } = supabase.auth.onAuthStateChange(async (_event, session) => {
+      setSession(session);
+      setUser(session?.user ?? null);
+      
+      // Ensure profile exists for authenticated user
+      if (session?.user) {
+        await ensureProfileExists(session.user);
       }
+      
+      setLoading(false);
     });
 
-    return () => {
-      mounted = false;
-      subscription.unsubscribe();
-    };
+    return () => subscription.unsubscribe();
   }, []);
 
   const signIn = async (email: string, password: string) => {
@@ -118,6 +93,12 @@ export const useAuth = () => {
     });
 
     if (error) throw error;
+    
+    // Ensure profile exists after sign in
+    if (data.user) {
+      await ensureProfileExists(data.user);
+    }
+    
     return data;
   };
 
@@ -134,6 +115,12 @@ export const useAuth = () => {
     });
 
     if (error) throw error;
+    
+    // Ensure profile exists after sign up
+    if (data.user) {
+      await ensureProfileExists(data.user);
+    }
+    
     return data;
   };
 
