@@ -27,7 +27,11 @@ export interface Tweet {
   replyTo?: string;
   hashtags: string[];
   mentions: string[];
-  tags?: string[]; // Tweet tags from database
+  tags?: string[];
+  // Retweet fields
+  isRetweet?: boolean;
+  originalTweet?: Tweet;
+  retweetedBy?: User;
 }
 
 export interface Notification {
@@ -77,17 +81,21 @@ export interface TweetData {
   image_urls: string[];
   hashtags: string[];
   mentions: string[];
-  tags: string[]; // Added tags field
+  tags: string[];
   likes_count: number;
   retweets_count: number;
   replies_count: number;
   views_count: number;
   created_at: string;
   updated_at: string;
+  // Retweet fields
+  is_retweet?: boolean;
+  original_tweet_id?: string;
 }
 
 export interface TweetWithProfile extends TweetData {
   profiles: Profile;
+  original_tweet?: TweetWithProfile;
 }
 
 // Available tweet tags

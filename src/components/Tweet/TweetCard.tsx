@@ -62,11 +62,12 @@ export const TweetCard: React.FC<TweetCardProps> = ({
     console.log('Delete tweet:', tweet.id);
   };
 
-  const handleProfileClick = () => {
-    navigate(`/profile/${tweet.author.username}`);
+  const handleProfileClick = (user = tweet.author) => {
+    navigate(`/profile/${user.username}`);
   };
 
   const handleReply = () => {
+    // For retweets, reply to the original tweet
     setShowReplyModal(true);
   };
 
@@ -88,24 +89,41 @@ export const TweetCard: React.FC<TweetCardProps> = ({
   };
 
   const isOwnTweet = currentUserId === tweet.author.id;
+  const displayTweet = tweet.originalTweet || tweet;
+  const isRetweetDisplay = tweet.isRetweet && tweet.originalTweet;
 
   return (
     <>
       <div className={`border-b border-gray-200 hover:bg-gray-50 transition-colors ${
         isReply ? 'pl-16 border-l-2 border-l-gray-300 ml-4' : 'p-4'
       } ${!isReply ? 'p-4' : 'py-3 pr-4'}`}>
+        
+        {/* Retweet Header */}
+        {isRetweetDisplay && (
+          <div className={`flex items-center mb-2 text-gray-500 text-sm ${isRTL ? 'justify-end' : 'justify-start'}`}>
+            <Repeat2 className="w-4 h-4 mr-2" />
+            <span 
+              className="hover:underline cursor-pointer"
+              onClick={() => handleProfileClick(tweet.retweetedBy!)}
+            >
+              {tweet.retweetedBy!.displayName} retweeted
+            </span>
+          </div>
+        )}
+
+        {/* Reply Indicator */}
         {isReply && (
           <div className={`flex items-center mb-2 text-gray-500 text-sm ${isRTL ? 'justify-end' : 'justify-start'}`}>
             <MessageCircle className="w-4 h-4 mr-2" />
-            <span>Replying to @{tweet.author.username}</span>
+            <span>Replying to @{displayTweet.author.username}</span>
           </div>
         )}
         
         <div className={`flex gap-4 ${isRTL ? '' : 'flex-row-reverse'}`}>
           {/* Avatar - Position changes based on RTL/LTR */}
-          <Avatar className="w-12 h-12 flex-shrink-0 cursor-pointer" onClick={handleProfileClick}>
-            <AvatarImage src={tweet.author.avatar} />
-            <AvatarFallback>{tweet.author.displayName[0]}</AvatarFallback>
+          <Avatar className="w-12 h-12 flex-shrink-0 cursor-pointer" onClick={() => handleProfileClick(displayTweet.author)}>
+            <AvatarImage src={displayTweet.author.avatar} />
+            <AvatarFallback>{displayTweet.author.displayName[0]}</AvatarFallback>
           </Avatar>
 
           {/* Tweet Content */}
@@ -134,11 +152,11 @@ export const TweetCard: React.FC<TweetCardProps> = ({
                       </DropdownMenuItem>
                     ) : (
                       <>
-                        <DropdownMenuItem onClick={handleProfileClick} className="hover:bg-gray-50">
+                        <DropdownMenuItem onClick={() => handleProfileClick(displayTweet.author)} className="hover:bg-gray-50">
                           View Profile
                         </DropdownMenuItem>
                         <DropdownMenuItem className="hover:bg-gray-50">
-                          Mute @{tweet.author.username}
+                          Mute @{displayTweet.author.username}
                         </DropdownMenuItem>
                         <DropdownMenuItem className="text-red-600 hover:bg-red-50">
                           Report post
@@ -152,30 +170,37 @@ export const TweetCard: React.FC<TweetCardProps> = ({
               {/* User info and timestamp */}
               <div className={`flex items-center space-x-2 ${isRTL ? '' : 'flex-row-reverse'} min-w-0`}>
                 <span className="text-gray-500 hover:underline cursor-pointer text-sm flex-shrink-0">
-                  {formatDistanceToNow(tweet.createdAt, { addSuffix: true })}
+                  {formatDistanceToNow(displayTweet.createdAt, { addSuffix: true })}
                 </span>
                 <span className="text-gray-500">·</span>
                 <span 
                   className="text-gray-500 truncate cursor-pointer hover:underline"
-                  onClick={handleProfileClick}
+                  onClick={() => handleProfileClick(displayTweet.author)}
                 >
-                  @{tweet.author.username}
+                  @{displayTweet.author.username}
                 </span>
-                {tweet.author.verified && (
+                {displayTweet.author.verified && (
                   <CheckCircle className="w-4 h-4 text-blue-500 fill-current flex-shrink-0" />
                 )}
                 <span 
                   className="font-bold text-gray-900 hover:underline cursor-pointer truncate"
-                  onClick={handleProfileClick}
+                  onClick={() => handleProfileClick(displayTweet.author)}
                 >
-                  {tweet.author.displayName}
+                  {displayTweet.author.displayName}
                 </span>
               </div>
             </div>
 
+            {/* Retweet Comment (if any) */}
+            {isRetweetDisplay && tweet.content && (
+              <div className={`text-gray-900 mb-3 text-[15px] leading-5 ${isRTL ? 'text-left' : 'text-right'}`}>
+                {tweet.content}
+              </div>
+            )}
+
             {/* Tweet Text */}
             <div className={`text-gray-900 mb-3 text-[15px] leading-5 ${isRTL ? 'text-left' : 'text-right'}`}>
-              {tweet.content.split(' ').map((word, index) => {
+              {displayTweet.content.split(' ').map((word, index) => {
                 if (word.startsWith('#')) {
                   return (
                     <span key={index} className="text-blue-500 hover:underline cursor-pointer">
@@ -195,9 +220,9 @@ export const TweetCard: React.FC<TweetCardProps> = ({
             </div>
 
             {/* Tags */}
-            {tweet.tags && tweet.tags.length > 0 && (
+            {displayTweet.tags && displayTweet.tags.length > 0 && (
               <div className={`mb-3 flex flex-wrap gap-2 ${isRTL ? 'justify-start' : 'justify-end'}`}>
-                {tweet.tags.map((tag, index) => (
+                {displayTweet.tags.map((tag, index) => (
                   <span
                     key={index}
                     className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-50 text-blue-700 border border-blue-200 hover:bg-blue-100 cursor-pointer transition-colors"
@@ -210,11 +235,11 @@ export const TweetCard: React.FC<TweetCardProps> = ({
             )}
 
             {/* Images - Fixed aspect ratio */}
-            {tweet.images && tweet.images.length > 0 && (
+            {displayTweet.images && displayTweet.images.length > 0 && (
               <div className="mb-3 rounded-2xl overflow-hidden border border-gray-200">
                 <div className="w-full aspect-[16/9]">
                   <img 
-                    src={tweet.images[0]} 
+                    src={displayTweet.images[0]} 
                     alt="Tweet image" 
                     className="w-full h-full object-cover"
                   />
@@ -232,7 +257,7 @@ export const TweetCard: React.FC<TweetCardProps> = ({
                 onClick={handleReply}
               >
                 <MessageCircle className="w-5 h-5" />
-                <span className={`text-sm ${isRTL ? 'mr-1' : 'ml-1'}`}>{formatNumber(tweet.replies)}</span>
+                <span className={`text-sm ${isRTL ? 'mr-1' : 'ml-1'}`}>{formatNumber(displayTweet.replies)}</span>
               </Button>
 
               {/* Retweet */}
@@ -240,14 +265,14 @@ export const TweetCard: React.FC<TweetCardProps> = ({
                 variant="ghost" 
                 size="sm" 
                 className={`p-2 flex items-center ${
-                  tweet.isRetweeted 
+                  displayTweet.isRetweeted 
                     ? 'text-green-500 hover:text-green-600 hover:bg-green-50' 
                     : 'text-gray-500 hover:text-green-500 hover:bg-green-50'
                 }`}
                 onClick={handleRetweet}
               >
                 <Repeat2 className="w-5 h-5" />
-                <span className={`text-sm ${isRTL ? 'mr-1' : 'ml-1'}`}>{formatNumber(tweet.retweets)}</span>
+                <span className={`text-sm ${isRTL ? 'mr-1' : 'ml-1'}`}>{formatNumber(displayTweet.retweets)}</span>
               </Button>
 
               {/* Like */}
@@ -255,20 +280,20 @@ export const TweetCard: React.FC<TweetCardProps> = ({
                 variant="ghost" 
                 size="sm" 
                 className={`p-2 flex items-center ${
-                  tweet.isLiked 
+                  displayTweet.isLiked 
                     ? 'text-red-500 hover:text-red-600 hover:bg-red-50' 
                     : 'text-gray-500 hover:text-red-500 hover:bg-red-50'
                 }`}
                 onClick={handleLike}
               >
-                <Heart className={`w-5 h-5 ${tweet.isLiked ? 'fill-current' : ''}`} />
-                <span className={`text-sm ${isRTL ? 'mr-1' : 'ml-1'}`}>{formatNumber(tweet.likes)}</span>
+                <Heart className={`w-5 h-5 ${displayTweet.isLiked ? 'fill-current' : ''}`} />
+                <span className={`text-sm ${isRTL ? 'mr-1' : 'ml-1'}`}>{formatNumber(displayTweet.likes)}</span>
               </Button>
 
               {/* Views */}
               <Button variant="ghost" size="sm" className="text-gray-500 hover:text-blue-500 hover:bg-blue-50 p-2 flex items-center">
                 <Eye className="w-5 h-5" />
-                <span className={`text-sm ${isRTL ? 'mr-1' : 'ml-1'}`}>{formatNumber(tweet.views)}</span>
+                <span className={`text-sm ${isRTL ? 'mr-1' : 'ml-1'}`}>{formatNumber(displayTweet.views)}</span>
               </Button>
 
               {/* Share & Bookmark */}
@@ -277,13 +302,13 @@ export const TweetCard: React.FC<TweetCardProps> = ({
                   variant="ghost" 
                   size="sm" 
                   className={`p-2 ${
-                    tweet.isBookmarked 
+                    displayTweet.isBookmarked 
                       ? 'text-blue-500 hover:text-blue-600 hover:bg-blue-50' 
                       : 'text-gray-500 hover:text-blue-500 hover:bg-blue-50'
                   }`}
                   onClick={handleBookmark}
                 >
-                  <Bookmark className={`w-5 h-5 ${tweet.isBookmarked ? 'fill-current' : ''}`} />
+                  <Bookmark className={`w-5 h-5 ${displayTweet.isBookmarked ? 'fill-current' : ''}`} />
                 </Button>
                 <Button variant="ghost" size="sm" className="text-gray-500 hover:text-blue-500 hover:bg-blue-50 p-2">
                   <Share className="w-5 h-5" />
@@ -296,18 +321,18 @@ export const TweetCard: React.FC<TweetCardProps> = ({
 
       {/* Reply Modal */}
       <ReplyModal 
-        tweet={tweet}
+        tweet={displayTweet}
         isOpen={showReplyModal}
         onClose={() => setShowReplyModal(false)}
       />
 
       {/* Retweet Modal */}
       <RetweetModal 
-        tweet={tweet}
+        tweet={displayTweet}
         isOpen={showRetweetModal}
         onClose={() => setShowRetweetModal(false)}
         onQuickRetweet={handleQuickRetweet}
-        isRetweeted={tweet.isRetweeted}
+        isRetweeted={displayTweet.isRetweeted}
       />
     </>
   );

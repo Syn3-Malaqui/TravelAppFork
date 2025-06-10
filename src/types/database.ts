@@ -48,13 +48,15 @@ export interface Database {
           image_urls: string[];
           hashtags: string[];
           mentions: string[];
-          tags: string[]; // Added tags field
+          tags: string[];
           likes_count: number;
           retweets_count: number;
           replies_count: number;
           views_count: number;
           created_at: string;
           updated_at: string;
+          is_retweet: boolean;
+          original_tweet_id: string | null;
         };
         Insert: {
           id?: string;
@@ -64,13 +66,15 @@ export interface Database {
           image_urls?: string[];
           hashtags?: string[];
           mentions?: string[];
-          tags?: string[]; // Added tags field
+          tags?: string[];
           likes_count?: number;
           retweets_count?: number;
           replies_count?: number;
           views_count?: number;
           created_at?: string;
           updated_at?: string;
+          is_retweet?: boolean;
+          original_tweet_id?: string | null;
         };
         Update: {
           id?: string;
@@ -80,13 +84,15 @@ export interface Database {
           image_urls?: string[];
           hashtags?: string[];
           mentions?: string[];
-          tags?: string[]; // Added tags field
+          tags?: string[];
           likes_count?: number;
           retweets_count?: number;
           replies_count?: number;
           views_count?: number;
           created_at?: string;
           updated_at?: string;
+          is_retweet?: boolean;
+          original_tweet_id?: string | null;
         };
       };
       likes: {
