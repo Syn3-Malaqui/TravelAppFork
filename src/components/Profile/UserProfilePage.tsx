@@ -1,12 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Calendar, Settings, Edit3, Camera } from 'lucide-react';
+import { ArrowLeft, Calendar, Edit3, Camera } from 'lucide-react';
 import { Button } from '../ui/button';
 import { Avatar, AvatarImage, AvatarFallback } from '../ui/avatar';
 import { TweetCard } from '../Tweet/TweetCard';
 import { MobileTweetCard } from '../Tweet/MobileTweetCard';
 import { useStore } from '../../store/useStore';
 import { useAuth } from '../../hooks/useAuth';
+import { useTweets } from '../../hooks/useTweets';
 import { supabase } from '../../lib/supabase';
 import { Tweet, User } from '../../types';
 
@@ -14,6 +15,7 @@ export const UserProfilePage: React.FC = () => {
   const navigate = useNavigate();
   const { isRTL } = useStore();
   const { user: currentUser } = useAuth();
+  const { likeTweet, unlikeTweet, retweetTweet, unretweetTweet, bookmarkTweet, unbookmarkTweet } = useTweets();
   
   const [profile, setProfile] = useState<User | null>(null);
   const [tweets, setTweets] = useState<Tweet[]>([]);
@@ -129,16 +131,74 @@ export const UserProfilePage: React.FC = () => {
   };
 
   const handleLike = async (tweetId: string) => {
-    // TODO: Implement like functionality
-    console.log('Like tweet:', tweetId);
+    try {
+      const tweet = tweets.find(t => t.id === tweetId);
+      if (tweet?.isLiked) {
+        await unlikeTweet(tweetId);
+      } else {
+        await likeTweet(tweetId);
+      }
+      // Update local state
+      setTweets(prevTweets => 
+        prevTweets.map(t => 
+          t.id === tweetId 
+            ? { 
+                ...t, 
+                isLiked: !t.isLiked, 
+                likes: t.isLiked ? Math.max(0, t.likes - 1) : t.likes + 1 
+              }
+            : t
+        )
+      );
+    } catch (error) {
+      console.error('Error toggling like:', error);
+    }
   };
 
-  const handleRetweet = (tweetId: string) => {
-    console.log('Retweet:', tweetId);
+  const handleRetweet = async (tweetId: string) => {
+    try {
+      const tweet = tweets.find(t => t.id === tweetId);
+      if (tweet?.isRetweeted) {
+        await unretweetTweet(tweetId);
+      } else {
+        await retweetTweet(tweetId);
+      }
+      // Update local state
+      setTweets(prevTweets => 
+        prevTweets.map(t => 
+          t.id === tweetId 
+            ? { 
+                ...t, 
+                isRetweeted: !t.isRetweeted, 
+                retweets: t.isRetweeted ? Math.max(0, t.retweets - 1) : t.retweets + 1 
+              }
+            : t
+        )
+      );
+    } catch (error) {
+      console.error('Error toggling retweet:', error);
+    }
   };
 
-  const handleBookmark = (tweetId: string) => {
-    console.log('Bookmark:', tweetId);
+  const handleBookmark = async (tweetId: string) => {
+    try {
+      const tweet = tweets.find(t => t.id === tweetId);
+      if (tweet?.isBookmarked) {
+        await unbookmarkTweet(tweetId);
+      } else {
+        await bookmarkTweet(tweetId);
+      }
+      // Update local state
+      setTweets(prevTweets => 
+        prevTweets.map(t => 
+          t.id === tweetId 
+            ? { ...t, isBookmarked: !t.isBookmarked }
+            : t
+        )
+      );
+    } catch (error) {
+      console.error('Error toggling bookmark:', error);
+    }
   };
 
   const handleEditProfile = () => {

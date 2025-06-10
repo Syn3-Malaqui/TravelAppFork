@@ -78,7 +78,7 @@ export const useTweets = () => {
         isBookmarked: userBookmarks.includes(tweet.id),
         hashtags: tweet.hashtags,
         mentions: tweet.mentions,
-        tags: tweet.tags || [], // Use tags from database
+        tags: tweet.tags || [],
       }));
 
       setTweets(formattedTweets);
@@ -90,7 +90,7 @@ export const useTweets = () => {
     }
   };
 
-  const createTweet = async (content: string, imageUrls: string[] = [], tags: TweetTag[] = []) => {
+  const createTweet = async (content: string, imageUrls: string[] = [], tags: TweetTag[] = [], replyTo?: string) => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('User not authenticated');
@@ -104,10 +104,11 @@ export const useTweets = () => {
         .insert({
           content,
           author_id: user.id,
+          reply_to: replyTo || null,
           image_urls: imageUrls,
           hashtags,
           mentions,
-          tags, // Include tags in the database insert
+          tags,
         })
         .select()
         .single();
@@ -136,14 +137,20 @@ export const useTweets = () => {
         });
 
       if (error) {
-        // If it's a duplicate key error, the user already liked this tweet
         if (error.code === '23505') {
           throw new Error('Tweet already liked');
         }
         throw error;
       }
       
-      await fetchTweets();
+      // Update local state immediately for better UX
+      setTweets(prevTweets => 
+        prevTweets.map(tweet => 
+          tweet.id === tweetId 
+            ? { ...tweet, isLiked: true, likes: tweet.likes + 1 }
+            : tweet
+        )
+      );
     } catch (err: any) {
       throw new Error(err.message);
     }
@@ -163,7 +170,15 @@ export const useTweets = () => {
         });
 
       if (error) throw error;
-      await fetchTweets();
+      
+      // Update local state immediately for better UX
+      setTweets(prevTweets => 
+        prevTweets.map(tweet => 
+          tweet.id === tweetId 
+            ? { ...tweet, isLiked: false, likes: Math.max(0, tweet.likes - 1) }
+            : tweet
+        )
+      );
     } catch (err: any) {
       throw new Error(err.message);
     }
@@ -188,7 +203,14 @@ export const useTweets = () => {
         throw error;
       }
       
-      await fetchTweets();
+      // Update local state immediately for better UX
+      setTweets(prevTweets => 
+        prevTweets.map(tweet => 
+          tweet.id === tweetId 
+            ? { ...tweet, isRetweeted: true, retweets: tweet.retweets + 1 }
+            : tweet
+        )
+      );
     } catch (err: any) {
       throw new Error(err.message);
     }
@@ -208,7 +230,15 @@ export const useTweets = () => {
         });
 
       if (error) throw error;
-      await fetchTweets();
+      
+      // Update local state immediately for better UX
+      setTweets(prevTweets => 
+        prevTweets.map(tweet => 
+          tweet.id === tweetId 
+            ? { ...tweet, isRetweeted: false, retweets: Math.max(0, tweet.retweets - 1) }
+            : tweet
+        )
+      );
     } catch (err: any) {
       throw new Error(err.message);
     }
@@ -233,7 +263,14 @@ export const useTweets = () => {
         throw error;
       }
       
-      await fetchTweets();
+      // Update local state immediately for better UX
+      setTweets(prevTweets => 
+        prevTweets.map(tweet => 
+          tweet.id === tweetId 
+            ? { ...tweet, isBookmarked: true }
+            : tweet
+        )
+      );
     } catch (err: any) {
       throw new Error(err.message);
     }
@@ -253,7 +290,15 @@ export const useTweets = () => {
         });
 
       if (error) throw error;
-      await fetchTweets();
+      
+      // Update local state immediately for better UX
+      setTweets(prevTweets => 
+        prevTweets.map(tweet => 
+          tweet.id === tweetId 
+            ? { ...tweet, isBookmarked: false }
+            : tweet
+        )
+      );
     } catch (err: any) {
       throw new Error(err.message);
     }
