@@ -8,6 +8,7 @@ import { CountryFilter } from '../Layout/CountryFilter';
 import { MobileCountryFilter } from '../Layout/MobileCountryFilter';
 import { useTweets } from '../../hooks/useTweets';
 import { useAuth } from '../../hooks/useAuth';
+import { FILTER_COUNTRIES } from '../../types';
 
 export const Timeline: React.FC = () => {
   const navigate = useNavigate();
@@ -136,14 +137,17 @@ export const Timeline: React.FC = () => {
         {/* Mobile Tabs */}
         <MobileTabs />
 
-        {/* Mobile Country Filter */}
-        <MobileCountryFilter 
-          selectedCountry={countryFilter}
-          onCountryChange={handleCountryFilter}
-        />
-
-        {/* Mobile Categories with filtering */}
-        <MobileTags onCategoryFilter={handleCategoryFilter} activeFilter={categoryFilter} />
+        {/* Mobile Filters */}
+        <div className="md:hidden">
+          <MobileCountryFilter 
+            selectedCountry={countryFilter}
+            onCountryChange={handleCountryFilter}
+          />
+          <MobileTags 
+            onCategoryFilter={handleCategoryFilter} 
+            activeFilter={categoryFilter} 
+          />
+        </div>
 
         {/* Desktop Tweet Composer */}
         <div className="hidden md:block border-b border-gray-200 p-4 flex-shrink-0">
