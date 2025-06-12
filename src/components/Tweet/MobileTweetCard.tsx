@@ -44,7 +44,7 @@ export const MobileTweetCard: React.FC<MobileTweetCardProps> = ({
   const navigate = useNavigate();
   const [showReplyComposer, setShowReplyComposer] = useState(false);
   const [showReplies, setShowReplies] = useState(false);
-  const { replies, fetchReplies } = useTweets();
+  const { replies, fetchReplies, createRetweet, removeRetweet } = useTweets();
 
   const formatNumber = (num: number): string => {
     if (num >= 1000000) {
@@ -86,6 +86,18 @@ export const MobileTweetCard: React.FC<MobileTweetCardProps> = ({
     setShowReplyComposer(false);
     await fetchReplies(tweet.id);
     setShowReplies(true);
+  };
+
+  const handleRetweetClick = async () => {
+    try {
+      if (tweet.isRetweeted) {
+        await removeRetweet(tweet.id);
+      } else {
+        await createRetweet(tweet.id);
+      }
+    } catch (error: any) {
+      console.error('Error toggling retweet:', error.message);
+    }
   };
 
   const isOwnTweet = currentUserId === tweet.author.id;
@@ -254,7 +266,7 @@ export const MobileTweetCard: React.FC<MobileTweetCardProps> = ({
                     ? 'text-green-500' 
                     : 'text-gray-500'
                 }`}
-                onClick={onRetweet}
+                onClick={handleRetweetClick}
               >
                 <Repeat2 className="w-4 h-4" />
                 <span className="text-xs ml-1">{formatNumber(tweet.retweets)}</span>

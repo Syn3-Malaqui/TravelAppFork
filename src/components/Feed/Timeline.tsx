@@ -16,7 +16,7 @@ export const Timeline: React.FC = () => {
   const [categoryFilter, setCategoryFilter] = useState<string | null>(null);
   const [countryFilter, setCountryFilter] = useState<string>('ALL');
   const { user } = useAuth();
-  const { tweets, followingTweets, loading, error, likeTweet, unlikeTweet, retweetTweet } = useTweets();
+  const { tweets, followingTweets, loading, error, likeTweet, unlikeTweet } = useTweets();
 
   const handleComposeClick = () => {
     navigate('/compose');
@@ -32,6 +32,11 @@ export const Timeline: React.FC = () => {
     } catch (error) {
       console.error('Error toggling like:', error);
     }
+  };
+
+  const handleRetweet = (tweetId: string) => {
+    // This is now handled directly in the TweetCard components
+    console.log('Retweet handled in TweetCard:', tweetId);
   };
 
   const handleBookmark = (tweetId: string) => {
@@ -281,7 +286,7 @@ export const Timeline: React.FC = () => {
                     <TweetCard 
                       tweet={tweet} 
                       onLike={() => handleLike(tweet.id, tweet.isLiked)}
-                      onRetweet={() => retweetTweet(tweet.id)}
+                      onRetweet={() => handleRetweet(tweet.id)}
                       onBookmark={() => handleBookmark(tweet.id)}
                       currentUserId={user?.id}
                     />
@@ -291,7 +296,7 @@ export const Timeline: React.FC = () => {
                     <MobileTweetCard 
                       tweet={tweet}
                       onLike={() => handleLike(tweet.id, tweet.isLiked)}
-                      onRetweet={() => retweetTweet(tweet.id)}
+                      onRetweet={() => handleRetweet(tweet.id)}
                       onBookmark={() => handleBookmark(tweet.id)}
                       currentUserId={user?.id}
                     />
