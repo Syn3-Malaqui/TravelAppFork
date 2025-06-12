@@ -419,10 +419,6 @@ export const useTweets = () => {
       return data;
     } catch (err: any) {
       throw new Error(err.message);
-    } finally {
-      // Always refresh tweets to sync state
-      await fetchTweets();
-      await fetchFollowingTweets();
     }
   };
 
@@ -455,10 +451,6 @@ export const useTweets = () => {
       if (retweetError) throw retweetError;
     } catch (err: any) {
       throw new Error(err.message);
-    } finally {
-      // Always refresh tweets to sync state
-      await fetchTweets();
-      await fetchFollowingTweets();
     }
   };
 
@@ -548,7 +540,9 @@ export const useTweets = () => {
       const tweet = tweets.find(t => t.id === tweetId) || followingTweets.find(t => t.id === tweetId);
       if (tweet?.isRetweeted) {
         // If already retweeted, remove the retweet
-        await unretweetTweet(tweetId);
+        await removeRetweet(tweetId);
+        // Refresh data to sync state
+        await Promise.all([fetchTweets(), fetchFollowingTweets()]);
         return;
       }
 
@@ -562,28 +556,19 @@ export const useTweets = () => {
       if (error) {
         if (error.code === '23505') {
           // If duplicate, it means it's already retweeted, so remove it instead
-          await unretweetTweet(tweetId);
+          await removeRetweet(tweetId);
+          // Refresh data to sync state
+          await Promise.all([fetchTweets(), fetchFollowingTweets()]);
           return;
         }
         throw error;
       }
       
-      // Update local state immediately for better UX
-      setTweets(prevTweets => 
-        prevTweets.map(tweet => 
-          tweet.id === tweetId 
-            ? { ...tweet, isRetweeted: true, retweets: tweet.retweets + 1 }
-            : tweet
-        )
-      );
+      // Create the retweet entry in tweets table
+      await createRetweet(tweetId);
       
-      setFollowingTweets(prevTweets => 
-        prevTweets.map(tweet => 
-          tweet.id === tweetId 
-            ? { ...tweet, isRetweeted: true, retweets: tweet.retweets + 1 }
-            : tweet
-        )
-      );
+      // Refresh data to sync state
+      await Promise.all([fetchTweets(), fetchFollowingTweets()]);
     } catch (err: any) {
       throw new Error(err.message);
     }
@@ -594,32 +579,11 @@ export const useTweets = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('User not authenticated');
 
-      const { error } = await supabase
-        .from('retweets')
-        .delete()
-        .match({
-          user_id: user.id,
-          tweet_id: tweetId,
-        });
-
-      if (error) throw error;
+      // Remove from both tables
+      await removeRetweet(tweetId);
       
-      // Update local state immediately for better UX
-      setTweets(prevTweets => 
-        prevTweets.map(tweet => 
-          tweet.id === tweetId 
-            ? { ...tweet, isRetweeted: false, retweets: Math.max(0, tweet.retweets - 1) }
-            : tweet
-        )
-      );
-      
-      setFollowingTweets(prevTweets => 
-        prevTweets.map(tweet => 
-          tweet.id === tweetId 
-            ? { ...tweet, isRetweeted: false, retweets: Math.max(0, tweet.retweets - 1) }
-            : tweet
-        )
-      );
+      // Refresh data to sync state
+      await Promise.all([fetchTweets(), fetchFollowingTweets()]);
     } catch (err: any) {
       throw new Error(err.message);
     }
