@@ -10,7 +10,7 @@ export const useNotifications = () => {
   const [unreadCount, setUnreadCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const subscriptionRef = useRef<RealtimeChannel | null>(null);
+  const channelRef = useRef<RealtimeChannel | null>(null);
 
   const formatNotificationData = (notificationData: NotificationWithProfile): Notification => {
     const notification: Notification = {
@@ -206,11 +206,11 @@ export const useNotifications = () => {
   useEffect(() => {
     const setupSubscription = async () => {
       try {
-        // Clean up existing subscription first
-        if (subscriptionRef.current) {
-          await subscriptionRef.current.unsubscribe();
-          supabase.removeChannel(subscriptionRef.current);
-          subscriptionRef.current = null;
+        // Clean up existing channel first
+        if (channelRef.current) {
+          await channelRef.current.unsubscribe();
+          supabase.removeChannel(channelRef.current);
+          channelRef.current = null;
         }
 
         if (!user) return;
@@ -234,11 +234,9 @@ export const useNotifications = () => {
             }
           );
 
-        // Only subscribe if the channel is not already subscribed
-        if (channel.state !== 'joined') {
-          subscriptionRef.current = channel;
-          await channel.subscribe();
-        }
+        // Store the channel reference and subscribe
+        channelRef.current = channel;
+        await channel.subscribe();
       } catch (error) {
         console.error('Error setting up notifications subscription:', error);
       }
@@ -247,10 +245,10 @@ export const useNotifications = () => {
     setupSubscription();
 
     return () => {
-      if (subscriptionRef.current) {
-        subscriptionRef.current.unsubscribe();
-        supabase.removeChannel(subscriptionRef.current);
-        subscriptionRef.current = null;
+      if (channelRef.current) {
+        channelRef.current.unsubscribe();
+        supabase.removeChannel(channelRef.current);
+        channelRef.current = null;
       }
     };
   }, [user, fetchNotifications]);
