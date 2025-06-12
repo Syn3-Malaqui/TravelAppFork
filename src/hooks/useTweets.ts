@@ -4,6 +4,7 @@ import { Tweet, TweetWithProfile, TweetCategory } from '../types';
 
 export const useTweets = () => {
   const [tweets, setTweets] = useState<Tweet[]>([]);
+  const [followingTweets, setFollowingTweets] = useState<Tweet[]>([]);
   const [replies, setReplies] = useState<{ [tweetId: string]: Tweet[] }>({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -89,6 +90,109 @@ export const useTweets = () => {
     } catch (err: any) {
       setError(err.message);
       console.error('Error fetching tweets:', err);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  const fetchFollowingTweets = useCallback(async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        setFollowingTweets([]);
+        setLoading(false);
+        return;
+      }
+
+      // First, get the list of users the current user follows
+      const { data: followsData, error: followsError } = await supabase
+        .from('follows')
+        .select('following_id')
+        .eq('follower_id', user.id);
+
+      if (followsError) throw followsError;
+
+      const followingIds = followsData.map(follow => follow.following_id);
+      
+      // If user doesn't follow anyone, return empty array
+      if (followingIds.length === 0) {
+        setFollowingTweets([]);
+        setLoading(false);
+        return;
+      }
+
+      // Fetch tweets from followed users
+      const { data, error } = await supabase
+        .from('tweets')
+        .select(`
+          *,
+          profiles (
+            id,
+            username,
+            display_name,
+            avatar_url,
+            bio,
+            verified,
+            followers_count,
+            following_count,
+            country,
+            created_at
+          )
+        `)
+        .in('author_id', followingIds)
+        .is('reply_to', null) // Only fetch top-level tweets, not replies
+        .order('created_at', { ascending: false })
+        .limit(50);
+
+      if (error) throw error;
+
+      // Get user's likes, retweets, and bookmarks
+      const [likesResult, retweetsResult, bookmarksResult] = await Promise.all([
+        supabase.from('likes').select('tweet_id').eq('user_id', user.id),
+        supabase.from('retweets').select('tweet_id').eq('user_id', user.id),
+        supabase.from('bookmarks').select('tweet_id').eq('user_id', user.id)
+      ]);
+      
+      const userLikes = likesResult.data?.map(like => like.tweet_id) || [];
+      const userRetweets = retweetsResult.data?.map(retweet => retweet.tweet_id) || [];
+      const userBookmarks = bookmarksResult.data?.map(bookmark => bookmark.tweet_id) || [];
+
+      const formattedTweets: Tweet[] = (data as TweetWithProfile[]).map(tweet => ({
+        id: tweet.id,
+        content: tweet.content,
+        author: {
+          id: tweet.profiles.id,
+          username: tweet.profiles.username,
+          displayName: tweet.profiles.display_name,
+          avatar: tweet.profiles.avatar_url || '',
+          bio: tweet.profiles.bio,
+          verified: tweet.profiles.verified,
+          followers: tweet.profiles.followers_count,
+          following: tweet.profiles.following_count,
+          country: tweet.profiles.country,
+          joinedDate: new Date(tweet.profiles.created_at),
+        },
+        createdAt: new Date(tweet.created_at),
+        likes: tweet.likes_count,
+        retweets: tweet.retweets_count,
+        replies: tweet.replies_count,
+        views: tweet.views_count,
+        images: tweet.image_urls,
+        isLiked: userLikes.includes(tweet.id),
+        isRetweeted: userRetweets.includes(tweet.id),
+        isBookmarked: userBookmarks.includes(tweet.id),
+        hashtags: tweet.hashtags,
+        mentions: tweet.mentions,
+        tags: tweet.tags || [],
+      }));
+
+      setFollowingTweets(formattedTweets);
+    } catch (err: any) {
+      setError(err.message);
+      console.error('Error fetching following tweets:', err);
     } finally {
       setLoading(false);
     }
@@ -204,6 +308,7 @@ export const useTweets = () => {
 
       // Refresh tweets after creating
       await fetchTweets();
+      await fetchFollowingTweets();
       
       return data;
     } catch (err: any) {
@@ -236,6 +341,7 @@ export const useTweets = () => {
 
       // Refresh main tweets to update reply count
       await fetchTweets();
+      await fetchFollowingTweets();
       
       return data;
     } catch (err: any) {
@@ -271,6 +377,14 @@ export const useTweets = () => {
             : tweet
         )
       );
+      
+      setFollowingTweets(prevTweets => 
+        prevTweets.map(tweet => 
+          tweet.id === tweetId 
+            ? { ...tweet, isLiked: true, likes: tweet.likes + 1 }
+            : tweet
+        )
+      );
     } catch (err: any) {
       throw new Error(err.message);
     }
@@ -293,6 +407,14 @@ export const useTweets = () => {
       
       // Update local state immediately for better UX
       setTweets(prevTweets => 
+        prevTweets.map(tweet => 
+          tweet.id === tweetId 
+            ? { ...tweet, isLiked: false, likes: Math.max(0, tweet.likes - 1) }
+            : tweet
+        )
+      );
+      
+      setFollowingTweets(prevTweets => 
         prevTweets.map(tweet => 
           tweet.id === tweetId 
             ? { ...tweet, isLiked: false, likes: Math.max(0, tweet.likes - 1) }
@@ -331,6 +453,14 @@ export const useTweets = () => {
             : tweet
         )
       );
+      
+      setFollowingTweets(prevTweets => 
+        prevTweets.map(tweet => 
+          tweet.id === tweetId 
+            ? { ...tweet, isRetweeted: true, retweets: tweet.retweets + 1 }
+            : tweet
+        )
+      );
     } catch (err: any) {
       throw new Error(err.message);
     }
@@ -353,6 +483,14 @@ export const useTweets = () => {
       
       // Update local state immediately for better UX
       setTweets(prevTweets => 
+        prevTweets.map(tweet => 
+          tweet.id === tweetId 
+            ? { ...tweet, isRetweeted: false, retweets: Math.max(0, tweet.retweets - 1) }
+            : tweet
+        )
+      );
+      
+      setFollowingTweets(prevTweets => 
         prevTweets.map(tweet => 
           tweet.id === tweetId 
             ? { ...tweet, isRetweeted: false, retweets: Math.max(0, tweet.retweets - 1) }
@@ -391,6 +529,14 @@ export const useTweets = () => {
             : tweet
         )
       );
+      
+      setFollowingTweets(prevTweets => 
+        prevTweets.map(tweet => 
+          tweet.id === tweetId 
+            ? { ...tweet, isBookmarked: true }
+            : tweet
+        )
+      );
     } catch (err: any) {
       throw new Error(err.message);
     }
@@ -419,6 +565,14 @@ export const useTweets = () => {
             : tweet
         )
       );
+      
+      setFollowingTweets(prevTweets => 
+        prevTweets.map(tweet => 
+          tweet.id === tweetId 
+            ? { ...tweet, isBookmarked: false }
+            : tweet
+        )
+      );
     } catch (err: any) {
       throw new Error(err.message);
     }
@@ -427,14 +581,17 @@ export const useTweets = () => {
   // Only fetch tweets once when the hook is first used
   useEffect(() => {
     fetchTweets();
-  }, [fetchTweets]);
+    fetchFollowingTweets();
+  }, [fetchTweets, fetchFollowingTweets]);
 
   return {
     tweets,
+    followingTweets,
     replies,
     loading,
     error,
     fetchTweets,
+    fetchFollowingTweets,
     fetchReplies,
     createTweet,
     createReply,

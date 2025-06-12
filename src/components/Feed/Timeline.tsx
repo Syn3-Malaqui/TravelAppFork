@@ -12,10 +12,11 @@ import { FILTER_COUNTRIES } from '../../types';
 
 export const Timeline: React.FC = () => {
   const navigate = useNavigate();
+  const [activeTab, setActiveTab] = useState<'for-you' | 'following'>('for-you');
   const [categoryFilter, setCategoryFilter] = useState<string | null>(null);
   const [countryFilter, setCountryFilter] = useState<string>('ALL');
   const { user } = useAuth();
-  const { tweets, loading, error, likeTweet, unlikeTweet } = useTweets();
+  const { tweets, followingTweets, loading, error, likeTweet, unlikeTweet } = useTweets();
 
   const handleComposeClick = () => {
     navigate('/compose');
@@ -51,9 +52,16 @@ export const Timeline: React.FC = () => {
     setCountryFilter(countryCode);
   };
 
+  const handleTabChange = (tab: 'for-you' | 'following') => {
+    setActiveTab(tab);
+  };
+
+  // Get the appropriate tweets based on active tab
+  const currentTweets = activeTab === 'for-you' ? tweets : followingTweets;
+
   // Filter tweets based on selected category and country
   const filteredTweets = useMemo(() => {
-    let filtered = tweets;
+    let filtered = currentTweets;
 
     // Filter by category
     if (categoryFilter) {
@@ -70,7 +78,7 @@ export const Timeline: React.FC = () => {
     }
 
     return filtered;
-  }, [tweets, categoryFilter, countryFilter]);
+  }, [currentTweets, categoryFilter, countryFilter]);
 
   if (loading) {
     return (
@@ -78,11 +86,17 @@ export const Timeline: React.FC = () => {
         <div className="w-full max-w-2xl border-r border-gray-200 overflow-hidden">
           {/* Desktop Header */}
           <div className="hidden md:block sticky top-0 bg-white/80 backdrop-blur-md border-b border-gray-200 p-4 z-10">
-            <h1 className="text-xl font-bold">Home</h1>
+            <div className="flex items-center justify-between">
+              <h1 className="text-xl font-bold">Home</h1>
+              <CountryFilter 
+                selectedCountry={countryFilter}
+                onCountryChange={handleCountryFilter}
+              />
+            </div>
           </div>
 
           {/* Mobile Tabs */}
-          <MobileTabs />
+          <MobileTabs activeTab={activeTab} onTabChange={handleTabChange} />
 
           {/* Loading State */}
           <div className="flex items-center justify-center py-12">
@@ -100,11 +114,17 @@ export const Timeline: React.FC = () => {
         <div className="w-full max-w-2xl border-r border-gray-200 overflow-hidden">
           {/* Desktop Header */}
           <div className="hidden md:block sticky top-0 bg-white/80 backdrop-blur-md border-b border-gray-200 p-4 z-10">
-            <h1 className="text-xl font-bold">Home</h1>
+            <div className="flex items-center justify-between">
+              <h1 className="text-xl font-bold">Home</h1>
+              <CountryFilter 
+                selectedCountry={countryFilter}
+                onCountryChange={handleCountryFilter}
+              />
+            </div>
           </div>
 
           {/* Mobile Tabs */}
-          <MobileTabs />
+          <MobileTabs activeTab={activeTab} onTabChange={handleTabChange} />
 
           {/* Error State */}
           <div className="flex flex-col items-center justify-center py-12 px-4">
@@ -133,7 +153,7 @@ export const Timeline: React.FC = () => {
         </div>
 
         {/* Mobile Tabs */}
-        <MobileTabs />
+        <MobileTabs activeTab={activeTab} onTabChange={handleTabChange} />
 
         {/* Mobile Filters - Compact Icon Row */}
         <div className="md:hidden bg-white border-b border-gray-200 px-4 py-3">
@@ -212,7 +232,18 @@ export const Timeline: React.FC = () => {
           <div className="flex flex-col items-end pb-20 md:pb-0">
             {filteredTweets.length === 0 ? (
               <div className="w-full text-center py-12 text-gray-500">
-                {categoryFilter || countryFilter !== 'ALL' ? (
+                {activeTab === 'following' && currentTweets.length === 0 ? (
+                  <>
+                    <p className="text-lg mb-4">No tweets from people you follow yet!</p>
+                    <p className="text-sm text-gray-400 mb-4">Follow some accounts to see their tweets here.</p>
+                    <button 
+                      onClick={() => navigate('/search')}
+                      className="bg-blue-500 hover:bg-blue-600 text-white px-6 py-2 rounded-full font-medium transition-colors"
+                    >
+                      Find people to follow
+                    </button>
+                  </>
+                ) : categoryFilter || countryFilter !== 'ALL' ? (
                   <>
                     <p className="text-lg">No tweets found with the selected filters.</p>
                     <div className="mt-4 space-x-2">
