@@ -29,31 +29,6 @@ export const useTweets = () => {
             following_count,
             country,
             created_at
-          ),
-          original_tweet:original_tweet_id (
-            id,
-            content,
-            image_urls,
-            hashtags,
-            mentions,
-            tags,
-            likes_count,
-            retweets_count,
-            replies_count,
-            views_count,
-            created_at,
-            profiles (
-              id,
-              username,
-              display_name,
-              avatar_url,
-              bio,
-              verified,
-              followers_count,
-              following_count,
-              country,
-              created_at
-            )
           )
         `)
         .is('reply_to', null) // Only fetch top-level tweets, not replies
@@ -82,86 +57,34 @@ export const useTweets = () => {
         userBookmarks = bookmarksResult.data?.map(bookmark => bookmark.tweet_id) || [];
       }
 
-      const formattedTweets: Tweet[] = (data as any[]).map(tweet => {
-        // If this is a retweet, format the original tweet data
-        if (tweet.is_retweet && tweet.original_tweet) {
-          const originalTweet = tweet.original_tweet;
-          return {
-            id: tweet.id,
-            content: originalTweet.content,
-            author: {
-              id: originalTweet.profiles.id,
-              username: originalTweet.profiles.username,
-              displayName: originalTweet.profiles.display_name,
-              avatar: originalTweet.profiles.avatar_url || '',
-              bio: originalTweet.profiles.bio,
-              verified: originalTweet.profiles.verified,
-              followers: originalTweet.profiles.followers_count,
-              following: originalTweet.profiles.following_count,
-              country: originalTweet.profiles.country,
-              joinedDate: new Date(originalTweet.profiles.created_at),
-            },
-            createdAt: new Date(originalTweet.created_at),
-            likes: originalTweet.likes_count,
-            retweets: originalTweet.retweets_count,
-            replies: originalTweet.replies_count,
-            views: originalTweet.views_count,
-            images: originalTweet.image_urls,
-            isLiked: userLikes.includes(originalTweet.id),
-            isRetweeted: userRetweets.includes(originalTweet.id),
-            isBookmarked: userBookmarks.includes(originalTweet.id),
-            hashtags: originalTweet.hashtags,
-            mentions: originalTweet.mentions,
-            tags: originalTweet.tags || [],
-            // Retweet metadata
-            isRetweet: true,
-            originalTweetId: originalTweet.id,
-            retweetedBy: {
-              id: tweet.profiles.id,
-              username: tweet.profiles.username,
-              displayName: tweet.profiles.display_name,
-              avatar: tweet.profiles.avatar_url || '',
-              bio: tweet.profiles.bio,
-              verified: tweet.profiles.verified,
-              followers: tweet.profiles.followers_count,
-              following: tweet.profiles.following_count,
-              country: tweet.profiles.country,
-              joinedDate: new Date(tweet.profiles.created_at),
-            },
-            retweetedAt: new Date(tweet.created_at),
-          };
-        }
-
-        // Regular tweet
-        return {
-          id: tweet.id,
-          content: tweet.content,
-          author: {
-            id: tweet.profiles.id,
-            username: tweet.profiles.username,
-            displayName: tweet.profiles.display_name,
-            avatar: tweet.profiles.avatar_url || '',
-            bio: tweet.profiles.bio,
-            verified: tweet.profiles.verified,
-            followers: tweet.profiles.followers_count,
-            following: tweet.profiles.following_count,
-            country: tweet.profiles.country,
-            joinedDate: new Date(tweet.profiles.created_at),
-          },
-          createdAt: new Date(tweet.created_at),
-          likes: tweet.likes_count,
-          retweets: tweet.retweets_count,
-          replies: tweet.replies_count,
-          views: tweet.views_count,
-          images: tweet.image_urls,
-          isLiked: userLikes.includes(tweet.id),
-          isRetweeted: userRetweets.includes(tweet.id),
-          isBookmarked: userBookmarks.includes(tweet.id),
-          hashtags: tweet.hashtags,
-          mentions: tweet.mentions,
-          tags: tweet.tags || [],
-        };
-      });
+      const formattedTweets: Tweet[] = (data as TweetWithProfile[]).map(tweet => ({
+        id: tweet.id,
+        content: tweet.content,
+        author: {
+          id: tweet.profiles.id,
+          username: tweet.profiles.username,
+          displayName: tweet.profiles.display_name,
+          avatar: tweet.profiles.avatar_url || '',
+          bio: tweet.profiles.bio,
+          verified: tweet.profiles.verified,
+          followers: tweet.profiles.followers_count,
+          following: tweet.profiles.following_count,
+          country: tweet.profiles.country,
+          joinedDate: new Date(tweet.profiles.created_at),
+        },
+        createdAt: new Date(tweet.created_at),
+        likes: tweet.likes_count,
+        retweets: tweet.retweets_count,
+        replies: tweet.replies_count,
+        views: tweet.views_count,
+        images: tweet.image_urls,
+        isLiked: userLikes.includes(tweet.id),
+        isRetweeted: userRetweets.includes(tweet.id),
+        isBookmarked: userBookmarks.includes(tweet.id),
+        hashtags: tweet.hashtags,
+        mentions: tweet.mentions,
+        tags: tweet.tags || [],
+      }));
 
       setTweets(formattedTweets);
     } catch (err: any) {
@@ -217,31 +140,6 @@ export const useTweets = () => {
             following_count,
             country,
             created_at
-          ),
-          original_tweet:original_tweet_id (
-            id,
-            content,
-            image_urls,
-            hashtags,
-            mentions,
-            tags,
-            likes_count,
-            retweets_count,
-            replies_count,
-            views_count,
-            created_at,
-            profiles (
-              id,
-              username,
-              display_name,
-              avatar_url,
-              bio,
-              verified,
-              followers_count,
-              following_count,
-              country,
-              created_at
-            )
           )
         `)
         .in('author_id', followingIds)
@@ -262,86 +160,34 @@ export const useTweets = () => {
       const userRetweets = retweetsResult.data?.map(retweet => retweet.tweet_id) || [];
       const userBookmarks = bookmarksResult.data?.map(bookmark => bookmark.tweet_id) || [];
 
-      const formattedTweets: Tweet[] = (data as any[]).map(tweet => {
-        // If this is a retweet, format the original tweet data
-        if (tweet.is_retweet && tweet.original_tweet) {
-          const originalTweet = tweet.original_tweet;
-          return {
-            id: tweet.id,
-            content: originalTweet.content,
-            author: {
-              id: originalTweet.profiles.id,
-              username: originalTweet.profiles.username,
-              displayName: originalTweet.profiles.display_name,
-              avatar: originalTweet.profiles.avatar_url || '',
-              bio: originalTweet.profiles.bio,
-              verified: originalTweet.profiles.verified,
-              followers: originalTweet.profiles.followers_count,
-              following: originalTweet.profiles.following_count,
-              country: originalTweet.profiles.country,
-              joinedDate: new Date(originalTweet.profiles.created_at),
-            },
-            createdAt: new Date(originalTweet.created_at),
-            likes: originalTweet.likes_count,
-            retweets: originalTweet.retweets_count,
-            replies: originalTweet.replies_count,
-            views: originalTweet.views_count,
-            images: originalTweet.image_urls,
-            isLiked: userLikes.includes(originalTweet.id),
-            isRetweeted: userRetweets.includes(originalTweet.id),
-            isBookmarked: userBookmarks.includes(originalTweet.id),
-            hashtags: originalTweet.hashtags,
-            mentions: originalTweet.mentions,
-            tags: originalTweet.tags || [],
-            // Retweet metadata
-            isRetweet: true,
-            originalTweetId: originalTweet.id,
-            retweetedBy: {
-              id: tweet.profiles.id,
-              username: tweet.profiles.username,
-              displayName: tweet.profiles.display_name,
-              avatar: tweet.profiles.avatar_url || '',
-              bio: tweet.profiles.bio,
-              verified: tweet.profiles.verified,
-              followers: tweet.profiles.followers_count,
-              following: tweet.profiles.following_count,
-              country: tweet.profiles.country,
-              joinedDate: new Date(tweet.profiles.created_at),
-            },
-            retweetedAt: new Date(tweet.created_at),
-          };
-        }
-
-        // Regular tweet
-        return {
-          id: tweet.id,
-          content: tweet.content,
-          author: {
-            id: tweet.profiles.id,
-            username: tweet.profiles.username,
-            displayName: tweet.profiles.display_name,
-            avatar: tweet.profiles.avatar_url || '',
-            bio: tweet.profiles.bio,
-            verified: tweet.profiles.verified,
-            followers: tweet.profiles.followers_count,
-            following: tweet.profiles.following_count,
-            country: tweet.profiles.country,
-            joinedDate: new Date(tweet.profiles.created_at),
-          },
-          createdAt: new Date(tweet.created_at),
-          likes: tweet.likes_count,
-          retweets: tweet.retweets_count,
-          replies: tweet.replies_count,
-          views: tweet.views_count,
-          images: tweet.image_urls,
-          isLiked: userLikes.includes(tweet.id),
-          isRetweeted: userRetweets.includes(tweet.id),
-          isBookmarked: userBookmarks.includes(tweet.id),
-          hashtags: tweet.hashtags,
-          mentions: tweet.mentions,
-          tags: tweet.tags || [],
-        };
-      });
+      const formattedTweets: Tweet[] = (data as TweetWithProfile[]).map(tweet => ({
+        id: tweet.id,
+        content: tweet.content,
+        author: {
+          id: tweet.profiles.id,
+          username: tweet.profiles.username,
+          displayName: tweet.profiles.display_name,
+          avatar: tweet.profiles.avatar_url || '',
+          bio: tweet.profiles.bio,
+          verified: tweet.profiles.verified,
+          followers: tweet.profiles.followers_count,
+          following: tweet.profiles.following_count,
+          country: tweet.profiles.country,
+          joinedDate: new Date(tweet.profiles.created_at),
+        },
+        createdAt: new Date(tweet.created_at),
+        likes: tweet.likes_count,
+        retweets: tweet.retweets_count,
+        replies: tweet.replies_count,
+        views: tweet.views_count,
+        images: tweet.image_urls,
+        isLiked: userLikes.includes(tweet.id),
+        isRetweeted: userRetweets.includes(tweet.id),
+        isBookmarked: userBookmarks.includes(tweet.id),
+        hashtags: tweet.hashtags,
+        mentions: tweet.mentions,
+        tags: tweet.tags || [],
+      }));
 
       setFollowingTweets(formattedTweets);
     } catch (err: any) {
@@ -503,34 +349,6 @@ export const useTweets = () => {
     }
   };
 
-  const createRetweet = async (originalTweetId: string) => {
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('User not authenticated');
-
-      const { data, error } = await supabase
-        .from('tweets')
-        .insert({
-          content: '', // Retweets don't have content
-          author_id: user.id,
-          is_retweet: true,
-          original_tweet_id: originalTweetId,
-        })
-        .select()
-        .single();
-
-      if (error) throw error;
-
-      // Refresh tweets after creating retweet
-      await fetchTweets();
-      await fetchFollowingTweets();
-      
-      return data;
-    } catch (err: any) {
-      throw new Error(err.message);
-    }
-  };
-
   const likeTweet = async (tweetId: string) => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
@@ -554,7 +372,7 @@ export const useTweets = () => {
       // Update local state immediately for better UX
       setTweets(prevTweets => 
         prevTweets.map(tweet => 
-          (tweet.originalTweetId === tweetId || tweet.id === tweetId)
+          tweet.id === tweetId 
             ? { ...tweet, isLiked: true, likes: tweet.likes + 1 }
             : tweet
         )
@@ -562,7 +380,7 @@ export const useTweets = () => {
       
       setFollowingTweets(prevTweets => 
         prevTweets.map(tweet => 
-          (tweet.originalTweetId === tweetId || tweet.id === tweetId)
+          tweet.id === tweetId 
             ? { ...tweet, isLiked: true, likes: tweet.likes + 1 }
             : tweet
         )
@@ -590,7 +408,7 @@ export const useTweets = () => {
       // Update local state immediately for better UX
       setTweets(prevTweets => 
         prevTweets.map(tweet => 
-          (tweet.originalTweetId === tweetId || tweet.id === tweetId)
+          tweet.id === tweetId 
             ? { ...tweet, isLiked: false, likes: Math.max(0, tweet.likes - 1) }
             : tweet
         )
@@ -598,7 +416,7 @@ export const useTweets = () => {
       
       setFollowingTweets(prevTweets => 
         prevTweets.map(tweet => 
-          (tweet.originalTweetId === tweetId || tweet.id === tweetId)
+          tweet.id === tweetId 
             ? { ...tweet, isLiked: false, likes: Math.max(0, tweet.likes - 1) }
             : tweet
         )
@@ -613,13 +431,24 @@ export const useTweets = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('User not authenticated');
 
-      // Create a retweet entry in the database
-      await createRetweet(tweetId);
+      const { error } = await supabase
+        .from('retweets')
+        .insert({
+          user_id: user.id,
+          tweet_id: tweetId,
+        });
+
+      if (error) {
+        if (error.code === '23505') {
+          throw new Error('Tweet already retweeted');
+        }
+        throw error;
+      }
       
       // Update local state immediately for better UX
       setTweets(prevTweets => 
         prevTweets.map(tweet => 
-          (tweet.originalTweetId === tweetId || tweet.id === tweetId)
+          tweet.id === tweetId 
             ? { ...tweet, isRetweeted: true, retweets: tweet.retweets + 1 }
             : tweet
         )
@@ -627,7 +456,7 @@ export const useTweets = () => {
       
       setFollowingTweets(prevTweets => 
         prevTweets.map(tweet => 
-          (tweet.originalTweetId === tweetId || tweet.id === tweetId)
+          tweet.id === tweetId 
             ? { ...tweet, isRetweeted: true, retweets: tweet.retweets + 1 }
             : tweet
         )
@@ -655,7 +484,7 @@ export const useTweets = () => {
       // Update local state immediately for better UX
       setTweets(prevTweets => 
         prevTweets.map(tweet => 
-          (tweet.originalTweetId === tweetId || tweet.id === tweetId)
+          tweet.id === tweetId 
             ? { ...tweet, isRetweeted: false, retweets: Math.max(0, tweet.retweets - 1) }
             : tweet
         )
@@ -663,7 +492,7 @@ export const useTweets = () => {
       
       setFollowingTweets(prevTweets => 
         prevTweets.map(tweet => 
-          (tweet.originalTweetId === tweetId || tweet.id === tweetId)
+          tweet.id === tweetId 
             ? { ...tweet, isRetweeted: false, retweets: Math.max(0, tweet.retweets - 1) }
             : tweet
         )
@@ -695,7 +524,7 @@ export const useTweets = () => {
       // Update local state immediately for better UX
       setTweets(prevTweets => 
         prevTweets.map(tweet => 
-          (tweet.originalTweetId === tweetId || tweet.id === tweetId)
+          tweet.id === tweetId 
             ? { ...tweet, isBookmarked: true }
             : tweet
         )
@@ -703,7 +532,7 @@ export const useTweets = () => {
       
       setFollowingTweets(prevTweets => 
         prevTweets.map(tweet => 
-          (tweet.originalTweetId === tweetId || tweet.id === tweetId)
+          tweet.id === tweetId 
             ? { ...tweet, isBookmarked: true }
             : tweet
         )
@@ -731,7 +560,7 @@ export const useTweets = () => {
       // Update local state immediately for better UX
       setTweets(prevTweets => 
         prevTweets.map(tweet => 
-          (tweet.originalTweetId === tweetId || tweet.id === tweetId)
+          tweet.id === tweetId 
             ? { ...tweet, isBookmarked: false }
             : tweet
         )
@@ -739,7 +568,7 @@ export const useTweets = () => {
       
       setFollowingTweets(prevTweets => 
         prevTweets.map(tweet => 
-          (tweet.originalTweetId === tweetId || tweet.id === tweetId)
+          tweet.id === tweetId 
             ? { ...tweet, isBookmarked: false }
             : tweet
         )
@@ -766,7 +595,6 @@ export const useTweets = () => {
     fetchReplies,
     createTweet,
     createReply,
-    createRetweet,
     likeTweet,
     unlikeTweet,
     retweetTweet,

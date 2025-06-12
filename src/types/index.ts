@@ -29,11 +29,6 @@ export interface Tweet {
   hashtags: string[];
   mentions: string[];
   tags?: string[];
-  // Retweet fields
-  isRetweet?: boolean;
-  originalTweetId?: string;
-  retweetedBy?: User;
-  retweetedAt?: Date;
 }
 
 export interface Notification {

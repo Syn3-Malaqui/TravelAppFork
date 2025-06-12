@@ -16,7 +16,7 @@ export const Timeline: React.FC = () => {
   const [categoryFilter, setCategoryFilter] = useState<string | null>(null);
   const [countryFilter, setCountryFilter] = useState<string>('ALL');
   const { user } = useAuth();
-  const { tweets, followingTweets, loading, error, likeTweet, unlikeTweet, retweetTweet, unretweetTweet } = useTweets();
+  const { tweets, followingTweets, loading, error, likeTweet, unlikeTweet } = useTweets();
 
   const handleComposeClick = () => {
     navigate('/compose');
@@ -34,16 +34,9 @@ export const Timeline: React.FC = () => {
     }
   };
 
-  const handleRetweet = async (tweetId: string, isCurrentlyRetweeted: boolean) => {
-    try {
-      if (isCurrentlyRetweeted) {
-        await unretweetTweet(tweetId);
-      } else {
-        await retweetTweet(tweetId);
-      }
-    } catch (error) {
-      console.error('Error toggling retweet:', error);
-    }
+  const handleRetweet = (tweetId: string) => {
+    console.log('Retweet:', tweetId);
+    // TODO: Implement retweet functionality
   };
 
   const handleBookmark = (tweetId: string) => {
@@ -292,9 +285,9 @@ export const Timeline: React.FC = () => {
                   <div className="hidden md:block">
                     <TweetCard 
                       tweet={tweet} 
-                      onLike={() => handleLike(tweet.originalTweetId || tweet.id, tweet.isLiked)}
-                      onRetweet={() => handleRetweet(tweet.originalTweetId || tweet.id, tweet.isRetweeted)}
-                      onBookmark={() => handleBookmark(tweet.originalTweetId || tweet.id)}
+                      onLike={() => handleLike(tweet.id, tweet.isLiked)}
+                      onRetweet={() => handleRetweet(tweet.id)}
+                      onBookmark={() => handleBookmark(tweet.id)}
                       currentUserId={user?.id}
                     />
                   </div>
@@ -302,9 +295,9 @@ export const Timeline: React.FC = () => {
                   <div className="md:hidden">
                     <MobileTweetCard 
                       tweet={tweet}
-                      onLike={() => handleLike(tweet.originalTweetId || tweet.id, tweet.isLiked)}
-                      onRetweet={() => handleRetweet(tweet.originalTweetId || tweet.id, tweet.isRetweeted)}
-                      onBookmark={() => handleBookmark(tweet.originalTweetId || tweet.id)}
+                      onLike={() => handleLike(tweet.id, tweet.isLiked)}
+                      onRetweet={() => handleRetweet(tweet.id)}
+                      onBookmark={() => handleBookmark(tweet.id)}
                       currentUserId={user?.id}
                     />
                   </div>
