@@ -2,8 +2,10 @@ import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../lib/supabase';
 import { Notification, NotificationWithProfile } from '../types';
 import type { RealtimeChannel } from '@supabase/supabase-js';
+import { useAuth } from './useAuth';
 
 export const useNotifications = () => {
+  const { user } = useAuth();
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -69,7 +71,6 @@ export const useNotifications = () => {
       setLoading(true);
       setError(null);
 
-      const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
         setNotifications([]);
         setUnreadCount(0);
@@ -127,7 +128,7 @@ export const useNotifications = () => {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [user]);
 
   const markAsRead = async (notificationId: string) => {
     try {
@@ -156,7 +157,6 @@ export const useNotifications = () => {
 
   const markAllAsRead = async () => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
       const { error } = await supabase
@@ -207,12 +207,13 @@ export const useNotifications = () => {
 
     const setupSubscription = async () => {
       try {
-        const { data: { user } } = await supabase.auth.getUser();
-        
         if (!user) return;
 
+        // Create a unique channel name for this user
+        const channelName = `notifications_user_${user.id}`;
+        
         subscription = supabase
-          .channel('notifications')
+          .channel(channelName)
           .on(
             'postgres_changes',
             {
@@ -237,9 +238,10 @@ export const useNotifications = () => {
     return () => {
       if (subscription) {
         subscription.unsubscribe();
+        supabase.removeChannel(subscription);
       }
     };
-  }, [fetchNotifications]);
+  }, [user, fetchNotifications]);
 
   useEffect(() => {
     fetchNotifications();
