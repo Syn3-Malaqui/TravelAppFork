@@ -38,18 +38,20 @@ export const MobileCountryFilter: React.FC<MobileCountryFilterProps> = ({
             size="sm"
             className="h-10 w-10 p-0 rounded-full border border-gray-200 hover:bg-gray-50"
           >
-            <span className="text-lg">{selectedCountryData.flag}</span>
+            <div className="w-6 h-6 rounded-full bg-gray-100 flex items-center justify-center">
+              <span className="text-sm">{selectedCountryData.flag}</span>
+            </div>
           </Button>
         </DialogTrigger>
         
-        <DialogContent className="w-[90vw] max-w-sm h-[60vh] p-0">
-          <DialogHeader className="p-3 border-b border-gray-200">
+        <DialogContent className="w-[90vw] max-w-sm max-h-[70vh] p-0 flex flex-col">
+          <DialogHeader className="p-3 border-b border-gray-200 flex-shrink-0">
             <DialogTitle className="text-base font-semibold">Select Country</DialogTitle>
           </DialogHeader>
           
-          <div className="flex flex-col h-full">
+          <div className="flex flex-col flex-1 min-h-0">
             {/* Search Input */}
-            <div className="p-3 border-b border-gray-100">
+            <div className="p-3 border-b border-gray-100 flex-shrink-0">
               <input
                 type="text"
                 value={searchQuery}
@@ -59,34 +61,42 @@ export const MobileCountryFilter: React.FC<MobileCountryFilterProps> = ({
               />
             </div>
 
-            {/* Country Grid */}
+            {/* Country List - Scrollable */}
             <div className="flex-1 overflow-y-auto p-3">
-              <div className="grid grid-cols-4 gap-2">
+              <div className="space-y-1">
                 {filteredCountries.map((country) => (
                   <button
                     key={country.code}
                     onClick={() => handleCountrySelect(country.code)}
-                    className={`relative flex flex-col items-center p-3 rounded-lg hover:bg-gray-50 transition-colors ${
+                    className={`w-full flex items-center space-x-3 p-3 rounded-lg hover:bg-gray-50 transition-colors ${
                       selectedCountry === country.code ? 'bg-blue-50 ring-2 ring-blue-500' : ''
                     }`}
-                    title={country.name}
                   >
-                    <span className="text-2xl mb-1">{country.flag}</span>
-                    <span className="text-xs text-gray-600 text-center leading-tight">
-                      {country.code}
-                    </span>
-                    {selectedCountry === country.code && (
-                      <div className="absolute -top-1 -right-1 w-5 h-5 bg-blue-500 rounded-full flex items-center justify-center">
-                        <Check className="h-3 w-3 text-white" />
+                    <div className="relative flex-shrink-0">
+                      <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center border border-gray-200">
+                        <span className="text-xl">{country.flag}</span>
                       </div>
-                    )}
+                      {selectedCountry === country.code && (
+                        <div className="absolute -top-1 -right-1 w-5 h-5 bg-blue-500 rounded-full flex items-center justify-center">
+                          <Check className="h-3 w-3 text-white" />
+                        </div>
+                      )}
+                    </div>
+                    <div className="flex-1 text-left min-w-0">
+                      <span className="text-sm font-medium text-gray-900 truncate block">
+                        {country.name}
+                      </span>
+                      <span className="text-xs text-gray-500">
+                        {country.code}
+                      </span>
+                    </div>
                   </button>
                 ))}
               </div>
             </div>
 
             {/* Footer */}
-            <div className="p-3 border-t border-gray-200 bg-gray-50">
+            <div className="p-3 border-t border-gray-200 bg-gray-50 flex-shrink-0">
               <Button
                 variant="outline"
                 onClick={() => setOpen(false)}
