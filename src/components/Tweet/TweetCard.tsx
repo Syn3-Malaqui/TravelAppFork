@@ -67,28 +67,51 @@ export const TweetCard: React.FC<TweetCardProps> = ({
     navigate(`/profile/${tweet.author.username}`);
   };
 
+  const handleRetweetedByClick = () => {
+    if (tweet.retweetedBy) {
+      navigate(`/profile/${tweet.retweetedBy.username}`);
+    }
+  };
+
   const handleReplyClick = () => {
     setShowReplyComposer(!showReplyComposer);
   };
 
   const handleShowReplies = async () => {
     if (!showReplies) {
-      await fetchReplies(tweet.id);
+      await fetchReplies(tweet.originalTweetId || tweet.id);
     }
     setShowReplies(!showReplies);
   };
 
   const handleReplySuccess = async () => {
     setShowReplyComposer(false);
-    await fetchReplies(tweet.id);
+    await fetchReplies(tweet.originalTweetId || tweet.id);
     setShowReplies(true);
   };
 
   const isOwnTweet = currentUserId === tweet.author.id;
-  const tweetReplies = replies[tweet.id] || [];
+  const tweetReplies = replies[tweet.originalTweetId || tweet.id] || [];
 
   return (
     <div className={`border-b border-gray-200 hover:bg-gray-50 transition-colors ${isReply ? 'ml-12 border-l-2 border-gray-200' : ''}`}>
+      {/* Retweet Header */}
+      {tweet.isRetweet && tweet.retweetedBy && (
+        <div className="px-4 pt-3 pb-1">
+          <div className="flex items-center space-x-2 text-gray-500 text-sm">
+            <Repeat2 className="w-4 h-4" />
+            <span 
+              className="hover:underline cursor-pointer"
+              onClick={handleRetweetedByClick}
+            >
+              <span className="font-medium">{tweet.retweetedBy.displayName}</span> retweeted
+            </span>
+            <span>·</span>
+            <span>{formatDistanceToNow(tweet.retweetedAt!, { addSuffix: true })}</span>
+          </div>
+        </div>
+      )}
+
       <div className="p-4">
         <div className="flex gap-4">
           {/* Avatar */}
