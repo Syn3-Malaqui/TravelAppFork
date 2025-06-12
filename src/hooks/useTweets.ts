@@ -4,6 +4,7 @@ import { Tweet, TweetWithProfile, TweetCategory } from '../types';
 
 export const useTweets = () => {
   const [tweets, setTweets] = useState<Tweet[]>([]);
+  const [replies, setReplies] = useState<{ [tweetId: string]: Tweet[] }>({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -29,6 +30,7 @@ export const useTweets = () => {
             created_at
           )
         `)
+        .is('reply_to', null) // Only fetch top-level tweets, not replies
         .order('created_at', { ascending: false })
         .limit(50);
 
@@ -92,6 +94,90 @@ export const useTweets = () => {
     }
   }, []);
 
+  const fetchReplies = async (tweetId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('tweets')
+        .select(`
+          *,
+          profiles (
+            id,
+            username,
+            display_name,
+            avatar_url,
+            bio,
+            verified,
+            followers_count,
+            following_count,
+            country,
+            created_at
+          )
+        `)
+        .eq('reply_to', tweetId)
+        .order('created_at', { ascending: true });
+
+      if (error) throw error;
+
+      // Get current user to check likes/retweets/bookmarks
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      let userLikes: string[] = [];
+      let userRetweets: string[] = [];
+      let userBookmarks: string[] = [];
+      
+      if (user) {
+        const [likesResult, retweetsResult, bookmarksResult] = await Promise.all([
+          supabase.from('likes').select('tweet_id').eq('user_id', user.id),
+          supabase.from('retweets').select('tweet_id').eq('user_id', user.id),
+          supabase.from('bookmarks').select('tweet_id').eq('user_id', user.id)
+        ]);
+        
+        userLikes = likesResult.data?.map(like => like.tweet_id) || [];
+        userRetweets = retweetsResult.data?.map(retweet => retweet.tweet_id) || [];
+        userBookmarks = bookmarksResult.data?.map(bookmark => bookmark.tweet_id) || [];
+      }
+
+      const formattedReplies: Tweet[] = (data as TweetWithProfile[]).map(tweet => ({
+        id: tweet.id,
+        content: tweet.content,
+        author: {
+          id: tweet.profiles.id,
+          username: tweet.profiles.username,
+          displayName: tweet.profiles.display_name,
+          avatar: tweet.profiles.avatar_url || '',
+          bio: tweet.profiles.bio,
+          verified: tweet.profiles.verified,
+          followers: tweet.profiles.followers_count,
+          following: tweet.profiles.following_count,
+          country: tweet.profiles.country,
+          joinedDate: new Date(tweet.profiles.created_at),
+        },
+        createdAt: new Date(tweet.created_at),
+        likes: tweet.likes_count,
+        retweets: tweet.retweets_count,
+        replies: tweet.replies_count,
+        views: tweet.views_count,
+        images: tweet.image_urls,
+        isLiked: userLikes.includes(tweet.id),
+        isRetweeted: userRetweets.includes(tweet.id),
+        isBookmarked: userBookmarks.includes(tweet.id),
+        hashtags: tweet.hashtags,
+        mentions: tweet.mentions,
+        tags: tweet.tags || [],
+      }));
+
+      setReplies(prev => ({
+        ...prev,
+        [tweetId]: formattedReplies
+      }));
+
+      return formattedReplies;
+    } catch (err: any) {
+      console.error('Error fetching replies:', err);
+      throw new Error(err.message);
+    }
+  };
+
   const createTweet = async (content: string, imageUrls: string[] = [], categories: TweetCategory[] = []) => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
@@ -117,6 +203,38 @@ export const useTweets = () => {
       if (error) throw error;
 
       // Refresh tweets after creating
+      await fetchTweets();
+      
+      return data;
+    } catch (err: any) {
+      throw new Error(err.message);
+    }
+  };
+
+  const createReply = async (content: string, replyToId: string) => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('User not authenticated');
+
+      // Extract hashtags and mentions from content
+      const hashtags = content.match(/#\w+/g)?.map(tag => tag.slice(1)) || [];
+      const mentions = content.match(/@\w+/g)?.map(mention => mention.slice(1)) || [];
+
+      const { data, error } = await supabase
+        .from('tweets')
+        .insert({
+          content,
+          author_id: user.id,
+          reply_to: replyToId,
+          hashtags,
+          mentions,
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      // Refresh main tweets to update reply count
       await fetchTweets();
       
       return data;
@@ -313,10 +431,13 @@ export const useTweets = () => {
 
   return {
     tweets,
+    replies,
     loading,
     error,
     fetchTweets,
+    fetchReplies,
     createTweet,
+    createReply,
     likeTweet,
     unlikeTweet,
     retweetTweet,
