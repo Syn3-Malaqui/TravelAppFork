@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '../lib/supabase';
 import { Notification, NotificationWithProfile } from '../types';
 import type { RealtimeChannel } from '@supabase/supabase-js';
@@ -10,6 +10,7 @@ export const useNotifications = () => {
   const [unreadCount, setUnreadCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const subscriptionRef = useRef<RealtimeChannel | null>(null);
 
   const formatNotificationData = (notificationData: NotificationWithProfile): Notification => {
     const notification: Notification = {
@@ -203,16 +204,21 @@ export const useNotifications = () => {
 
   // Set up real-time subscription for notifications
   useEffect(() => {
-    let subscription: RealtimeChannel | null = null;
-
     const setupSubscription = async () => {
       try {
+        // Clean up existing subscription first
+        if (subscriptionRef.current) {
+          await subscriptionRef.current.unsubscribe();
+          supabase.removeChannel(subscriptionRef.current);
+          subscriptionRef.current = null;
+        }
+
         if (!user) return;
 
         // Create a unique channel name for this user
         const channelName = `notifications_user_${user.id}`;
         
-        subscription = supabase
+        const channel = supabase
           .channel(channelName)
           .on(
             'postgres_changes',
@@ -226,8 +232,13 @@ export const useNotifications = () => {
               // Refresh notifications when new ones arrive
               fetchNotifications();
             }
-          )
-          .subscribe();
+          );
+
+        // Only subscribe if the channel is not already subscribed
+        if (channel.state !== 'joined') {
+          subscriptionRef.current = channel;
+          await channel.subscribe();
+        }
       } catch (error) {
         console.error('Error setting up notifications subscription:', error);
       }
@@ -236,9 +247,10 @@ export const useNotifications = () => {
     setupSubscription();
 
     return () => {
-      if (subscription) {
-        subscription.unsubscribe();
-        supabase.removeChannel(subscription);
+      if (subscriptionRef.current) {
+        subscriptionRef.current.unsubscribe();
+        supabase.removeChannel(subscriptionRef.current);
+        subscriptionRef.current = null;
       }
     };
   }, [user, fetchNotifications]);
