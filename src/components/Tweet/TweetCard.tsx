@@ -46,7 +46,7 @@ export const TweetCard: React.FC<TweetCardProps> = ({
   const navigate = useNavigate();
   const [showReplyComposer, setShowReplyComposer] = useState(false);
   const [showReplies, setShowReplies] = useState(false);
-  const { replies, fetchReplies, createRetweet, removeRetweet } = useTweets();
+  const { replies, fetchReplies } = useTweets();
 
   const formatNumber = (num: number): string => {
     if (num >= 1000000) {
@@ -88,18 +88,6 @@ export const TweetCard: React.FC<TweetCardProps> = ({
     setShowReplyComposer(false);
     await fetchReplies(tweet.id);
     setShowReplies(true);
-  };
-
-  const handleRetweetClick = async () => {
-    try {
-      if (tweet.isRetweeted) {
-        await removeRetweet(tweet.id);
-      } else {
-        await createRetweet(tweet.id);
-      }
-    } catch (error: any) {
-      console.error('Error toggling retweet:', error.message);
-    }
   };
 
   const isOwnTweet = currentUserId === tweet.author.id;
@@ -268,7 +256,7 @@ export const TweetCard: React.FC<TweetCardProps> = ({
                     ? 'text-green-500 hover:text-green-600 hover:bg-green-50' 
                     : 'text-gray-500 hover:text-green-500 hover:bg-green-50'
                 }`}
-                onClick={handleRetweetClick}
+                onClick={onRetweet}
               >
                 <Repeat2 className="w-5 h-5" />
                 <span className="text-sm ml-1">{formatNumber(tweet.retweets)}</span>
