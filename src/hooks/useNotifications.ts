@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../lib/supabase';
 import { Notification, NotificationWithProfile } from '../types';
+import type { RealtimeChannel } from '@supabase/supabase-js';
 
 export const useNotifications = () => {
   const [notifications, setNotifications] = useState<Notification[]>([]);
@@ -202,32 +203,42 @@ export const useNotifications = () => {
 
   // Set up real-time subscription for notifications
   useEffect(() => {
-    const { data: { user } } = supabase.auth.getUser();
-    
-    user.then(({ user }) => {
-      if (!user) return;
+    let subscription: RealtimeChannel | null = null;
 
-      const subscription = supabase
-        .channel('notifications')
-        .on(
-          'postgres_changes',
-          {
-            event: 'INSERT',
-            schema: 'public',
-            table: 'notifications',
-            filter: `recipient_id=eq.${user.id}`,
-          },
-          () => {
-            // Refresh notifications when new ones arrive
-            fetchNotifications();
-          }
-        )
-        .subscribe();
+    const setupSubscription = async () => {
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        
+        if (!user) return;
 
-      return () => {
+        subscription = supabase
+          .channel('notifications')
+          .on(
+            'postgres_changes',
+            {
+              event: 'INSERT',
+              schema: 'public',
+              table: 'notifications',
+              filter: `recipient_id=eq.${user.id}`,
+            },
+            () => {
+              // Refresh notifications when new ones arrive
+              fetchNotifications();
+            }
+          )
+          .subscribe();
+      } catch (error) {
+        console.error('Error setting up notifications subscription:', error);
+      }
+    };
+
+    setupSubscription();
+
+    return () => {
+      if (subscription) {
         subscription.unsubscribe();
-      };
-    });
+      }
+    };
   }, [fetchNotifications]);
 
   useEffect(() => {
