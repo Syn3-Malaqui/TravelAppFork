@@ -416,13 +416,13 @@ export const useTweets = () => {
           tweet_id: originalTweetId,
         });
 
-      // Refresh tweets to show the new retweet
-      await fetchTweets();
-      await fetchFollowingTweets();
-      
       return data;
     } catch (err: any) {
       throw new Error(err.message);
+    } finally {
+      // Always refresh tweets to sync state
+      await fetchTweets();
+      await fetchFollowingTweets();
     }
   };
 
@@ -453,12 +453,12 @@ export const useTweets = () => {
         });
 
       if (retweetError) throw retweetError;
-
-      // Refresh tweets
-      await fetchTweets();
-      await fetchFollowingTweets();
     } catch (err: any) {
       throw new Error(err.message);
+    } finally {
+      // Always refresh tweets to sync state
+      await fetchTweets();
+      await fetchFollowingTweets();
     }
   };
 
@@ -544,6 +544,14 @@ export const useTweets = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('User not authenticated');
 
+      // Check if already retweeted and toggle accordingly
+      const tweet = tweets.find(t => t.id === tweetId) || followingTweets.find(t => t.id === tweetId);
+      if (tweet?.isRetweeted) {
+        // If already retweeted, remove the retweet
+        await unretweetTweet(tweetId);
+        return;
+      }
+
       const { error } = await supabase
         .from('retweets')
         .insert({
@@ -553,7 +561,9 @@ export const useTweets = () => {
 
       if (error) {
         if (error.code === '23505') {
-          throw new Error('Tweet already retweeted');
+          // If duplicate, it means it's already retweeted, so remove it instead
+          await unretweetTweet(tweetId);
+          return;
         }
         throw error;
       }
