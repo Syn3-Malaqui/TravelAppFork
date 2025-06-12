@@ -9,6 +9,7 @@ import {
   DropdownMenuTrigger,
 } from '../ui/dropdown-menu';
 import { useAuth } from '../../hooks/useAuth';
+import { useNotifications } from '../../hooks/useNotifications';
 
 const navItems = [
   { icon: Search, label: 'Search', path: '/search' },
@@ -20,6 +21,7 @@ export const MobileNavigation: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { signOut } = useAuth();
+  const { unreadCount } = useNotifications();
   const [settingsOpen, setSettingsOpen] = useState(false);
 
   const handleNavClick = (path: string) => {
@@ -58,12 +60,17 @@ export const MobileNavigation: React.FC = () => {
         <Button
           variant="ghost"
           size="lg"
-          className={`p-4 min-w-0 rounded-xl transition-colors ${
+          className={`p-4 min-w-0 rounded-xl transition-colors relative ${
             location.pathname === '/notifications' ? 'text-blue-500 bg-blue-50' : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
           }`}
           onClick={() => handleNavClick('/notifications')}
         >
           <Bell className="w-8 h-8" />
+          {unreadCount > 0 && (
+            <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-6 w-6 flex items-center justify-center">
+              {unreadCount > 99 ? '99+' : unreadCount}
+            </span>
+          )}
         </Button>
 
         {/* Compose Button - Centered and Larger */}

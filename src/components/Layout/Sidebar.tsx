@@ -21,6 +21,7 @@ import {
   DropdownMenuTrigger,
 } from '../ui/dropdown-menu';
 import { useAuth } from '../../hooks/useAuth';
+import { useNotifications } from '../../hooks/useNotifications';
 
 const sidebarItems = [
   { icon: Home, label: 'Home', path: '/' },
@@ -38,6 +39,7 @@ export const Sidebar: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { user, signOut } = useAuth();
+  const { unreadCount } = useNotifications();
   const [settingsOpen, setSettingsOpen] = useState(false);
 
   const handleTweetClick = () => {
@@ -71,17 +73,25 @@ export const Sidebar: React.FC = () => {
         <ul className="space-y-2">
           {sidebarItems.map((item) => {
             const isActive = location.pathname === item.path;
+            const isNotifications = item.path === '/notifications';
             
             return (
               <li key={item.label}>
                 <Button
                   variant="ghost"
                   onClick={() => handleNavClick(item.path)}
-                  className={`w-full justify-start text-xl py-3 px-4 h-auto ${
+                  className={`w-full justify-start text-xl py-3 px-4 h-auto relative ${
                     isActive ? 'font-bold text-blue-500' : 'font-normal text-gray-700 hover:bg-gray-100'
                   }`}
                 >
-                  <item.icon className="mr-4 h-6 w-6" />
+                  <div className="relative">
+                    <item.icon className="mr-4 h-6 w-6" />
+                    {isNotifications && unreadCount > 0 && (
+                      <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
+                        {unreadCount > 99 ? '99+' : unreadCount}
+                      </span>
+                    )}
+                  </div>
                   {item.label}
                 </Button>
               </li>

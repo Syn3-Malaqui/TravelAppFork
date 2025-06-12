@@ -7,6 +7,7 @@ import { ComposePage } from './components/Tweet/ComposePage';
 import { ProfilePage } from './components/Profile/ProfilePage';
 import { UserProfilePage } from './components/Profile/UserProfilePage';
 import { SearchPage } from './components/Search/SearchPage';
+import { NotificationsPage } from './components/Notifications/NotificationsPage';
 import { FloatingActionButton } from './components/ui/FloatingActionButton';
 import { AuthPage } from './components/Auth/AuthPage';
 import { useAuth } from './hooks/useAuth';
@@ -44,10 +45,10 @@ function App() {
               <Route path="/" element={<Timeline />} />
               <Route path="/compose" element={<ComposePage />} />
               <Route path="/search" element={<SearchPage />} />
+              <Route path="/notifications" element={<NotificationsPage />} />
               <Route path="/profile/:username" element={<ProfilePage />} />
               <Route path="/profile" element={<UserProfilePage />} />
               <Route path="/explore" element={<div className="p-8 text-center text-gray-500">Explore Page</div>} />
-              <Route path="/notifications" element={<div className="p-8 text-center text-gray-500">Notifications Page</div>} />
               <Route path="/messages" element={<div className="p-8 text-center text-gray-500">Messages Page</div>} />
               <Route path="/bookmarks" element={<div className="p-8 text-center text-gray-500">Bookmarks Page</div>} />
             </Routes>

@@ -38,8 +38,8 @@ export interface Tweet {
 
 export interface Notification {
   id: string;
-  type: 'like' | 'retweet' | 'follow' | 'reply' | 'mention';
-  from: User;
+  type: 'like' | 'retweet' | 'follow' | 'reply';
+  actor: User;
   tweet?: Tweet;
   createdAt: Date;
   read: boolean;
@@ -98,6 +98,21 @@ export interface TweetData {
 export interface TweetWithProfile extends TweetData {
   profiles: Profile;
   original_tweet?: TweetWithProfile;
+}
+
+export interface NotificationData {
+  id: string;
+  recipient_id: string;
+  actor_id: string;
+  type: 'like' | 'retweet' | 'follow' | 'reply';
+  tweet_id: string | null;
+  read: boolean;
+  created_at: string;
+}
+
+export interface NotificationWithProfile extends NotificationData {
+  actor_profile: Profile;
+  tweet?: TweetWithProfile;
 }
 
 // Available tweet categories
