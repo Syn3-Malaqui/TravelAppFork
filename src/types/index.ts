@@ -29,6 +29,11 @@ export interface Tweet {
   hashtags: string[];
   mentions: string[];
   tags?: string[];
+  // Retweet information
+  retweetedBy?: User;
+  retweetedAt?: Date;
+  isRetweet?: boolean;
+  originalTweet?: Tweet;
 }
 
 export interface Notification {
@@ -86,10 +91,13 @@ export interface TweetData {
   views_count: number;
   created_at: string;
   updated_at: string;
+  is_retweet: boolean;
+  original_tweet_id: string | null;
 }
 
 export interface TweetWithProfile extends TweetData {
   profiles: Profile;
+  original_tweet?: TweetWithProfile;
 }
 
 // Available tweet categories

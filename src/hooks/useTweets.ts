@@ -9,6 +9,86 @@ export const useTweets = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  const formatTweetData = (tweetData: TweetWithProfile, userLikes: string[], userRetweets: string[], userBookmarks: string[]): Tweet => {
+    // If this is a retweet, we need to format the original tweet
+    if (tweetData.is_retweet && tweetData.original_tweet) {
+      const originalTweet: Tweet = {
+        id: tweetData.original_tweet.id,
+        content: tweetData.original_tweet.content,
+        author: {
+          id: tweetData.original_tweet.profiles.id,
+          username: tweetData.original_tweet.profiles.username,
+          displayName: tweetData.original_tweet.profiles.display_name,
+          avatar: tweetData.original_tweet.profiles.avatar_url || '',
+          bio: tweetData.original_tweet.profiles.bio,
+          verified: tweetData.original_tweet.profiles.verified,
+          followers: tweetData.original_tweet.profiles.followers_count,
+          following: tweetData.original_tweet.profiles.following_count,
+          country: tweetData.original_tweet.profiles.country,
+          joinedDate: new Date(tweetData.original_tweet.profiles.created_at),
+        },
+        createdAt: new Date(tweetData.original_tweet.created_at),
+        likes: tweetData.original_tweet.likes_count,
+        retweets: tweetData.original_tweet.retweets_count,
+        replies: tweetData.original_tweet.replies_count,
+        views: tweetData.original_tweet.views_count,
+        images: tweetData.original_tweet.image_urls,
+        isLiked: userLikes.includes(tweetData.original_tweet.id),
+        isRetweeted: userRetweets.includes(tweetData.original_tweet.id),
+        isBookmarked: userBookmarks.includes(tweetData.original_tweet.id),
+        hashtags: tweetData.original_tweet.hashtags,
+        mentions: tweetData.original_tweet.mentions,
+        tags: tweetData.original_tweet.tags || [],
+        // Retweet information
+        retweetedBy: {
+          id: tweetData.profiles.id,
+          username: tweetData.profiles.username,
+          displayName: tweetData.profiles.display_name,
+          avatar: tweetData.profiles.avatar_url || '',
+          bio: tweetData.profiles.bio,
+          verified: tweetData.profiles.verified,
+          followers: tweetData.profiles.followers_count,
+          following: tweetData.profiles.following_count,
+          country: tweetData.profiles.country,
+          joinedDate: new Date(tweetData.profiles.created_at),
+        },
+        retweetedAt: new Date(tweetData.created_at),
+        isRetweet: true,
+      };
+      return originalTweet;
+    }
+
+    // Regular tweet
+    return {
+      id: tweetData.id,
+      content: tweetData.content,
+      author: {
+        id: tweetData.profiles.id,
+        username: tweetData.profiles.username,
+        displayName: tweetData.profiles.display_name,
+        avatar: tweetData.profiles.avatar_url || '',
+        bio: tweetData.profiles.bio,
+        verified: tweetData.profiles.verified,
+        followers: tweetData.profiles.followers_count,
+        following: tweetData.profiles.following_count,
+        country: tweetData.profiles.country,
+        joinedDate: new Date(tweetData.profiles.created_at),
+      },
+      createdAt: new Date(tweetData.created_at),
+      likes: tweetData.likes_count,
+      retweets: tweetData.retweets_count,
+      replies: tweetData.replies_count,
+      views: tweetData.views_count,
+      images: tweetData.image_urls,
+      isLiked: userLikes.includes(tweetData.id),
+      isRetweeted: userRetweets.includes(tweetData.id),
+      isBookmarked: userBookmarks.includes(tweetData.id),
+      hashtags: tweetData.hashtags,
+      mentions: tweetData.mentions,
+      tags: tweetData.tags || [],
+    };
+  };
+
   const fetchTweets = useCallback(async () => {
     try {
       setLoading(true);
@@ -29,6 +109,21 @@ export const useTweets = () => {
             following_count,
             country,
             created_at
+          ),
+          original_tweet:original_tweet_id (
+            *,
+            profiles (
+              id,
+              username,
+              display_name,
+              avatar_url,
+              bio,
+              verified,
+              followers_count,
+              following_count,
+              country,
+              created_at
+            )
           )
         `)
         .is('reply_to', null) // Only fetch top-level tweets, not replies
@@ -57,34 +152,9 @@ export const useTweets = () => {
         userBookmarks = bookmarksResult.data?.map(bookmark => bookmark.tweet_id) || [];
       }
 
-      const formattedTweets: Tweet[] = (data as TweetWithProfile[]).map(tweet => ({
-        id: tweet.id,
-        content: tweet.content,
-        author: {
-          id: tweet.profiles.id,
-          username: tweet.profiles.username,
-          displayName: tweet.profiles.display_name,
-          avatar: tweet.profiles.avatar_url || '',
-          bio: tweet.profiles.bio,
-          verified: tweet.profiles.verified,
-          followers: tweet.profiles.followers_count,
-          following: tweet.profiles.following_count,
-          country: tweet.profiles.country,
-          joinedDate: new Date(tweet.profiles.created_at),
-        },
-        createdAt: new Date(tweet.created_at),
-        likes: tweet.likes_count,
-        retweets: tweet.retweets_count,
-        replies: tweet.replies_count,
-        views: tweet.views_count,
-        images: tweet.image_urls,
-        isLiked: userLikes.includes(tweet.id),
-        isRetweeted: userRetweets.includes(tweet.id),
-        isBookmarked: userBookmarks.includes(tweet.id),
-        hashtags: tweet.hashtags,
-        mentions: tweet.mentions,
-        tags: tweet.tags || [],
-      }));
+      const formattedTweets: Tweet[] = (data as TweetWithProfile[]).map(tweet => 
+        formatTweetData(tweet, userLikes, userRetweets, userBookmarks)
+      );
 
       setTweets(formattedTweets);
     } catch (err: any) {
@@ -124,7 +194,7 @@ export const useTweets = () => {
         return;
       }
 
-      // Fetch tweets from followed users
+      // Fetch tweets from followed users (including their retweets)
       const { data, error } = await supabase
         .from('tweets')
         .select(`
@@ -140,6 +210,21 @@ export const useTweets = () => {
             following_count,
             country,
             created_at
+          ),
+          original_tweet:original_tweet_id (
+            *,
+            profiles (
+              id,
+              username,
+              display_name,
+              avatar_url,
+              bio,
+              verified,
+              followers_count,
+              following_count,
+              country,
+              created_at
+            )
           )
         `)
         .in('author_id', followingIds)
@@ -160,34 +245,9 @@ export const useTweets = () => {
       const userRetweets = retweetsResult.data?.map(retweet => retweet.tweet_id) || [];
       const userBookmarks = bookmarksResult.data?.map(bookmark => bookmark.tweet_id) || [];
 
-      const formattedTweets: Tweet[] = (data as TweetWithProfile[]).map(tweet => ({
-        id: tweet.id,
-        content: tweet.content,
-        author: {
-          id: tweet.profiles.id,
-          username: tweet.profiles.username,
-          displayName: tweet.profiles.display_name,
-          avatar: tweet.profiles.avatar_url || '',
-          bio: tweet.profiles.bio,
-          verified: tweet.profiles.verified,
-          followers: tweet.profiles.followers_count,
-          following: tweet.profiles.following_count,
-          country: tweet.profiles.country,
-          joinedDate: new Date(tweet.profiles.created_at),
-        },
-        createdAt: new Date(tweet.created_at),
-        likes: tweet.likes_count,
-        retweets: tweet.retweets_count,
-        replies: tweet.replies_count,
-        views: tweet.views_count,
-        images: tweet.image_urls,
-        isLiked: userLikes.includes(tweet.id),
-        isRetweeted: userRetweets.includes(tweet.id),
-        isBookmarked: userBookmarks.includes(tweet.id),
-        hashtags: tweet.hashtags,
-        mentions: tweet.mentions,
-        tags: tweet.tags || [],
-      }));
+      const formattedTweets: Tweet[] = (data as TweetWithProfile[]).map(tweet => 
+        formatTweetData(tweet, userLikes, userRetweets, userBookmarks)
+      );
 
       setFollowingTweets(formattedTweets);
     } catch (err: any) {
@@ -241,34 +301,9 @@ export const useTweets = () => {
         userBookmarks = bookmarksResult.data?.map(bookmark => bookmark.tweet_id) || [];
       }
 
-      const formattedReplies: Tweet[] = (data as TweetWithProfile[]).map(tweet => ({
-        id: tweet.id,
-        content: tweet.content,
-        author: {
-          id: tweet.profiles.id,
-          username: tweet.profiles.username,
-          displayName: tweet.profiles.display_name,
-          avatar: tweet.profiles.avatar_url || '',
-          bio: tweet.profiles.bio,
-          verified: tweet.profiles.verified,
-          followers: tweet.profiles.followers_count,
-          following: tweet.profiles.following_count,
-          country: tweet.profiles.country,
-          joinedDate: new Date(tweet.profiles.created_at),
-        },
-        createdAt: new Date(tweet.created_at),
-        likes: tweet.likes_count,
-        retweets: tweet.retweets_count,
-        replies: tweet.replies_count,
-        views: tweet.views_count,
-        images: tweet.image_urls,
-        isLiked: userLikes.includes(tweet.id),
-        isRetweeted: userRetweets.includes(tweet.id),
-        isBookmarked: userBookmarks.includes(tweet.id),
-        hashtags: tweet.hashtags,
-        mentions: tweet.mentions,
-        tags: tweet.tags || [],
-      }));
+      const formattedReplies: Tweet[] = (data as TweetWithProfile[]).map(tweet => 
+        formatTweetData(tweet, userLikes, userRetweets, userBookmarks)
+      );
 
       setReplies(prev => ({
         ...prev,
@@ -344,6 +379,84 @@ export const useTweets = () => {
       await fetchFollowingTweets();
       
       return data;
+    } catch (err: any) {
+      throw new Error(err.message);
+    }
+  };
+
+  const createRetweet = async (originalTweetId: string) => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('User not authenticated');
+
+      // Create a retweet record in the tweets table
+      const { data, error } = await supabase
+        .from('tweets')
+        .insert({
+          content: '', // Retweets don't have content
+          author_id: user.id,
+          is_retweet: true,
+          original_tweet_id: originalTweetId,
+        })
+        .select()
+        .single();
+
+      if (error) {
+        if (error.code === '23505') {
+          throw new Error('You have already retweeted this tweet');
+        }
+        throw error;
+      }
+
+      // Also add to retweets table for tracking
+      await supabase
+        .from('retweets')
+        .insert({
+          user_id: user.id,
+          tweet_id: originalTweetId,
+        });
+
+      // Refresh tweets to show the new retweet
+      await fetchTweets();
+      await fetchFollowingTweets();
+      
+      return data;
+    } catch (err: any) {
+      throw new Error(err.message);
+    }
+  };
+
+  const removeRetweet = async (originalTweetId: string) => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('User not authenticated');
+
+      // Remove the retweet from tweets table
+      const { error: tweetError } = await supabase
+        .from('tweets')
+        .delete()
+        .match({
+          author_id: user.id,
+          original_tweet_id: originalTweetId,
+          is_retweet: true,
+        });
+
+      if (tweetError) throw tweetError;
+
+      // Remove from retweets table
+      const { error: retweetError } = await supabase
+        .from('retweets')
+        .delete()
+        .match({
+          user_id: user.id,
+          tweet_id: originalTweetId,
+        });
+
+      if (retweetError) throw retweetError;
+
+      // Refresh tweets
+      await fetchTweets();
+      await fetchFollowingTweets();
     } catch (err: any) {
       throw new Error(err.message);
     }
@@ -595,6 +708,8 @@ export const useTweets = () => {
     fetchReplies,
     createTweet,
     createReply,
+    createRetweet,
+    removeRetweet,
     likeTweet,
     unlikeTweet,
     retweetTweet,

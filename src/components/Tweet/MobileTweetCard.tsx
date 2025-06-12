@@ -44,7 +44,7 @@ export const MobileTweetCard: React.FC<MobileTweetCardProps> = ({
   const navigate = useNavigate();
   const [showReplyComposer, setShowReplyComposer] = useState(false);
   const [showReplies, setShowReplies] = useState(false);
-  const { replies, fetchReplies } = useTweets();
+  const { replies, fetchReplies, createRetweet, removeRetweet } = useTweets();
 
   const formatNumber = (num: number): string => {
     if (num >= 1000000) {
@@ -65,6 +65,12 @@ export const MobileTweetCard: React.FC<MobileTweetCardProps> = ({
     navigate(`/profile/${tweet.author.username}`);
   };
 
+  const handleRetweeterProfileClick = () => {
+    if (tweet.retweetedBy) {
+      navigate(`/profile/${tweet.retweetedBy.username}`);
+    }
+  };
+
   const handleReplyClick = () => {
     setShowReplyComposer(!showReplyComposer);
   };
@@ -82,11 +88,40 @@ export const MobileTweetCard: React.FC<MobileTweetCardProps> = ({
     setShowReplies(true);
   };
 
+  const handleRetweetClick = async () => {
+    try {
+      if (tweet.isRetweeted) {
+        await removeRetweet(tweet.id);
+      } else {
+        await createRetweet(tweet.id);
+      }
+    } catch (error: any) {
+      console.error('Error toggling retweet:', error.message);
+    }
+  };
+
   const isOwnTweet = currentUserId === tweet.author.id;
   const tweetReplies = replies[tweet.id] || [];
 
   return (
     <div className={`border-b border-gray-100 bg-white ${isReply ? 'ml-8 border-l-2 border-gray-200' : ''}`}>
+      {/* Retweet indicator */}
+      {tweet.isRetweet && tweet.retweetedBy && (
+        <div className="px-4 pt-3 pb-1">
+          <div className="flex items-center space-x-2 text-gray-500 text-xs">
+            <Repeat2 className="w-3 h-3" />
+            <span 
+              className="hover:underline cursor-pointer"
+              onClick={handleRetweeterProfileClick}
+            >
+              <span className="font-medium">{tweet.retweetedBy.displayName}</span> retweeted
+            </span>
+            <span>·</span>
+            <span>{formatDistanceToNow(tweet.retweetedAt!, { addSuffix: true }).replace('about ', '')}</span>
+          </div>
+        </div>
+      )}
+
       <div className="p-4">
         <div className="flex gap-3">
           {/* Avatar */}
@@ -231,7 +266,7 @@ export const MobileTweetCard: React.FC<MobileTweetCardProps> = ({
                     ? 'text-green-500' 
                     : 'text-gray-500'
                 }`}
-                onClick={onRetweet}
+                onClick={handleRetweetClick}
               >
                 <Repeat2 className="w-4 h-4" />
                 <span className="text-xs ml-1">{formatNumber(tweet.retweets)}</span>

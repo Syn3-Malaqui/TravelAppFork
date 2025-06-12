@@ -35,8 +35,8 @@ export const Timeline: React.FC = () => {
   };
 
   const handleRetweet = (tweetId: string) => {
-    console.log('Retweet:', tweetId);
-    // TODO: Implement retweet functionality
+    // This is now handled directly in the TweetCard components
+    console.log('Retweet handled in TweetCard:', tweetId);
   };
 
   const handleBookmark = (tweetId: string) => {
@@ -280,7 +280,7 @@ export const Timeline: React.FC = () => {
               </div>
             ) : (
               filteredTweets.map((tweet) => (
-                <div key={tweet.id} className="w-full max-w-2xl">
+                <div key={`${tweet.id}-${tweet.retweetedAt || tweet.createdAt}`} className="w-full max-w-2xl">
                   {/* Desktop Tweet Card */}
                   <div className="hidden md:block">
                     <TweetCard 
