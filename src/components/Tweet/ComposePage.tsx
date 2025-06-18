@@ -82,6 +82,8 @@ export const ComposePage: React.FC = () => {
   const characterCount = content.length;
   const maxCharacters = 200; // Changed from 280 to 200
   const isOverLimit = characterCount > maxCharacters;
+  const isNearLimit = characterCount > 180;
+  const remainingChars = maxCharacters - characterCount;
 
   // Filter out "All Countries" option for selection
   const selectableCountries = FILTER_COUNTRIES.filter(country => country.code !== 'ALL');
@@ -102,13 +104,24 @@ export const ComposePage: React.FC = () => {
           <h1 className="text-lg font-semibold">Compose Tweet</h1>
         </div>
         
-        <Button
-          onClick={handleSubmit}
-          disabled={!content.trim() || isOverLimit || loading}
-          className="bg-blue-500 hover:bg-blue-600 text-white font-bold px-6 py-2 rounded-full disabled:opacity-50"
-        >
-          {loading ? 'Posting...' : 'Tweet'}
-        </Button>
+        {/* Character Count in Header */}
+        <div className="flex items-center space-x-4">
+          <div className={`text-sm font-bold ${
+            isOverLimit ? 'text-red-500' : 
+            isNearLimit ? 'text-yellow-600' :
+            'text-gray-500'
+          }`}>
+            {characterCount}/{maxCharacters}
+          </div>
+          
+          <Button
+            onClick={handleSubmit}
+            disabled={!content.trim() || isOverLimit || loading}
+            className="bg-blue-500 hover:bg-blue-600 text-white font-bold px-6 py-2 rounded-full disabled:opacity-50"
+          >
+            {loading ? 'Posting...' : 'Tweet'}
+          </Button>
+        </div>
       </div>
 
       {/* Error Message */}
@@ -119,13 +132,13 @@ export const ComposePage: React.FC = () => {
       )}
 
       {/* Character limit warning */}
-      {characterCount > 180 && (
+      {isNearLimit && (
         <div className="mx-4 mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
-          <p className="text-yellow-700 text-sm">
+          <p className="text-yellow-700 text-sm font-medium">
             {isOverLimit ? (
-              <>You've exceeded the 200 character limit by {characterCount - maxCharacters} characters</>
+              <>⚠️ You've exceeded the 200 character limit by {Math.abs(remainingChars)} characters</>
             ) : (
-              <>You have {maxCharacters - characterCount} characters remaining</>
+              <>⏰ You have {remainingChars} characters remaining</>
             )}
           </p>
         </div>
@@ -148,6 +161,42 @@ export const ComposePage: React.FC = () => {
               }`}
               autoFocus
             />
+
+            {/* Real-time Character Count Display */}
+            <div className="mt-4 flex items-center justify-between">
+              <div className="text-sm text-gray-500">
+                {content.length === 0 ? (
+                  'Start typing your tweet...'
+                ) : (
+                  `${content.split(' ').length} words`
+                )}
+              </div>
+              
+              <div className="flex items-center space-x-3">
+                {/* Character Progress Bar */}
+                <div className="w-20 h-2 bg-gray-200 rounded-full overflow-hidden">
+                  <div 
+                    className={`h-full transition-all duration-300 ${
+                      isOverLimit ? 'bg-red-500' : 
+                      isNearLimit ? 'bg-yellow-500' :
+                      'bg-blue-500'
+                    }`}
+                    style={{ 
+                      width: `${Math.min((characterCount / maxCharacters) * 100, 100)}%` 
+                    }}
+                  />
+                </div>
+                
+                {/* Numeric Count */}
+                <div className={`text-sm font-bold min-w-[60px] text-right ${
+                  isOverLimit ? 'text-red-500' : 
+                  isNearLimit ? 'text-yellow-600' :
+                  'text-gray-500'
+                }`}>
+                  {characterCount}/{maxCharacters}
+                </div>
+              </div>
+            </div>
 
             {/* Categories Selection */}
             <div className="mt-4">
@@ -301,39 +350,58 @@ export const ComposePage: React.FC = () => {
             </Button>
           </div>
 
-          {/* Character Count */}
-          <div className="flex items-center space-x-3">
-            <div className={`text-sm font-medium ${
-              isOverLimit ? 'text-red-500' : 
-              characterCount > 180 ? 'text-yellow-600' :
-              'text-gray-500'
-            }`}>
-              {characterCount}/{maxCharacters}
-            </div>
-            <div className="w-8 h-8 relative">
-              <svg className="w-8 h-8 transform -rotate-90" viewBox="0 0 32 32">
-                <circle
-                  cx="16"
-                  cy="16"
-                  r="14"
+          {/* Enhanced Character Count Display */}
+          <div className="flex items-center space-x-4">
+            {/* Progress Circle */}
+            <div className="relative w-10 h-10">
+              <svg className="w-10 h-10 transform -rotate-90" viewBox="0 0 36 36">
+                <path
+                  d="M18 2.0845
+                    a 15.9155 15.9155 0 0 1 0 31.831
+                    a 15.9155 15.9155 0 0 1 0 -31.831"
                   fill="none"
                   stroke="#e5e7eb"
                   strokeWidth="2"
                 />
-                <circle
-                  cx="16"
-                  cy="16"
-                  r="14"
+                <path
+                  d="M18 2.0845
+                    a 15.9155 15.9155 0 0 1 0 31.831
+                    a 15.9155 15.9155 0 0 1 0 -31.831"
                   fill="none"
                   stroke={
                     isOverLimit ? "#ef4444" : 
-                    characterCount > 180 ? "#eab308" :
+                    isNearLimit ? "#eab308" :
                     "#3b82f6"
                   }
                   strokeWidth="2"
-                  strokeDasharray={`${Math.min((characterCount / maxCharacters) * 87.96, 87.96)} 87.96`}
+                  strokeDasharray={`${Math.min((characterCount / maxCharacters) * 100, 100)}, 100`}
                 />
               </svg>
+              <div className="absolute inset-0 flex items-center justify-center">
+                <span className={`text-xs font-bold ${
+                  isOverLimit ? 'text-red-500' : 
+                  isNearLimit ? 'text-yellow-600' :
+                  'text-gray-500'
+                }`}>
+                  {isOverLimit ? `-${Math.abs(remainingChars)}` : remainingChars}
+                </span>
+              </div>
+            </div>
+
+            {/* Character Count Text */}
+            <div className="text-right">
+              <div className={`text-lg font-bold ${
+                isOverLimit ? 'text-red-500' : 
+                isNearLimit ? 'text-yellow-600' :
+                'text-gray-700'
+              }`}>
+                {characterCount}/{maxCharacters}
+              </div>
+              <div className="text-xs text-gray-500">
+                {isOverLimit ? 'Over limit' : 
+                 isNearLimit ? 'Almost there' :
+                 'Characters'}
+              </div>
             </div>
           </div>
         </div>
