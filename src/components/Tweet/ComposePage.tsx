@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { X, Image, Smile, Calendar, MapPin, ArrowLeft, Tag } from 'lucide-react';
+import { X, Image, Smile, Calendar, MapPin, ArrowLeft, Tag, Globe } from 'lucide-react';
 import { Button } from '../ui/button';
-import { TWEET_CATEGORIES, TweetCategory } from '../../types';
+import { TWEET_CATEGORIES, TweetCategory, FILTER_COUNTRIES } from '../../types';
 import { useTweets } from '../../hooks/useTweets';
 
 export const ComposePage: React.FC = () => {
@@ -10,6 +10,7 @@ export const ComposePage: React.FC = () => {
   const [content, setContent] = useState('');
   const [images, setImages] = useState<string[]>([]);
   const [selectedCategories, setSelectedCategories] = useState<TweetCategory[]>([]);
+  const [selectedCountries, setSelectedCountries] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const { createTweet } = useTweets();
@@ -24,12 +25,15 @@ export const ComposePage: React.FC = () => {
     setError('');
     
     try {
-      await createTweet(content, images, selectedCategories);
+      // Combine categories and countries into tags
+      const allTags = [...selectedCategories, ...selectedCountries];
+      await createTweet(content, images, allTags);
       
       // Reset form
       setContent('');
       setImages([]);
       setSelectedCategories([]);
+      setSelectedCountries([]);
       
       // Navigate back to timeline
       navigate('/');
@@ -60,9 +64,22 @@ export const ComposePage: React.FC = () => {
     );
   };
 
+  const toggleCountry = (countryCode: string) => {
+    if (countryCode === 'ALL') return; // Don't allow selecting "All Countries"
+    
+    setSelectedCountries(prev => 
+      prev.includes(countryCode) 
+        ? prev.filter(c => c !== countryCode)
+        : [...prev, countryCode]
+    );
+  };
+
   const characterCount = content.length;
   const maxCharacters = 280;
   const isOverLimit = characterCount > maxCharacters;
+
+  // Filter out "All Countries" option for selection
+  const selectableCountries = FILTER_COUNTRIES.filter(country => country.code !== 'ALL');
 
   return (
     <div className="min-h-screen bg-white">
@@ -137,26 +154,79 @@ export const ComposePage: React.FC = () => {
               </div>
             </div>
 
-            {/* Selected Categories Display */}
-            {selectedCategories.length > 0 && (
-              <div className="mt-3 flex flex-wrap gap-2">
-                {selectedCategories.map((category) => (
-                  <span
-                    key={category}
-                    className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-50 text-blue-700 border border-blue-200"
+            {/* Countries Selection */}
+            <div className="mt-4">
+              <div className="flex items-center space-x-2 mb-3">
+                <Globe className="h-5 w-5 text-gray-500" />
+                <span className="text-sm font-medium text-gray-700">Add countries:</span>
+              </div>
+              <div className="flex flex-wrap gap-2 max-h-32 overflow-y-auto">
+                {selectableCountries.map((country) => (
+                  <Button
+                    key={country.code}
+                    variant="outline"
+                    size="sm"
+                    onClick={() => toggleCountry(country.code)}
+                    className={`rounded-full px-3 py-1 text-sm transition-colors flex items-center space-x-1 ${
+                      selectedCountries.includes(country.code)
+                        ? 'bg-green-500 text-white border-green-500 hover:bg-green-600'
+                        : 'border-gray-300 text-gray-700 hover:bg-gray-50'
+                    }`}
                   >
-                    <Tag className="w-3 h-3 mr-1" />
-                    {category}
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => toggleCategory(category)}
-                      className="ml-1 h-4 w-4 p-0 hover:bg-blue-100 rounded-full"
-                    >
-                      <X className="h-3 w-3" />
-                    </Button>
-                  </span>
+                    <span>{country.flag}</span>
+                    <span>{country.name}</span>
+                  </Button>
                 ))}
+              </div>
+            </div>
+
+            {/* Selected Tags Display */}
+            {(selectedCategories.length > 0 || selectedCountries.length > 0) && (
+              <div className="mt-4">
+                <div className="text-sm font-medium text-gray-700 mb-2">Selected tags:</div>
+                <div className="flex flex-wrap gap-2">
+                  {/* Category Tags */}
+                  {selectedCategories.map((category) => (
+                    <span
+                      key={category}
+                      className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-50 text-blue-700 border border-blue-200"
+                    >
+                      <Tag className="w-3 h-3 mr-1" />
+                      {category}
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => toggleCategory(category)}
+                        className="ml-1 h-4 w-4 p-0 hover:bg-blue-100 rounded-full"
+                      >
+                        <X className="h-3 w-3" />
+                      </Button>
+                    </span>
+                  ))}
+                  
+                  {/* Country Tags */}
+                  {selectedCountries.map((countryCode) => {
+                    const country = FILTER_COUNTRIES.find(c => c.code === countryCode);
+                    return (
+                      <span
+                        key={countryCode}
+                        className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-50 text-green-700 border border-green-200"
+                      >
+                        <Globe className="w-3 h-3 mr-1" />
+                        <span className="mr-1">{country?.flag}</span>
+                        {country?.name}
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => toggleCountry(countryCode)}
+                          className="ml-1 h-4 w-4 p-0 hover:bg-green-100 rounded-full"
+                        >
+                          <X className="h-3 w-3" />
+                        </Button>
+                      </span>
+                    );
+                  })}
+                </div>
               </div>
             )}
 

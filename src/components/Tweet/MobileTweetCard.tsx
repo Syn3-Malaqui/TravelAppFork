@@ -7,7 +7,6 @@ import {
   Share, 
   MoreHorizontal,
   CheckCircle,
-  Tag,
   ChevronDown,
   ChevronUp
 } from 'lucide-react';
@@ -194,21 +193,6 @@ export const MobileTweetCard: React.FC<MobileTweetCardProps> = ({
                 </DropdownMenu>
               </div>
             </div>
-
-            {/* Tags - Moved below username */}
-            {tweet.tags && tweet.tags.length > 0 && (
-              <div className="mb-3 flex flex-wrap gap-1">
-                {tweet.tags.map((tag, index) => (
-                  <span
-                    key={index}
-                    className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-50 text-blue-700 border border-blue-200"
-                  >
-                    <Tag className="w-2.5 h-2.5 mr-1" />
-                    {tag}
-                  </span>
-                ))}
-              </div>
-            )}
 
             {/* Tweet Text */}
             <div className="text-gray-900 mb-3 text-sm leading-5">
