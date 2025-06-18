@@ -4,13 +4,8 @@ import {
   Home, 
   Search, 
   Bell, 
-  Mail, 
-  Bookmark, 
   User, 
   Settings,
-  MoreHorizontal,
-  Hash,
-  Users,
   LogOut
 } from 'lucide-react';
 import { Button } from '../ui/button';
@@ -27,12 +22,7 @@ const sidebarItems = [
   { icon: Home, label: 'Home', path: '/' },
   { icon: Search, label: 'Explore', path: '/search' },
   { icon: Bell, label: 'Notifications', path: '/notifications' },
-  { icon: Mail, label: 'Messages', path: '/messages' },
-  { icon: Bookmark, label: 'Bookmarks', path: '/bookmarks' },
-  { icon: Hash, label: 'Lists', path: '/lists' },
-  { icon: Users, label: 'Communities', path: '/communities' },
   { icon: User, label: 'Profile', path: '/profile' },
-  { icon: MoreHorizontal, label: 'More', path: '/more' },
 ];
 
 export const Sidebar: React.FC = () => {
