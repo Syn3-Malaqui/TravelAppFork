@@ -314,7 +314,7 @@ export const MobileTweetCard: React.FC<MobileTweetCardProps> = ({
                     </div>
                   ) : tweet.images.length === 3 ? (
                     // Three images - first takes full left side, two small on right
-                    <div className="grid grid-cols-2 gap-1 h-64">
+                    <div className="grid grid-cols-2 grid-rows-2 gap-1 h-64">
                       <div className="row-span-2 cursor-pointer" onClick={(e) => handleImageClick(0, e)}>
                         <img 
                           src={tweet.images[0]} 
