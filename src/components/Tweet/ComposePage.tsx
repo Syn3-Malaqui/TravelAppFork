@@ -21,6 +21,11 @@ export const ComposePage: React.FC = () => {
       return;
     }
 
+    if (content.length > 200) {
+      setError('Tweet cannot exceed 200 characters');
+      return;
+    }
+
     setLoading(true);
     setError('');
     
@@ -75,7 +80,7 @@ export const ComposePage: React.FC = () => {
   };
 
   const characterCount = content.length;
-  const maxCharacters = 280;
+  const maxCharacters = 200; // Changed from 280 to 200
   const isOverLimit = characterCount > maxCharacters;
 
   // Filter out "All Countries" option for selection
@@ -113,6 +118,19 @@ export const ComposePage: React.FC = () => {
         </div>
       )}
 
+      {/* Character limit warning */}
+      {characterCount > 180 && (
+        <div className="mx-4 mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+          <p className="text-yellow-700 text-sm">
+            {isOverLimit ? (
+              <>You've exceeded the 200 character limit by {characterCount - maxCharacters} characters</>
+            ) : (
+              <>You have {maxCharacters - characterCount} characters remaining</>
+            )}
+          </p>
+        </div>
+      )}
+
       {/* Compose Area */}
       <div className="p-4">
         <div className="flex space-x-4">
@@ -125,7 +143,9 @@ export const ComposePage: React.FC = () => {
               value={content}
               onChange={(e) => setContent(e.target.value)}
               placeholder="What's happening?"
-              className="w-full text-xl placeholder-gray-500 border-none outline-none resize-none min-h-[200px] bg-transparent focus:ring-0 focus:border-none focus:outline-none"
+              className={`w-full text-xl placeholder-gray-500 border-none outline-none resize-none min-h-[200px] bg-transparent focus:ring-0 focus:border-none focus:outline-none ${
+                isOverLimit ? 'text-red-600' : ''
+              }`}
               autoFocus
             />
 
@@ -283,8 +303,12 @@ export const ComposePage: React.FC = () => {
 
           {/* Character Count */}
           <div className="flex items-center space-x-3">
-            <div className={`text-sm ${isOverLimit ? 'text-red-500' : 'text-gray-500'}`}>
-              {maxCharacters - characterCount}
+            <div className={`text-sm font-medium ${
+              isOverLimit ? 'text-red-500' : 
+              characterCount > 180 ? 'text-yellow-600' :
+              'text-gray-500'
+            }`}>
+              {characterCount}/{maxCharacters}
             </div>
             <div className="w-8 h-8 relative">
               <svg className="w-8 h-8 transform -rotate-90" viewBox="0 0 32 32">
@@ -301,9 +325,13 @@ export const ComposePage: React.FC = () => {
                   cy="16"
                   r="14"
                   fill="none"
-                  stroke={isOverLimit ? "#ef4444" : "#3b82f6"}
+                  stroke={
+                    isOverLimit ? "#ef4444" : 
+                    characterCount > 180 ? "#eab308" :
+                    "#3b82f6"
+                  }
                   strokeWidth="2"
-                  strokeDasharray={`${(characterCount / maxCharacters) * 87.96} 87.96`}
+                  strokeDasharray={`${Math.min((characterCount / maxCharacters) * 87.96, 87.96)} 87.96`}
                 />
               </svg>
             </div>

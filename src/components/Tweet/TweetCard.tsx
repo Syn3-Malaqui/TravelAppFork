@@ -137,6 +137,11 @@ export const TweetCard: React.FC<TweetCardProps> = ({
   const tweetReplies = replies[tweet.id] || [];
   const hasReplies = tweet.replies > 0 && !isReply;
 
+  // Truncate content if it exceeds 200 characters (for display purposes)
+  const displayContent = tweet.content.length > 200 
+    ? tweet.content.substring(0, 200) + '...' 
+    : tweet.content;
+
   return (
     <div className={`border-b border-gray-200 transition-colors ${isReply ? 'ml-12 border-l-2 border-gray-200' : ''}`}>
       {/* Retweet indicator */}
@@ -239,7 +244,7 @@ export const TweetCard: React.FC<TweetCardProps> = ({
 
             {/* Tweet Text with Hashtag Links */}
             <div className="text-gray-900 mb-3 text-[15px] leading-5">
-              {tweet.content.split(' ').map((word, index) => {
+              {displayContent.split(' ').map((word, index) => {
                 if (word.startsWith('#')) {
                   return (
                     <span 
@@ -260,6 +265,9 @@ export const TweetCard: React.FC<TweetCardProps> = ({
                 }
                 return word + ' ';
               })}
+              {tweet.content.length > 200 && (
+                <span className="text-gray-500 text-sm italic"> (truncated)</span>
+              )}
             </div>
 
             {/* Images - Fixed aspect ratio */}

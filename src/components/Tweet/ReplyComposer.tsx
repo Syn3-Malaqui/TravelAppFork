@@ -29,6 +29,11 @@ export const ReplyComposer: React.FC<ReplyComposerProps> = ({
       return;
     }
 
+    if (content.length > 200) {
+      setError('Reply cannot exceed 200 characters');
+      return;
+    }
+
     setLoading(true);
     setError('');
     
@@ -44,7 +49,7 @@ export const ReplyComposer: React.FC<ReplyComposerProps> = ({
   };
 
   const characterCount = content.length;
-  const maxCharacters = 280;
+  const maxCharacters = 200; // Changed from 280 to 200
   const isOverLimit = characterCount > maxCharacters;
 
   return (
@@ -58,6 +63,19 @@ export const ReplyComposer: React.FC<ReplyComposerProps> = ({
       {error && (
         <div className="mb-3 p-3 bg-red-50 border border-red-200 rounded-lg">
           <p className="text-red-700 text-sm">{error}</p>
+        </div>
+      )}
+
+      {/* Character limit warning */}
+      {characterCount > 180 && (
+        <div className="mb-3 p-2 bg-yellow-50 border border-yellow-200 rounded-lg">
+          <p className="text-yellow-700 text-xs">
+            {isOverLimit ? (
+              <>Exceeded limit by {characterCount - maxCharacters} characters</>
+            ) : (
+              <>{maxCharacters - characterCount} characters remaining</>
+            )}
+          </p>
         </div>
       )}
 
@@ -75,7 +93,9 @@ export const ReplyComposer: React.FC<ReplyComposerProps> = ({
             value={content}
             onChange={(e) => setContent(e.target.value)}
             placeholder="Tweet your reply"
-            className="w-full text-lg placeholder-gray-500 border-none outline-none resize-none min-h-[80px] bg-transparent focus:ring-0 focus:border-none focus:outline-none"
+            className={`w-full text-lg placeholder-gray-500 border-none outline-none resize-none min-h-[80px] bg-transparent focus:ring-0 focus:border-none focus:outline-none ${
+              isOverLimit ? 'text-red-600' : ''
+            }`}
             autoFocus
           />
 
@@ -89,8 +109,12 @@ export const ReplyComposer: React.FC<ReplyComposerProps> = ({
 
             <div className="flex items-center space-x-3">
               {/* Character Count */}
-              <div className={`text-sm ${isOverLimit ? 'text-red-500' : 'text-gray-500'}`}>
-                {maxCharacters - characterCount}
+              <div className={`text-sm font-medium ${
+                isOverLimit ? 'text-red-500' : 
+                characterCount > 180 ? 'text-yellow-600' :
+                'text-gray-500'
+              }`}>
+                {characterCount}/{maxCharacters}
               </div>
 
               {/* Cancel Button */}
