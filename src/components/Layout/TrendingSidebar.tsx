@@ -1,62 +1,21 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { TrendingUp, Hash, MoreHorizontal, Search, X } from 'lucide-react';
+import { TrendingUp, Hash, MoreHorizontal } from 'lucide-react';
 import { Button } from '../ui/button';
 import { useHashtags } from '../../hooks/useHashtags';
 
 export const TrendingSidebar: React.FC = () => {
   const navigate = useNavigate();
   const { trendingHashtags, loading } = useHashtags();
-  const [searchQuery, setSearchQuery] = useState('');
 
   const handleHashtagClick = (hashtag: string) => {
     const cleanHashtag = hashtag.replace('#', '');
     navigate(`/hashtag/${cleanHashtag}`);
   };
 
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (searchQuery.trim()) {
-      navigate(`/search?q=${encodeURIComponent(searchQuery.trim())}`);
-    }
-  };
-
-  const clearSearch = () => {
-    setSearchQuery('');
-  };
-
   return (
     <div className="w-80 bg-white border-l border-gray-200 flex flex-col h-full">
-      {/* Search Bar Section */}
-      <div className="bg-white/95 backdrop-blur-md border-b border-gray-200 z-40 flex-shrink-0">
-        <div className="p-4">
-          <form onSubmit={handleSearch} className="relative">
-            <div className="relative">
-              <Search className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
-              <input
-                type="text"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search Twitter"
-                className="w-full pl-10 pr-10 py-3 bg-gray-100 rounded-full focus:bg-white focus:ring-2 focus:ring-blue-500 focus:outline-none transition-all text-sm"
-              />
-              {searchQuery && (
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  onClick={clearSearch}
-                  className="absolute right-2 top-2 p-2 hover:bg-gray-100 rounded-full h-7 w-7"
-                >
-                  <X className="h-4 w-4" />
-                </Button>
-              )}
-            </div>
-          </form>
-        </div>
-      </div>
-
-      {/* Trending Header */}
+      {/* Fixed Header */}
       <div className="bg-white/95 backdrop-blur-md border-b border-gray-200 z-40 flex-shrink-0">
         <div className="p-4">
           <h2 className="text-xl font-bold text-gray-900 flex items-center">
