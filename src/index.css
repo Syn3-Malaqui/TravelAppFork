@@ -60,7 +60,7 @@
   }
 }
 
-/* Shimmer Animation */
+/* Shimmer Animation - Slowed Down */
 @keyframes shimmer {
   0% {
     background-position: -200px 0;
@@ -73,20 +73,20 @@
 .animate-shimmer {
   background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
   background-size: 200px 100%;
-  animation: shimmer 1.5s infinite;
+  animation: shimmer 2.5s infinite ease-in-out;
 }
 
 /* Enhanced shimmer for different elements */
 .animate-shimmer-slow {
   background: linear-gradient(90deg, #f8f9fa 25%, #e9ecef 50%, #f8f9fa 75%);
   background-size: 200px 100%;
-  animation: shimmer 2s infinite;
+  animation: shimmer 3.5s infinite ease-in-out;
 }
 
 .animate-shimmer-fast {
   background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
   background-size: 200px 100%;
-  animation: shimmer 1s infinite;
+  animation: shimmer 2s infinite ease-in-out;
 }
 
 /* Custom scrollbar */
