@@ -24,41 +24,9 @@ export const useAuth = () => {
     // Listen for auth changes
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange(async (_event, session) => {
+    } = supabase.auth.onAuthStateChange((_event, session) => {
       setSession(session);
-      
-      if (session?.user) {
-        // Fetch the latest profile data to get avatar_url
-        try {
-          const { data: profile } = await supabase
-            .from('profiles')
-            .select('avatar_url, display_name, username')
-            .eq('id', session.user.id)
-            .single();
-
-          if (profile) {
-            // Update user metadata with profile data
-            const updatedUser = {
-              ...session.user,
-              user_metadata: {
-                ...session.user.user_metadata,
-                avatar_url: profile.avatar_url,
-                display_name: profile.display_name,
-                username: profile.username,
-              }
-            };
-            setUser(updatedUser);
-          } else {
-            setUser(session.user);
-          }
-        } catch (error) {
-          console.error('Error fetching profile:', error);
-          setUser(session.user);
-        }
-      } else {
-        setUser(null);
-      }
-      
+      setUser(session?.user ?? null);
       setLoading(false);
     });
 

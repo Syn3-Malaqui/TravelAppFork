@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { X, Image, Smile, Calendar, MapPin, ArrowLeft, Tag, Globe, Upload, Trash2 } from 'lucide-react';
 import { Button } from '../ui/button';
-import { Avatar, AvatarImage, AvatarFallback } from '../ui/avatar';
 import { TWEET_CATEGORIES, TweetCategory, FILTER_COUNTRIES } from '../../types';
 import { useTweets } from '../../hooks/useTweets';
 import { useAuth } from '../../hooks/useAuth';
@@ -267,10 +266,7 @@ export const ComposePage: React.FC = () => {
           {/* Compose Area */}
           <div className="flex space-x-4">
             {/* Avatar */}
-            <Avatar className="w-12 h-12 flex-shrink-0">
-              <AvatarImage src={user?.user_metadata?.avatar_url} />
-              <AvatarFallback>{user?.user_metadata?.display_name?.[0] || 'U'}</AvatarFallback>
-            </Avatar>
+            <div className="w-12 h-12 bg-gray-300 rounded-full flex-shrink-0"></div>
 
             {/* Text Area */}
             <div className="flex-1 min-w-0">

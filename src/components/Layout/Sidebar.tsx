@@ -9,7 +9,6 @@ import {
   LogOut
 } from 'lucide-react';
 import { Button } from '../ui/button';
-import { Avatar, AvatarImage, AvatarFallback } from '../ui/avatar';
 import { 
   DropdownMenu,
   DropdownMenuContent,
@@ -130,14 +129,11 @@ export const Sidebar: React.FC = () => {
         </DropdownMenu>
 
         {/* User Profile */}
-        <div className="flex items-center p-3 hover:bg-gray-50 rounded-lg cursor-pointer transition-colors" onClick={() => navigate('/profile')}>
-          <Avatar className="w-10 h-10 mr-3">
-            <AvatarImage src={user?.user_metadata?.avatar_url} />
-            <AvatarFallback>{user?.user_metadata?.display_name?.[0] || 'U'}</AvatarFallback>
-          </Avatar>
-          <div className="flex-1 min-w-0">
-            <div className="font-bold text-sm truncate">{user?.user_metadata?.display_name || 'User'}</div>
-            <div className="text-gray-500 text-sm truncate">@{user?.user_metadata?.username || 'user'}</div>
+        <div className="flex items-center p-3">
+          <div className="w-10 h-10 bg-gray-300 rounded-full mr-3"></div>
+          <div className="flex-1">
+            <div className="font-bold text-sm">{user?.user_metadata?.display_name || 'User'}</div>
+            <div className="text-gray-500 text-sm">@{user?.user_metadata?.username || 'user'}</div>
           </div>
         </div>
       </div>

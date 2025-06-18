@@ -9,7 +9,6 @@ import { CategoriesFilter } from '../Layout/CategoriesFilter';
 import { MobileCountryFilter } from '../Layout/MobileCountryFilter';
 import { TrendingSidebar } from '../Layout/TrendingSidebar.tsx';
 import { Button } from '../ui/button';
-import { Avatar, AvatarImage, AvatarFallback } from '../ui/avatar';
 import { useTweets } from '../../hooks/useTweets';
 import { useAuth } from '../../hooks/useAuth';
 import { FILTER_COUNTRIES } from '../../types';
@@ -307,10 +306,7 @@ export const Timeline: React.FC = () => {
           {/* Desktop Tweet Composer */}
           <div className="border-b border-gray-200 p-4 flex-shrink-0">
             <div className="flex space-x-4">
-              <Avatar className="w-12 h-12 flex-shrink-0">
-                <AvatarImage src={user?.user_metadata?.avatar_url} />
-                <AvatarFallback>{user?.user_metadata?.display_name?.[0] || 'U'}</AvatarFallback>
-              </Avatar>
+              <div className="w-12 h-12 bg-gray-300 rounded-full"></div>
               <div className="flex-1">
                 <div 
                   className="text-xl text-gray-500 py-3 cursor-pointer hover:bg-gray-50 rounded-lg px-4"
