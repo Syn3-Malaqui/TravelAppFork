@@ -234,9 +234,13 @@ export const useNotifications = () => {
             }
           );
 
-        // Store the channel reference and subscribe
+        // Store the channel reference and subscribe only if not already subscribed
         channelRef.current = channel;
-        await channel.subscribe();
+        
+        // Check if the channel is not already in a subscribed state
+        if (channel.state !== 'joined' && channel.state !== 'joining') {
+          await channel.subscribe();
+        }
       } catch (error) {
         console.error('Error setting up notifications subscription:', error);
       }
