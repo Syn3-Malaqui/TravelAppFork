@@ -284,8 +284,8 @@ export const MobileTweetCard: React.FC<MobileTweetCardProps> = ({
               {tweet.images && tweet.images.length > 0 && (
                 <div className="mb-3 rounded-xl overflow-hidden">
                   {tweet.images.length === 1 ? (
-                    // Single image - 2:3 aspect ratio
-                    <div className="w-full aspect-[2/3] cursor-pointer" onClick={(e) => handleImageClick(0, e)}>
+                    // Single image - uniform aspect ratio (16:9)
+                    <div className="w-full aspect-[16/9] cursor-pointer" onClick={(e) => handleImageClick(0, e)}>
                       <img 
                         src={tweet.images[0]} 
                         alt="Tweet image" 
@@ -293,12 +293,12 @@ export const MobileTweetCard: React.FC<MobileTweetCardProps> = ({
                       />
                     </div>
                   ) : tweet.images.length === 2 ? (
-                    // Two images - side by side squares
+                    // Two images - side by side with uniform aspect ratio (16:9)
                     <div className="grid grid-cols-2 gap-1">
                       {tweet.images.map((image, index) => (
                         <div 
                           key={index} 
-                          className="aspect-square cursor-pointer"
+                          className="aspect-[16/9] cursor-pointer"
                           onClick={(e) => handleImageClick(index, e)}
                         >
                           <img 
@@ -336,12 +336,12 @@ export const MobileTweetCard: React.FC<MobileTweetCardProps> = ({
                       </div>
                     </div>
                   ) : (
-                    // Four images - 2x2 grid of squares
-                    <div className="grid grid-cols-2 gap-1 aspect-square">
+                    // Four images - 2x2 grid with uniform aspect ratio (16:9)
+                    <div className="grid grid-cols-2 gap-1">
                       {tweet.images.map((image, index) => (
                         <div 
                           key={index} 
-                          className="cursor-pointer"
+                          className="aspect-[16/9] cursor-pointer"
                           onClick={(e) => handleImageClick(index, e)}
                         >
                           <img 
