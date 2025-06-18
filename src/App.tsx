@@ -4,6 +4,7 @@ import { Sidebar } from './components/Layout/Sidebar';
 import { MobileNavigation } from './components/Layout/MobileNavigation';
 import { Timeline } from './components/Feed/Timeline';
 import { ComposePage } from './components/Tweet/ComposePage';
+import { TweetDetailPage } from './components/Tweet/TweetDetailPage';
 import { ProfilePage } from './components/Profile/ProfilePage';
 import { UserProfilePage } from './components/Profile/UserProfilePage';
 import { SearchPage } from './components/Search/SearchPage';
@@ -45,6 +46,7 @@ function App() {
             <Routes>
               <Route path="/" element={<Timeline />} />
               <Route path="/compose" element={<ComposePage />} />
+              <Route path="/tweet/:tweetId" element={<TweetDetailPage />} />
               <Route path="/search" element={<SearchPage />} />
               <Route path="/hashtag/:hashtag" element={<HashtagPage />} />
               <Route path="/notifications" element={<NotificationsPage />} />

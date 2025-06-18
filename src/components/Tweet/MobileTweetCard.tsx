@@ -195,12 +195,8 @@ export const MobileTweetCard: React.FC<MobileTweetCardProps> = ({
   };
 
   const handleTweetClick = async () => {
-    if (!isReply && tweet.replies > 0) {
-      if (!showReplies) {
-        await fetchReplies(tweet.id);
-      }
-      setShowReplies(!showReplies);
-    }
+    // Navigate to tweet detail page instead of showing replies inline
+    navigate(`/tweet/${tweet.id}`);
   };
 
   const handleReplyClick = (e: React.MouseEvent, targetTweetId?: string) => {
@@ -339,6 +335,9 @@ export const MobileTweetCard: React.FC<MobileTweetCardProps> = ({
     ? tweet.content.substring(0, 200) + '...' 
     : tweet.content;
 
+  // Check if this tweet is replying to someone (has @mention at the start)
+  const isReplyToReply = isReply && tweet.content.startsWith('@');
+
   return (
     <>
       <div className={`border-b border-gray-100 bg-white ${isReply ? 'ml-8 border-l-2 border-gray-200' : ''}`}>
@@ -376,7 +375,7 @@ export const MobileTweetCard: React.FC<MobileTweetCardProps> = ({
         )}
 
         <div 
-          className={`p-4 ${hasReplies ? 'cursor-pointer' : ''}`}
+          className="p-4 cursor-pointer"
           onClick={handleTweetClick}
         >
           <div className="flex gap-3">
@@ -576,23 +575,6 @@ export const MobileTweetCard: React.FC<MobileTweetCardProps> = ({
                         </div>
                       ))}
                     </div>
-                  )}
-                </div>
-              )}
-
-              {/* Click to view replies indicator */}
-              {hasReplies && (
-                <div className="mb-3 text-sm text-blue-500 flex items-center space-x-1">
-                  {showReplies ? (
-                    <>
-                      <ChevronUp className="w-4 h-4" />
-                      <span>Hide {tweet.replies} {tweet.replies === 1 ? 'reply' : 'replies'}</span>
-                    </>
-                  ) : (
-                    <>
-                      <ChevronDown className="w-4 h-4" />
-                      <span>Show {tweet.replies} {tweet.replies === 1 ? 'reply' : 'replies'}</span>
-                    </>
                   )}
                 </div>
               )}
