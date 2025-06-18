@@ -5,6 +5,7 @@ import { MobileTweetCard } from '../Tweet/MobileTweetCard';
 import { MobileTabs } from '../Layout/MobileTabs';
 import { MobileTags } from '../Layout/MobileTags';
 import { CountryFilter } from '../Layout/CountryFilter';
+import { CategoriesFilter } from '../Layout/CategoriesFilter';
 import { MobileCountryFilter } from '../Layout/MobileCountryFilter';
 import { useTweets } from '../../hooks/useTweets';
 import { useAuth } from '../../hooks/useAuth';
@@ -88,10 +89,16 @@ export const Timeline: React.FC = () => {
           <div className="hidden md:block sticky top-0 bg-white/80 backdrop-blur-md border-b border-gray-200 p-4 z-10">
             <div className="flex items-center justify-between">
               <h1 className="text-xl font-bold">Home</h1>
-              <CountryFilter 
-                selectedCountry={countryFilter}
-                onCountryChange={handleCountryFilter}
-              />
+              <div className="flex items-center space-x-3">
+                <CategoriesFilter 
+                  selectedCategory={categoryFilter}
+                  onCategoryChange={handleCategoryFilter}
+                />
+                <CountryFilter 
+                  selectedCountry={countryFilter}
+                  onCountryChange={handleCountryFilter}
+                />
+              </div>
             </div>
           </div>
 
@@ -116,10 +123,16 @@ export const Timeline: React.FC = () => {
           <div className="hidden md:block sticky top-0 bg-white/80 backdrop-blur-md border-b border-gray-200 p-4 z-10">
             <div className="flex items-center justify-between">
               <h1 className="text-xl font-bold">Home</h1>
-              <CountryFilter 
-                selectedCountry={countryFilter}
-                onCountryChange={handleCountryFilter}
-              />
+              <div className="flex items-center space-x-3">
+                <CategoriesFilter 
+                  selectedCategory={categoryFilter}
+                  onCategoryChange={handleCategoryFilter}
+                />
+                <CountryFilter 
+                  selectedCountry={countryFilter}
+                  onCountryChange={handleCountryFilter}
+                />
+              </div>
             </div>
           </div>
 
@@ -145,10 +158,16 @@ export const Timeline: React.FC = () => {
         <div className="hidden md:block sticky top-0 bg-white/80 backdrop-blur-md border-b border-gray-200 p-4 z-10">
           <div className="flex items-center justify-between">
             <h1 className="text-xl font-bold">Home</h1>
-            <CountryFilter 
-              selectedCountry={countryFilter}
-              onCountryChange={handleCountryFilter}
-            />
+            <div className="flex items-center space-x-3">
+              <CategoriesFilter 
+                selectedCategory={categoryFilter}
+                onCategoryChange={handleCategoryFilter}
+              />
+              <CountryFilter 
+                selectedCountry={countryFilter}
+                onCountryChange={handleCountryFilter}
+              />
+            </div>
           </div>
         </div>
 
