@@ -93,12 +93,23 @@ export const Sidebar: React.FC = () => {
           })}
         </ul>
 
+        {/* Tweet Button */}
+        <Button 
+          className="w-full mt-4 bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 rounded-full text-lg"
+          onClick={handleTweetClick}
+        >
+          Tweet
+        </Button>
+      </nav>
+
+      {/* Settings and User Profile Section */}
+      <div className="mt-auto space-y-4">
         {/* Settings Dropdown */}
         <DropdownMenu open={settingsOpen} onOpenChange={setSettingsOpen}>
           <DropdownMenuTrigger asChild>
             <Button 
-              variant="outline"
-              className="w-full mt-6 justify-start text-lg py-3 px-4 h-auto border-gray-300 hover:bg-gray-50"
+              variant="ghost"
+              className="w-full justify-start text-lg py-3 px-4 h-auto text-gray-700 hover:bg-gray-100"
             >
               <Settings className="mr-4 h-5 w-5" />
               Settings
@@ -117,17 +128,7 @@ export const Sidebar: React.FC = () => {
           </DropdownMenuContent>
         </DropdownMenu>
 
-        {/* Tweet Button */}
-        <Button 
-          className="w-full mt-4 bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 rounded-full text-lg"
-          onClick={handleTweetClick}
-        >
-          Tweet
-        </Button>
-      </nav>
-
-      {/* User Profile */}
-      <div className="mt-auto">
+        {/* User Profile */}
         <div className="flex items-center p-3">
           <div className="w-10 h-10 bg-gray-300 rounded-full mr-3"></div>
           <div className="flex-1">
