@@ -9,7 +9,8 @@ import {
   CheckCircle,
   ChevronDown,
   ChevronUp,
-  X
+  X,
+  CornerUpLeft
 } from 'lucide-react';
 import { Button } from '../ui/button';
 import { Avatar, AvatarImage, AvatarFallback } from '../ui/avatar';
@@ -24,6 +25,7 @@ import { useNavigate } from 'react-router-dom';
 import { ReplyComposer } from './ReplyComposer';
 import { useTweets } from '../../hooks/useTweets';
 import { storageService } from '../../lib/storage';
+import { supabase } from '../../lib/supabase';
 
 interface MobileTweetCardProps {
   tweet: Tweet;
@@ -46,6 +48,8 @@ export const MobileTweetCard: React.FC<MobileTweetCardProps> = ({
   const [showReplies, setShowReplies] = useState(false);
   const [showReplyComposer, setShowReplyComposer] = useState(false);
   const [selectedImageIndex, setSelectedImageIndex] = useState<number | null>(null);
+  const [originalTweet, setOriginalTweet] = useState<Tweet | null>(null);
+  const [loadingOriginal, setLoadingOriginal] = useState(false);
   const { replies, fetchReplies, createRetweet, removeRetweet } = useTweets();
 
   const formatNumber = (num: number): string => {
@@ -72,6 +76,118 @@ export const MobileTweetCard: React.FC<MobileTweetCardProps> = ({
     e.stopPropagation();
     if (tweet.retweetedBy) {
       navigate(`/profile/${tweet.retweetedBy.username}`);
+    }
+  };
+
+  const fetchOriginalTweet = async (replyToId: string) => {
+    try {
+      setLoadingOriginal(true);
+      
+      const { data, error } = await supabase
+        .from('tweets')
+        .select(`
+          id,
+          content,
+          author_id,
+          image_urls,
+          hashtags,
+          mentions,
+          tags,
+          likes_count,
+          retweets_count,
+          replies_count,
+          views_count,
+          created_at,
+          profiles!tweets_author_id_fkey (
+            id,
+            username,
+            display_name,
+            avatar_url,
+            bio,
+            verified,
+            followers_count,
+            following_count,
+            country,
+            created_at
+          )
+        `)
+        .eq('id', replyToId)
+        .single();
+
+      if (error) throw error;
+
+      // Get current user to check likes/retweets/bookmarks
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      let userLikes: string[] = [];
+      let userRetweets: string[] = [];
+      let userBookmarks: string[] = [];
+      
+      if (user) {
+        const [likesResult, retweetsResult, bookmarksResult] = await Promise.all([
+          supabase
+            .from('likes')
+            .select('tweet_id')
+            .eq('user_id', user.id)
+            .eq('tweet_id', data.id),
+          supabase
+            .from('retweets')
+            .select('tweet_id')
+            .eq('user_id', user.id)
+            .eq('tweet_id', data.id),
+          supabase
+            .from('bookmarks')
+            .select('tweet_id')
+            .eq('user_id', user.id)
+            .eq('tweet_id', data.id)
+        ]);
+        
+        userLikes = likesResult.data?.map(like => like.tweet_id) || [];
+        userRetweets = retweetsResult.data?.map(retweet => retweet.tweet_id) || [];
+        userBookmarks = bookmarksResult.data?.map(bookmark => bookmark.tweet_id) || [];
+      }
+
+      const formattedTweet: Tweet = {
+        id: data.id,
+        content: data.content,
+        author: {
+          id: data.profiles.id,
+          username: data.profiles.username,
+          displayName: data.profiles.display_name,
+          avatar: data.profiles.avatar_url || '',
+          bio: data.profiles.bio,
+          verified: data.profiles.verified,
+          followers: data.profiles.followers_count,
+          following: data.profiles.following_count,
+          country: data.profiles.country,
+          joinedDate: new Date(data.profiles.created_at),
+        },
+        createdAt: new Date(data.created_at),
+        likes: data.likes_count,
+        retweets: data.retweets_count,
+        replies: data.replies_count,
+        views: data.views_count,
+        images: data.image_urls,
+        isLiked: userLikes.includes(data.id),
+        isRetweeted: userRetweets.includes(data.id),
+        isBookmarked: userBookmarks.includes(data.id),
+        hashtags: data.hashtags,
+        mentions: data.mentions,
+        tags: data.tags || [],
+      };
+
+      setOriginalTweet(formattedTweet);
+    } catch (error) {
+      console.error('Error fetching original tweet:', error);
+    } finally {
+      setLoadingOriginal(false);
+    }
+  };
+
+  const handleReplyToClick = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (tweet.replyTo && !originalTweet && !loadingOriginal) {
+      await fetchOriginalTweet(tweet.replyTo);
     }
   };
 
@@ -236,6 +352,22 @@ export const MobileTweetCard: React.FC<MobileTweetCardProps> = ({
           </div>
         )}
 
+        {/* Reply indicator */}
+        {tweet.replyTo && (
+          <div className="px-4 pt-3 pb-1">
+            <div className="flex items-center space-x-2 text-gray-500 text-xs">
+              <CornerUpLeft className="w-3 h-3" />
+              <span>Replying to</span>
+              <button
+                onClick={handleReplyToClick}
+                className="text-blue-500 hover:text-blue-600 hover:underline font-medium transition-colors"
+              >
+                {loadingOriginal ? 'Loading...' : originalTweet ? `@${originalTweet.author.username}` : 'a tweet'}
+              </button>
+            </div>
+          </div>
+        )}
+
         <div 
           className={`p-4 ${hasReplies ? 'cursor-pointer' : ''}`}
           onClick={handleTweetClick}
@@ -326,6 +458,45 @@ export const MobileTweetCard: React.FC<MobileTweetCardProps> = ({
                   <span className="text-gray-500 text-xs italic"> (truncated)</span>
                 )}
               </div>
+
+              {/* Original Tweet Preview (for replies) */}
+              {originalTweet && (
+                <div className="mb-3 border border-gray-200 rounded-xl p-3 bg-gray-50 hover:bg-gray-100 transition-colors cursor-pointer"
+                     onClick={(e) => {
+                       e.stopPropagation();
+                       // Navigate to the original tweet's author profile or tweet detail
+                       navigate(`/profile/${originalTweet.author.username}`);
+                     }}>
+                  <div className="flex items-start space-x-2">
+                    <Avatar className="w-6 h-6 flex-shrink-0">
+                      <AvatarImage 
+                        src={originalTweet.author.avatar ? storageService.getOptimizedImageUrl(originalTweet.author.avatar, { width: 48, quality: 80 }) : undefined} 
+                      />
+                      <AvatarFallback className="text-xs">{originalTweet.author.displayName[0]}</AvatarFallback>
+                    </Avatar>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center space-x-1 mb-1">
+                        <span className="font-bold text-gray-900 text-xs truncate">
+                          {originalTweet.author.displayName}
+                        </span>
+                        {originalTweet.author.verified && (
+                          <CheckCircle className="w-3 h-3 text-blue-500 fill-current flex-shrink-0" />
+                        )}
+                        <span className="text-gray-500 text-xs truncate">
+                          @{originalTweet.author.username}
+                        </span>
+                        <span className="text-gray-500 text-xs">·</span>
+                        <span className="text-gray-500 text-xs flex-shrink-0">
+                          {formatDistanceToNow(originalTweet.createdAt, { addSuffix: true }).replace('about ', '')}
+                        </span>
+                      </div>
+                      <p className="text-gray-700 text-xs line-clamp-2">
+                        {originalTweet.content}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
 
               {/* Images */}
               {tweet.images && tweet.images.length > 0 && (

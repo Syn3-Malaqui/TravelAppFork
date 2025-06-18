@@ -25,7 +25,7 @@ export interface Tweet {
   isLiked: boolean;
   isRetweeted: boolean;
   isBookmarked: boolean;
-  replyTo?: string;
+  replyTo?: string; // ID of the tweet this is replying to
   hashtags: string[];
   mentions: string[];
   tags?: string[];
