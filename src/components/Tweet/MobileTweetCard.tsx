@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { formatDistanceToNow } from 'date-fns';
 import { 
   Heart, 
@@ -10,7 +10,8 @@ import {
   ChevronDown,
   ChevronUp,
   X,
-  CornerUpLeft
+  CornerUpLeft,
+  Eye
 } from 'lucide-react';
 import { Button } from '../ui/button';
 import { Avatar, AvatarImage, AvatarFallback } from '../ui/avatar';
@@ -24,6 +25,7 @@ import { Tweet } from '../../types';
 import { useNavigate } from 'react-router-dom';
 import { ReplyComposer } from './ReplyComposer';
 import { useTweets } from '../../hooks/useTweets';
+import { useTweetViews } from '../../hooks/useTweetViews';
 import { storageService } from '../../lib/storage';
 import { supabase } from '../../lib/supabase';
 
@@ -54,6 +56,20 @@ export const MobileTweetCard: React.FC<MobileTweetCardProps> = ({
   const [loadingOriginal, setLoadingOriginal] = useState(false);
   const [replyingToTweetId, setReplyingToTweetId] = useState<string | null>(null);
   const { replies, fetchReplies, createRetweet, removeRetweet } = useTweets();
+  const { observeTweet, unobserveTweet, recordView } = useTweetViews();
+  const tweetRef = useRef<HTMLDivElement>(null);
+
+  // Set up view tracking
+  useEffect(() => {
+    const element = tweetRef.current;
+    if (element && !isReply) { // Only track views for main tweets, not replies
+      observeTweet(element, tweet.id);
+      
+      return () => {
+        unobserveTweet(element);
+      };
+    }
+  }, [tweet.id, isReply, observeTweet, unobserveTweet]);
 
   const formatNumber = (num: number): string => {
     if (num >= 1000000) {
@@ -195,6 +211,8 @@ export const MobileTweetCard: React.FC<MobileTweetCardProps> = ({
   };
 
   const handleTweetClick = async () => {
+    // Record view when user explicitly clicks on tweet
+    await recordView(tweet.id);
     // Navigate to tweet detail page instead of showing replies inline
     navigate(`/tweet/${tweet.id}`);
   };
@@ -232,9 +250,19 @@ export const MobileTweetCard: React.FC<MobileTweetCardProps> = ({
     onLike();
   };
 
+  const handleBookmarkClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    onBookmark();
+  };
+
   const handleShareClick = (e: React.MouseEvent) => {
     e.stopPropagation();
     // Handle share functionality
+  };
+
+  const handleViewsClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    // Handle views functionality - could show who viewed the tweet
   };
 
   const handleHashtagClick = (hashtag: string, e: React.MouseEvent) => {
@@ -340,7 +368,10 @@ export const MobileTweetCard: React.FC<MobileTweetCardProps> = ({
 
   return (
     <>
-      <div className={`border-b border-gray-100 bg-white ${isReply ? 'ml-8 border-l-2 border-gray-200' : ''}`}>
+      <div 
+        ref={tweetRef}
+        className={`border-b border-gray-100 bg-white ${isReply ? 'ml-8 border-l-2 border-gray-200' : ''}`}
+      >
         {/* Retweet indicator */}
         {tweet.isRetweet && tweet.retweetedBy && (
           <div className="px-4 pt-3 pb-1">
@@ -620,6 +651,17 @@ export const MobileTweetCard: React.FC<MobileTweetCardProps> = ({
                 >
                   <Heart className={`w-4 h-4 ${tweet.isLiked ? 'fill-current' : ''}`} />
                   <span className="text-xs ml-1">{formatNumber(tweet.likes)}</span>
+                </Button>
+
+                {/* Views */}
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  className="text-gray-500 p-1 h-8 flex items-center"
+                  onClick={handleViewsClick}
+                >
+                  <Eye className="w-4 h-4" />
+                  <span className="text-xs ml-1">{formatNumber(tweet.views)}</span>
                 </Button>
 
                 {/* Share */}

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { formatDistanceToNow } from 'date-fns';
 import { 
   Heart, 
@@ -26,6 +26,7 @@ import { Tweet } from '../../types';
 import { useNavigate } from 'react-router-dom';
 import { ReplyComposer } from './ReplyComposer';
 import { useTweets } from '../../hooks/useTweets';
+import { useTweetViews } from '../../hooks/useTweetViews';
 import { storageService } from '../../lib/storage';
 import { supabase } from '../../lib/supabase';
 
@@ -56,6 +57,20 @@ export const TweetCard: React.FC<TweetCardProps> = ({
   const [loadingOriginal, setLoadingOriginal] = useState(false);
   const [replyingToTweetId, setReplyingToTweetId] = useState<string | null>(null);
   const { replies, fetchReplies, createRetweet, removeRetweet } = useTweets();
+  const { observeTweet, unobserveTweet, recordView } = useTweetViews();
+  const tweetRef = useRef<HTMLDivElement>(null);
+
+  // Set up view tracking
+  useEffect(() => {
+    const element = tweetRef.current;
+    if (element && !isReply) { // Only track views for main tweets, not replies
+      observeTweet(element, tweet.id);
+      
+      return () => {
+        unobserveTweet(element);
+      };
+    }
+  }, [tweet.id, isReply, observeTweet, unobserveTweet]);
 
   const formatNumber = (num: number): string => {
     if (num >= 1000000) {
@@ -197,6 +212,8 @@ export const TweetCard: React.FC<TweetCardProps> = ({
   };
 
   const handleTweetClick = async () => {
+    // Record view when user explicitly clicks on tweet
+    await recordView(tweet.id);
     // Navigate to tweet detail page instead of showing replies inline
     navigate(`/tweet/${tweet.id}`);
   };
@@ -246,7 +263,7 @@ export const TweetCard: React.FC<TweetCardProps> = ({
 
   const handleViewsClick = (e: React.MouseEvent) => {
     e.stopPropagation();
-    // Handle views functionality
+    // Handle views functionality - could show who viewed the tweet
   };
 
   const handleHashtagClick = (hashtag: string, e: React.MouseEvent) => {
@@ -352,7 +369,10 @@ export const TweetCard: React.FC<TweetCardProps> = ({
 
   return (
     <>
-      <div className={`border-b border-gray-200 transition-colors hover:bg-gray-50 cursor-pointer ${isReply ? 'ml-12 border-l-2 border-gray-200' : ''}`}>
+      <div 
+        ref={tweetRef}
+        className={`border-b border-gray-200 transition-colors hover:bg-gray-50 cursor-pointer ${isReply ? 'ml-12 border-l-2 border-gray-200' : ''}`}
+      >
         {/* Retweet indicator */}
         {tweet.isRetweet && tweet.retweetedBy && (
           <div className="px-4 pt-3 pb-1">

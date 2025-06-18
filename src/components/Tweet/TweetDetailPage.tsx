@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, CornerUpLeft } from 'lucide-react';
+import { ArrowLeft, CornerUpLeft, Eye } from 'lucide-react';
 import { Button } from '../ui/button';
 import { Avatar, AvatarImage, AvatarFallback } from '../ui/avatar';
 import { TweetCard } from './TweetCard';
@@ -10,6 +10,7 @@ import { ReplyComposer } from './ReplyComposer';
 import { TrendingSidebar } from '../Layout/TrendingSidebar';
 import { useAuth } from '../../hooks/useAuth';
 import { useTweets } from '../../hooks/useTweets';
+import { useTweetViews } from '../../hooks/useTweetViews';
 import { supabase } from '../../lib/supabase';
 import { storageService } from '../../lib/storage';
 import { Tweet, TweetWithProfile } from '../../types';
@@ -20,6 +21,7 @@ export const TweetDetailPage: React.FC = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { replies, fetchReplies, likeTweet, unlikeTweet } = useTweets();
+  const { recordView } = useTweetViews();
   
   const [tweet, setTweet] = useState<Tweet | null>(null);
   const [parentTweet, setParentTweet] = useState<Tweet | null>(null);
@@ -51,6 +53,13 @@ export const TweetDetailPage: React.FC = () => {
     }
   }, [tweetId]);
 
+  // Record view when tweet detail page loads
+  useEffect(() => {
+    if (tweet && user) {
+      recordView(tweet.id);
+    }
+  }, [tweet, user, recordView]);
+
   const formatTweetData = (tweetData: TweetWithProfile, userLikes: string[], userRetweets: string[], userBookmarks: string[]): Tweet => {
     return {
       id: tweetData.id,
@@ -81,6 +90,16 @@ export const TweetDetailPage: React.FC = () => {
       tags: tweetData.tags || [],
       replyTo: tweetData.reply_to,
     };
+  };
+
+  const formatNumber = (num: number): string => {
+    if (num >= 1000000) {
+      return (num / 1000000).toFixed(1) + 'M';
+    }
+    if (num >= 1000) {
+      return (num / 1000).toFixed(1) + 'K';
+    }
+    return num.toString();
   };
 
   const fetchTweetDetail = async () => {
@@ -584,7 +603,7 @@ export const TweetDetailPage: React.FC = () => {
                     <span className="ml-1">Likes</span>
                   </div>
                   <div>
-                    <span className="font-bold text-gray-900">{tweet.views.toLocaleString()}</span>
+                    <span className="font-bold text-gray-900">{formatNumber(tweet.views)}</span>
                     <span className="ml-1">Views</span>
                   </div>
                 </div>
@@ -868,7 +887,7 @@ export const TweetDetailPage: React.FC = () => {
                   <span className="ml-1">Likes</span>
                 </div>
                 <div>
-                  <span className="font-bold text-gray-900">{tweet.views.toLocaleString()}</span>
+                  <span className="font-bold text-gray-900">{formatNumber(tweet.views)}</span>
                   <span className="ml-1">Views</span>
                 </div>
               </div>
