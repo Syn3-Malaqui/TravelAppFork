@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { X, Image } from 'lucide-react';
 import { Button } from '../ui/button';
 import { Avatar, AvatarImage, AvatarFallback } from '../ui/avatar';
@@ -11,12 +11,14 @@ interface ReplyComposerProps {
   tweet: Tweet;
   onCancel: () => void;
   onReplySuccess: () => void;
+  replyingToReply?: boolean; // New prop to indicate if replying to a reply
 }
 
 export const ReplyComposer: React.FC<ReplyComposerProps> = ({ 
   tweet, 
   onCancel, 
-  onReplySuccess 
+  onReplySuccess,
+  replyingToReply = false
 }) => {
   const [content, setContent] = useState('');
   const [images, setImages] = useState<string[]>([]);
@@ -25,6 +27,13 @@ export const ReplyComposer: React.FC<ReplyComposerProps> = ({
   const [uploadingImage, setUploadingImage] = useState(false);
   const { user } = useAuth();
   const { createReply } = useTweets();
+
+  // Auto-populate @mention when replying to a reply
+  useEffect(() => {
+    if (replyingToReply && tweet.author.username) {
+      setContent(`@${tweet.author.username} `);
+    }
+  }, [replyingToReply, tweet.author.username]);
 
   const handleSubmit = async () => {
     if (!content.trim()) {
@@ -41,7 +50,10 @@ export const ReplyComposer: React.FC<ReplyComposerProps> = ({
     setError('');
     
     try {
-      await createReply(content, tweet.id, images);
+      // For replies to replies, we want to reply to the original tweet (root of the thread)
+      // but include the @mention in the content
+      const rootTweetId = tweet.replyTo || tweet.id;
+      await createReply(content, rootTweetId, images);
       setContent('');
       setImages([]);
       onReplySuccess();
@@ -126,7 +138,11 @@ export const ReplyComposer: React.FC<ReplyComposerProps> = ({
     <div className="border-t border-gray-200 bg-gray-50 p-4">
       {/* Replying to indicator */}
       <div className="mb-3 text-sm text-gray-500">
-        Replying to <span className="text-blue-500">@{tweet.author.username}</span>
+        {replyingToReply ? (
+          <>Replying to <span className="text-blue-500">@{tweet.author.username}</span> in this thread</>
+        ) : (
+          <>Replying to <span className="text-blue-500">@{tweet.author.username}</span></>
+        )}
       </div>
 
       {/* Error Message */}
@@ -164,7 +180,7 @@ export const ReplyComposer: React.FC<ReplyComposerProps> = ({
           <textarea
             value={content}
             onChange={(e) => setContent(e.target.value)}
-            placeholder="Tweet your reply"
+            placeholder={replyingToReply ? "Add to this conversation..." : "Tweet your reply"}
             className={`w-full text-lg placeholder-gray-500 border-none outline-none resize-none min-h-[80px] bg-transparent focus:ring-0 focus:border-none focus:outline-none ${
               isOverLimit ? 'text-red-600' : ''
             }`}

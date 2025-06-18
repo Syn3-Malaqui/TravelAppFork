@@ -36,6 +36,7 @@ interface TweetCardProps {
   onBookmark: () => void;
   currentUserId?: string;
   isReply?: boolean;
+  parentTweetId?: string; // ID of the parent tweet in the thread
 }
 
 export const TweetCard: React.FC<TweetCardProps> = ({ 
@@ -44,7 +45,8 @@ export const TweetCard: React.FC<TweetCardProps> = ({
   onRetweet, 
   onBookmark, 
   currentUserId,
-  isReply = false
+  isReply = false,
+  parentTweetId
 }) => {
   const navigate = useNavigate();
   const [showReplies, setShowReplies] = useState(false);
@@ -52,6 +54,7 @@ export const TweetCard: React.FC<TweetCardProps> = ({
   const [selectedImageIndex, setSelectedImageIndex] = useState<number | null>(null);
   const [originalTweet, setOriginalTweet] = useState<Tweet | null>(null);
   const [loadingOriginal, setLoadingOriginal] = useState(false);
+  const [replyingToTweetId, setReplyingToTweetId] = useState<string | null>(null);
   const { replies, fetchReplies, createRetweet, removeRetweet } = useTweets();
 
   const formatNumber = (num: number): string => {
@@ -202,14 +205,18 @@ export const TweetCard: React.FC<TweetCardProps> = ({
     }
   };
 
-  const handleReplyClick = (e: React.MouseEvent) => {
+  const handleReplyClick = (e: React.MouseEvent, targetTweetId?: string) => {
     e.stopPropagation();
+    setReplyingToTweetId(targetTweetId || tweet.id);
     setShowReplyComposer(!showReplyComposer);
   };
 
   const handleReplySuccess = async () => {
     setShowReplyComposer(false);
-    await fetchReplies(tweet.id);
+    setReplyingToTweetId(null);
+    // Refresh replies for the main tweet (not individual replies)
+    const mainTweetId = parentTweetId || tweet.id;
+    await fetchReplies(mainTweetId);
     setShowReplies(true);
   };
 
@@ -336,13 +343,16 @@ export const TweetCard: React.FC<TweetCardProps> = ({
   };
 
   const isOwnTweet = currentUserId === tweet.author.id;
-  const tweetReplies = replies[tweet.id] || [];
+  const tweetReplies = replies[parentTweetId || tweet.id] || [];
   const hasReplies = tweet.replies > 0 && !isReply;
 
   // Truncate content if it exceeds 200 characters (for display purposes)
   const displayContent = tweet.content.length > 200 
     ? tweet.content.substring(0, 200) + '...' 
     : tweet.content;
+
+  // Check if this tweet is replying to someone (has @mention at the start)
+  const isReplyToReply = isReply && tweet.content.startsWith('@');
 
   return (
     <>
@@ -609,7 +619,7 @@ export const TweetCard: React.FC<TweetCardProps> = ({
                   variant="ghost" 
                   size="sm" 
                   className="text-gray-500 hover:text-blue-500 hover:bg-blue-50 p-2 flex items-center"
-                  onClick={handleReplyClick}
+                  onClick={(e) => handleReplyClick(e)}
                 >
                   <MessageCircle className="w-5 h-5" />
                   <span className="text-sm ml-1">{formatNumber(tweet.replies)}</span>
@@ -686,9 +696,13 @@ export const TweetCard: React.FC<TweetCardProps> = ({
           {/* Reply Composer */}
           {showReplyComposer && (
             <ReplyComposer
-              tweet={tweet}
-              onCancel={() => setShowReplyComposer(false)}
+              tweet={replyingToTweetId === tweet.id ? tweet : { ...tweet, id: replyingToTweetId! }}
+              onCancel={() => {
+                setShowReplyComposer(false);
+                setReplyingToTweetId(null);
+              }}
               onReplySuccess={handleReplySuccess}
+              replyingToReply={isReply && replyingToTweetId !== tweet.id}
             />
           )}
         </div>
@@ -705,6 +719,7 @@ export const TweetCard: React.FC<TweetCardProps> = ({
                 onBookmark={() => {}} // TODO: Implement reply bookmark
                 currentUserId={currentUserId}
                 isReply={true}
+                parentTweetId={tweet.id}
               />
             ))}
           </div>
