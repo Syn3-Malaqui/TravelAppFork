@@ -34,13 +34,14 @@ function App() {
   return (
     <Router>
       <div className="min-h-screen bg-white">
-        {/* Desktop Layout */}
-        <div className="hidden md:flex h-screen">
-          {/* Desktop Sidebar - Fixed */}
-          <Sidebar />
+        <div className="flex">
+          {/* Desktop Sidebar */}
+          <div className="hidden md:block">
+            <Sidebar />
+          </div>
           
-          {/* Main Content Area - Takes remaining space */}
-          <div className="flex-1 flex min-w-0">
+          {/* Main Content - Takes remaining space, accounting for sidebar on desktop */}
+          <div className="flex-1 md:ml-64">
             <Routes>
               <Route path="/" element={<Timeline />} />
               <Route path="/compose" element={<ComposePage />} />
@@ -53,23 +54,9 @@ function App() {
             </Routes>
           </div>
         </div>
-
-        {/* Mobile Layout */}
-        <div className="md:hidden">
-          <Routes>
-            <Route path="/" element={<Timeline />} />
-            <Route path="/compose" element={<ComposePage />} />
-            <Route path="/search" element={<SearchPage />} />
-            <Route path="/hashtag/:hashtag" element={<HashtagPage />} />
-            <Route path="/notifications" element={<NotificationsPage />} />
-            <Route path="/profile/:username" element={<ProfilePage />} />
-            <Route path="/profile" element={<UserProfilePage />} />
-            <Route path="/explore" element={<div className="p-8 text-center text-gray-500">Explore Page</div>} />
-          </Routes>
-          
-          {/* Mobile Navigation */}
-          <MobileNavigation />
-        </div>
+        
+        {/* Mobile Navigation */}
+        <MobileNavigation />
         
         {/* Floating Action Button */}
         <FloatingActionButton />
