@@ -53,7 +53,7 @@ export const CategoriesFilter: React.FC<CategoriesFilterProps> = ({
         <DropdownMenuTrigger asChild>
           <Button 
             variant="outline" 
-            className="flex items-center space-x-2 px-4 py-2 border-gray-300 hover:bg-gray-50"
+            className="flex items-center space-x-2 px-4 py-2 border-gray-300 hover:bg-gray-50 rounded-full"
           >
             <Tag className="h-4 w-4 text-gray-500" />
             <div className="relative">
@@ -67,14 +67,14 @@ export const CategoriesFilter: React.FC<CategoriesFilterProps> = ({
         </DropdownMenuTrigger>
         <DropdownMenuContent 
           align="start" 
-          className="w-72 max-h-96 overflow-y-auto"
+          className="w-72 max-h-96 overflow-y-auto rounded-xl"
           sideOffset={4}
         >
           <div className="max-h-80 overflow-y-auto">
             {/* All Categories Option */}
             <DropdownMenuItem
               onClick={() => handleCategorySelect(null)}
-              className="flex items-center space-x-3 px-3 py-2 hover:bg-gray-50 cursor-pointer"
+              className="flex items-center space-x-3 px-3 py-2 hover:bg-gray-50 cursor-pointer rounded-lg mx-1"
             >
               <div className="relative flex-shrink-0">
                 <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center border border-gray-200">
@@ -92,7 +92,7 @@ export const CategoriesFilter: React.FC<CategoriesFilterProps> = ({
               <DropdownMenuItem
                 key={category}
                 onClick={() => handleCategorySelect(category)}
-                className="flex items-center space-x-3 px-3 py-2 hover:bg-gray-50 cursor-pointer"
+                className="flex items-center space-x-3 px-3 py-2 hover:bg-gray-50 cursor-pointer rounded-lg mx-1"
               >
                 <div className="relative flex-shrink-0">
                   <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center border border-gray-200">
