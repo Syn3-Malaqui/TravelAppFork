@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Search, X, TrendingUp, Hash, User } from 'lucide-react';
+import { Search, X, TrendingUp, Hash, User, Filter, ChevronDown, ChevronUp } from 'lucide-react';
 import { Button } from '../ui/button';
 import { Avatar, AvatarImage, AvatarFallback } from '../ui/avatar';
 import { useNavigate } from 'react-router-dom';
@@ -7,6 +7,7 @@ import { useAuth } from '../../hooks/useAuth';
 import { useHashtags } from '../../hooks/useHashtags';
 import { supabase } from '../../lib/supabase';
 import { User as UserType } from '../../types';
+import { TWEET_CATEGORIES, FILTER_COUNTRIES } from '../../types';
 
 interface SearchResult {
   type: 'user' | 'hashtag';
@@ -18,6 +19,11 @@ export const SearchPage: React.FC = () => {
   const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
   const [loading, setLoading] = useState(false);
   const [activeTab, setActiveTab] = useState<'top' | 'people' | 'hashtags'>('top');
+  const [showFilters, setShowFilters] = useState(false);
+  
+  // Filter states
+  const [selectedTags, setSelectedTags] = useState<string[]>([]);
+  const [selectedCountries, setSelectedCountries] = useState<string[]>([]);
   
   const { user } = useAuth();
   const { trendingHashtags, loading: hashtagsLoading } = useHashtags();
@@ -29,7 +35,7 @@ export const SearchPage: React.FC = () => {
     } else {
       setSearchResults([]);
     }
-  }, [searchQuery, activeTab]);
+  }, [searchQuery, activeTab, selectedTags, selectedCountries]);
 
   const performSearch = async () => {
     if (!searchQuery.trim()) return;
@@ -40,11 +46,17 @@ export const SearchPage: React.FC = () => {
 
       // Search for users if looking for people or top results
       if (activeTab === 'people' || activeTab === 'top') {
-        const { data: users, error } = await supabase
+        let userQuery = supabase
           .from('profiles')
           .select('*')
-          .or(`username.ilike.%${searchQuery}%,display_name.ilike.%${searchQuery}%`)
-          .limit(10);
+          .or(`username.ilike.%${searchQuery}%,display_name.ilike.%${searchQuery}%`);
+
+        // Apply country filter for users
+        if (selectedCountries.length > 0) {
+          userQuery = userQuery.in('country', selectedCountries);
+        }
+
+        const { data: users, error } = await userQuery.limit(10);
 
         if (!error && users) {
           const userResults: SearchResult[] = users.map(user => ({
@@ -73,12 +85,18 @@ export const SearchPage: React.FC = () => {
           item.hashtag.toLowerCase().includes(searchQuery.toLowerCase())
         );
         
-        // Also search in all tweets for hashtags
-        const { data: tweets, error } = await supabase
+        // Also search in all tweets for hashtags with filters
+        let tweetQuery = supabase
           .from('tweets')
-          .select('hashtags')
-          .not('hashtags', 'eq', '{}')
-          .limit(100);
+          .select('hashtags, tags, profiles!tweets_author_id_fkey(country)')
+          .not('hashtags', 'eq', '{}');
+
+        // Apply tag filter
+        if (selectedTags.length > 0) {
+          tweetQuery = tweetQuery.overlaps('tags', selectedTags);
+        }
+
+        const { data: tweets, error } = await tweetQuery.limit(200);
 
         if (!error && tweets) {
           const allHashtags = new Set<string>();
@@ -86,8 +104,14 @@ export const SearchPage: React.FC = () => {
           // Add trending matches first
           trendingMatches.forEach(item => allHashtags.add(item.hashtag));
           
-          // Add other matching hashtags
+          // Add other matching hashtags with country filtering
           tweets.forEach(tweet => {
+            // Apply country filter
+            if (selectedCountries.length > 0 && 
+                !selectedCountries.includes(tweet.profiles?.country)) {
+              return;
+            }
+
             tweet.hashtags.forEach((hashtag: string) => {
               if (hashtag.toLowerCase().includes(searchQuery.toLowerCase())) {
                 allHashtags.add(`#${hashtag}`);
@@ -128,6 +152,31 @@ export const SearchPage: React.FC = () => {
     setSearchResults([]);
   };
 
+  const toggleTag = (tag: string) => {
+    setSelectedTags(prev => 
+      prev.includes(tag) 
+        ? prev.filter(t => t !== tag)
+        : [...prev, tag]
+    );
+  };
+
+  const toggleCountry = (countryCode: string) => {
+    if (countryCode === 'ALL') return;
+    
+    setSelectedCountries(prev => 
+      prev.includes(countryCode) 
+        ? prev.filter(c => c !== countryCode)
+        : [...prev, countryCode]
+    );
+  };
+
+  const clearAllFilters = () => {
+    setSelectedTags([]);
+    setSelectedCountries([]);
+  };
+
+  const hasActiveFilters = selectedTags.length > 0 || selectedCountries.length > 0;
+
   const filteredResults = searchResults.filter(result => {
     if (activeTab === 'people') return result.type === 'user';
     if (activeTab === 'hashtags') return result.type === 'hashtag';
@@ -141,30 +190,120 @@ export const SearchPage: React.FC = () => {
     return trending ? `${trending.count} posts` : 'Hashtag';
   };
 
+  const selectableCountries = FILTER_COUNTRIES.filter(country => country.code !== 'ALL');
+
   return (
     <div className="min-h-screen bg-white">
       {/* Header */}
-      <div className="sticky top-0 bg-white/80 backdrop-blur-md border-b border-gray-200 px-4 py-3 z-10">
-        <div className="relative">
-          <Search className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
-          <input
-            type="text"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Search X"
-            className="w-full pl-10 pr-10 py-3 bg-gray-100 rounded-full focus:bg-white focus:ring-2 focus:ring-blue-500 focus:outline-none transition-all"
-          />
-          {searchQuery && (
+      <div className="sticky top-0 bg-white/80 backdrop-blur-md border-b border-gray-200 z-10">
+        <div className="px-4 py-3">
+          <div className="relative">
+            <Search className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Search X"
+              className="w-full pl-10 pr-10 py-3 bg-gray-100 rounded-full focus:bg-white focus:ring-2 focus:ring-blue-500 focus:outline-none transition-all"
+            />
+            {searchQuery && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={clearSearch}
+                className="absolute right-2 top-2 p-2 hover:bg-gray-100 rounded-full"
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            )}
+          </div>
+
+          {/* Filter Toggle Button */}
+          <div className="flex items-center justify-between mt-3">
             <Button
-              variant="ghost"
+              variant="outline"
               size="sm"
-              onClick={clearSearch}
-              className="absolute right-2 top-2 p-2 hover:bg-gray-100 rounded-full"
+              onClick={() => setShowFilters(!showFilters)}
+              className={`flex items-center space-x-2 ${hasActiveFilters ? 'border-blue-500 text-blue-600' : ''}`}
             >
-              <X className="h-4 w-4" />
+              <Filter className="h-4 w-4" />
+              <span>Filters</span>
+              {hasActiveFilters && (
+                <span className="bg-blue-500 text-white text-xs rounded-full px-2 py-1">
+                  {selectedTags.length + selectedCountries.length}
+                </span>
+              )}
+              {showFilters ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
             </Button>
-          )}
+
+            {hasActiveFilters && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={clearAllFilters}
+                className="text-blue-600 hover:text-blue-700"
+              >
+                Clear all
+              </Button>
+            )}
+          </div>
         </div>
+
+        {/* Expandable Filters */}
+        {showFilters && (
+          <div className="border-t border-gray-200 bg-gray-50 p-4 space-y-4">
+            {/* Tags Filter */}
+            <div>
+              <h3 className="text-sm font-medium text-gray-700 mb-2 flex items-center">
+                <Hash className="h-4 w-4 mr-1" />
+                Categories
+              </h3>
+              <div className="flex flex-wrap gap-2">
+                {TWEET_CATEGORIES.map((tag) => (
+                  <Button
+                    key={tag}
+                    variant="outline"
+                    size="sm"
+                    onClick={() => toggleTag(tag)}
+                    className={`text-xs ${
+                      selectedTags.includes(tag)
+                        ? 'bg-blue-500 text-white border-blue-500 hover:bg-blue-600'
+                        : 'border-gray-300 text-gray-700 hover:bg-gray-100'
+                    }`}
+                  >
+                    {tag}
+                  </Button>
+                ))}
+              </div>
+            </div>
+
+            {/* Countries Filter */}
+            <div>
+              <h3 className="text-sm font-medium text-gray-700 mb-2 flex items-center">
+                <User className="h-4 w-4 mr-1" />
+                Countries
+              </h3>
+              <div className="flex flex-wrap gap-2 max-h-32 overflow-y-auto">
+                {selectableCountries.map((country) => (
+                  <Button
+                    key={country.code}
+                    variant="outline"
+                    size="sm"
+                    onClick={() => toggleCountry(country.code)}
+                    className={`text-xs flex items-center space-x-1 ${
+                      selectedCountries.includes(country.code)
+                        ? 'bg-green-500 text-white border-green-500 hover:bg-green-600'
+                        : 'border-gray-300 text-gray-700 hover:bg-gray-100'
+                    }`}
+                  >
+                    <span>{country.flag}</span>
+                    <span>{country.name}</span>
+                  </Button>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Search Tabs */}
@@ -246,6 +385,40 @@ export const SearchPage: React.FC = () => {
         ) : (
           /* Search Results */
           <div>
+            {/* Active Filters Display */}
+            {hasActiveFilters && (
+              <div className="bg-blue-50 border-b border-blue-200 px-4 py-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="text-sm text-blue-700 font-medium">Active filters:</span>
+                    {selectedTags.map(tag => (
+                      <span key={tag} className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-blue-100 text-blue-700">
+                        <Hash className="w-3 h-3 mr-1" />
+                        {tag}
+                      </span>
+                    ))}
+                    {selectedCountries.map(countryCode => {
+                      const country = selectableCountries.find(c => c.code === countryCode);
+                      return (
+                        <span key={countryCode} className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-green-100 text-green-700">
+                          <span className="mr-1">{country?.flag}</span>
+                          {country?.name}
+                        </span>
+                      );
+                    })}
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={clearAllFilters}
+                    className="text-blue-600 hover:text-blue-700 text-xs"
+                  >
+                    Clear
+                  </Button>
+                </div>
+              </div>
+            )}
+
             {loading ? (
               <div className="flex items-center justify-center py-12">
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
@@ -254,7 +427,12 @@ export const SearchPage: React.FC = () => {
             ) : filteredResults.length === 0 ? (
               <div className="text-center py-12 text-gray-500">
                 <p className="text-lg">No results found</p>
-                <p className="text-sm mt-2">Try searching for something else</p>
+                <p className="text-sm mt-2">
+                  {hasActiveFilters 
+                    ? 'Try adjusting your filters or search terms'
+                    : 'Try searching for something else'
+                  }
+                </p>
               </div>
             ) : (
               <div className="divide-y divide-gray-100">
@@ -279,6 +457,11 @@ export const SearchPage: React.FC = () => {
                                 <div className="w-4 h-4 bg-blue-500 rounded-full flex items-center justify-center">
                                   <span className="text-white text-xs">✓</span>
                                 </div>
+                              )}
+                              {(result.data as UserType).country && (
+                                <span className="text-sm">
+                                  {selectableCountries.find(c => c.code === (result.data as UserType).country)?.flag}
+                                </span>
                               )}
                             </div>
                             <p className="text-gray-500 text-sm">@{(result.data as UserType).username}</p>
