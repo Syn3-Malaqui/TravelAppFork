@@ -197,8 +197,18 @@ export const TweetCard: React.FC<TweetCardProps> = ({
   };
 
   const handleTweetClick = async () => {
-    // Navigate to tweet detail page instead of showing replies inline
-    navigate(`/tweet/${tweet.id}`);
+    // Navigate to tweet detail page for main tweets
+    if (!isReply) {
+      navigate(`/tweet/${tweet.id}`);
+    }
+  };
+
+  const handleShowRepliesClick = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!showReplies) {
+      await fetchReplies(tweet.id);
+    }
+    setShowReplies(!showReplies);
   };
 
   const handleReplyClick = (e: React.MouseEvent, targetTweetId?: string) => {
@@ -352,7 +362,7 @@ export const TweetCard: React.FC<TweetCardProps> = ({
 
   return (
     <>
-      <div className={`border-b border-gray-200 transition-colors hover:bg-gray-50 cursor-pointer ${isReply ? 'ml-12 border-l-2 border-gray-200' : ''}`}>
+      <div className={`border-b border-gray-200 transition-colors hover:bg-gray-50 ${isReply ? 'ml-12 border-l-2 border-gray-200' : ''}`}>
         {/* Retweet indicator */}
         {tweet.isRetweet && tweet.retweetedBy && (
           <div className="px-4 pt-3 pb-1">
@@ -387,8 +397,8 @@ export const TweetCard: React.FC<TweetCardProps> = ({
         )}
 
         <div 
-          className="p-4"
-          onClick={handleTweetClick}
+          className={`p-4 ${!isReply ? 'cursor-pointer' : ''}`}
+          onClick={!isReply ? handleTweetClick : undefined}
         >
           <div className="flex gap-4">
             {/* Avatar */}
@@ -588,6 +598,30 @@ export const TweetCard: React.FC<TweetCardProps> = ({
                       ))}
                     </div>
                   )}
+                </div>
+              )}
+
+              {/* Show replies button for main tweets */}
+              {hasReplies && (
+                <div className="mb-3">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={handleShowRepliesClick}
+                    className="text-blue-500 hover:text-blue-600 hover:bg-blue-50 p-2 rounded-full flex items-center space-x-1"
+                  >
+                    {showReplies ? (
+                      <>
+                        <ChevronUp className="w-4 h-4" />
+                        <span className="text-sm">Hide {tweet.replies} {tweet.replies === 1 ? 'reply' : 'replies'}</span>
+                      </>
+                    ) : (
+                      <>
+                        <ChevronDown className="w-4 h-4" />
+                        <span className="text-sm">Show {tweet.replies} {tweet.replies === 1 ? 'reply' : 'replies'}</span>
+                      </>
+                    )}
+                  </Button>
                 </div>
               )}
 
