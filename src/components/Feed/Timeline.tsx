@@ -22,6 +22,7 @@ export const Timeline: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'for-you' | 'following'>('for-you');
   const [categoryFilter, setCategoryFilter] = useState<string | null>(null);
   const [countryFilter, setCountryFilter] = useState<string>('ALL');
+  const [showSidebar, setShowSidebar] = useState(true);
   const { user } = useAuth();
   const { tweets, followingTweets, loading, error, likeTweet, unlikeTweet } = useTweets();
   const [userProfile, setUserProfile] = useState<{
@@ -29,6 +30,23 @@ export const Timeline: React.FC = () => {
     username: string;
     avatar: string;
   } | null>(null);
+
+  // Handle window resize to show/hide sidebar
+  useEffect(() => {
+    const handleResize = () => {
+      // Hide sidebar when window width is less than 1280px (xl breakpoint)
+      setShowSidebar(window.innerWidth >= 1280);
+    };
+
+    // Set initial state
+    handleResize();
+
+    // Add event listener
+    window.addEventListener('resize', handleResize);
+
+    // Cleanup
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   // Fetch user profile data for the composer
   useEffect(() => {
@@ -128,10 +146,10 @@ export const Timeline: React.FC = () => {
   if (loading) {
     return (
       <div className="h-full flex">
-        {/* Desktop Layout with Sidebar */}
+        {/* Desktop Layout with Conditional Sidebar */}
         <div className="hidden md:flex flex-1">
           {/* Main Content */}
-          <div className="flex-1 border-r border-gray-200 flex flex-col">
+          <div className={`flex-1 border-r border-gray-200 flex flex-col ${showSidebar ? '' : 'border-r-0'}`}>
             {/* Desktop Header with Tabs - Fixed */}
             <div className="bg-white/95 backdrop-blur-md border-b border-gray-200 z-50 flex-shrink-0">
               {/* Top section with title */}
@@ -199,8 +217,8 @@ export const Timeline: React.FC = () => {
             </div>
           </div>
 
-          {/* Right Sidebar - Fixed */}
-          <TrendingSidebar />
+          {/* Right Sidebar - Conditionally Rendered */}
+          {showSidebar && <TrendingSidebar />}
         </div>
 
         {/* Mobile Layout */}
@@ -246,10 +264,10 @@ export const Timeline: React.FC = () => {
   if (error) {
     return (
       <div className="h-full flex">
-        {/* Desktop Layout with Sidebar */}
+        {/* Desktop Layout with Conditional Sidebar */}
         <div className="hidden md:flex flex-1">
           {/* Main Content */}
-          <div className="flex-1 border-r border-gray-200 flex flex-col">
+          <div className={`flex-1 border-r border-gray-200 flex flex-col ${showSidebar ? '' : 'border-r-0'}`}>
             {/* Desktop Header with Tabs - Fixed */}
             <div className="bg-white/95 backdrop-blur-md border-b border-gray-200 z-50 flex-shrink-0">
               {/* Top section with title */}
@@ -307,8 +325,8 @@ export const Timeline: React.FC = () => {
             </div>
           </div>
 
-          {/* Right Sidebar - Fixed */}
-          <TrendingSidebar />
+          {/* Right Sidebar - Conditionally Rendered */}
+          {showSidebar && <TrendingSidebar />}
         </div>
 
         {/* Mobile Layout */}
@@ -330,10 +348,10 @@ export const Timeline: React.FC = () => {
 
   return (
     <div className="h-full flex">
-      {/* Desktop Layout with Sidebar */}
+      {/* Desktop Layout with Conditional Sidebar */}
       <div className="hidden md:flex flex-1">
         {/* Main Content */}
-        <div className="flex-1 border-r border-gray-200 flex flex-col">
+        <div className={`flex-1 border-r border-gray-200 flex flex-col ${showSidebar ? '' : 'border-r-0'}`}>
           {/* Desktop Header with Tabs - Fixed */}
           <div className="bg-white/95 backdrop-blur-md border-b border-gray-200 z-50 flex-shrink-0">
             {/* Top section with title */}
@@ -503,8 +521,8 @@ export const Timeline: React.FC = () => {
           </div>
         </div>
 
-        {/* Right Sidebar - Fixed and separate from scrolling */}
-        <TrendingSidebar />
+        {/* Right Sidebar - Conditionally Rendered and separate from scrolling */}
+        {showSidebar && <TrendingSidebar />}
       </div>
 
       {/* Mobile Layout */}
