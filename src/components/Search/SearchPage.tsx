@@ -4,6 +4,7 @@ import { Button } from '../ui/button';
 import { Avatar, AvatarImage, AvatarFallback } from '../ui/avatar';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
+import { useHashtags } from '../../hooks/useHashtags';
 import { supabase } from '../../lib/supabase';
 import { User as UserType } from '../../types';
 
@@ -12,17 +13,6 @@ interface SearchResult {
   data: UserType | string;
 }
 
-const trendingTopics = [
-  { hashtag: '#coding', tweets: '125K' },
-  { hashtag: '#react', tweets: '89K' },
-  { hashtag: '#typescript', tweets: '67K' },
-  { hashtag: '#webdev', tweets: '156K' },
-  { hashtag: '#javascript', tweets: '234K' },
-  { hashtag: '#programming', tweets: '189K' },
-  { hashtag: '#travel', tweets: '345K' },
-  { hashtag: '#photography', tweets: '278K' },
-];
-
 export const SearchPage: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
@@ -30,6 +20,7 @@ export const SearchPage: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'top' | 'people' | 'hashtags'>('top');
   
   const { user } = useAuth();
+  const { trendingHashtags, loading: hashtagsLoading } = useHashtags();
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -67,6 +58,7 @@ export const SearchPage: React.FC = () => {
               verified: user.verified,
               followers: user.followers_count,
               following: user.following_count,
+              country: user.country,
               joinedDate: new Date(user.created_at),
             }
           }));
@@ -76,15 +68,42 @@ export const SearchPage: React.FC = () => {
 
       // Search for hashtags if looking for hashtags or top results
       if (activeTab === 'hashtags' || activeTab === 'top') {
-        const matchingHashtags = trendingTopics.filter(topic =>
-          topic.hashtag.toLowerCase().includes(searchQuery.toLowerCase())
+        // Search in trending hashtags first
+        const trendingMatches = trendingHashtags.filter(item =>
+          item.hashtag.toLowerCase().includes(searchQuery.toLowerCase())
         );
         
-        const hashtagResults: SearchResult[] = matchingHashtags.map(hashtag => ({
-          type: 'hashtag',
-          data: hashtag.hashtag
-        }));
-        results.push(...hashtagResults);
+        // Also search in all tweets for hashtags
+        const { data: tweets, error } = await supabase
+          .from('tweets')
+          .select('hashtags')
+          .not('hashtags', 'eq', '{}')
+          .limit(100);
+
+        if (!error && tweets) {
+          const allHashtags = new Set<string>();
+          
+          // Add trending matches first
+          trendingMatches.forEach(item => allHashtags.add(item.hashtag));
+          
+          // Add other matching hashtags
+          tweets.forEach(tweet => {
+            tweet.hashtags.forEach((hashtag: string) => {
+              if (hashtag.toLowerCase().includes(searchQuery.toLowerCase())) {
+                allHashtags.add(`#${hashtag}`);
+              }
+            });
+          });
+
+          const hashtagResults: SearchResult[] = Array.from(allHashtags)
+            .slice(0, 10)
+            .map(hashtag => ({
+              type: 'hashtag',
+              data: hashtag
+            }));
+          
+          results.push(...hashtagResults);
+        }
       }
 
       setSearchResults(results);
@@ -100,8 +119,8 @@ export const SearchPage: React.FC = () => {
   };
 
   const handleHashtagClick = (hashtag: string) => {
-    // TODO: Navigate to hashtag feed
-    console.log('Navigate to hashtag:', hashtag);
+    const cleanHashtag = hashtag.replace('#', '');
+    navigate(`/hashtag/${cleanHashtag}`);
   };
 
   const clearSearch = () => {
@@ -114,6 +133,13 @@ export const SearchPage: React.FC = () => {
     if (activeTab === 'hashtags') return result.type === 'hashtag';
     return true; // 'top' shows all results
   });
+
+  const getHashtagStats = (hashtag: string) => {
+    const trending = trendingHashtags.find(item => 
+      item.hashtag.toLowerCase() === hashtag.toLowerCase()
+    );
+    return trending ? `${trending.count} posts` : 'Hashtag';
+  };
 
   return (
     <div className="min-h-screen bg-white">
@@ -172,34 +198,50 @@ export const SearchPage: React.FC = () => {
         {!searchQuery ? (
           /* Trending Section */
           <div className="p-4">
-            <h2 className="text-xl font-bold mb-4">
-              Trending for you
+            <h2 className="text-xl font-bold mb-4 flex items-center">
+              <TrendingUp className="w-5 h-5 mr-2 text-blue-500" />
+              Trending hashtags
             </h2>
-            <div className="space-y-3">
-              {trendingTopics.map((topic, index) => (
-                <div
-                  key={topic.hashtag}
-                  onClick={() => handleHashtagClick(topic.hashtag)}
-                  className="p-3 hover:bg-gray-50 rounded-lg cursor-pointer transition-colors"
-                >
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-3">
-                      <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
-                        <Hash className="w-5 h-5 text-blue-500" />
+            
+            {hashtagsLoading ? (
+              <div className="flex items-center justify-center py-8">
+                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-500"></div>
+                <span className="ml-3 text-gray-500">Loading trending hashtags...</span>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {trendingHashtags.slice(0, 15).map((item, index) => (
+                  <div
+                    key={item.hashtag}
+                    onClick={() => handleHashtagClick(item.hashtag)}
+                    className="p-3 hover:bg-gray-50 rounded-lg cursor-pointer transition-colors"
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-3">
+                        <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
+                          <Hash className="w-5 h-5 text-blue-500" />
+                        </div>
+                        <div>
+                          <p className="font-bold text-gray-900">{item.hashtag}</p>
+                          <p className="text-sm text-gray-500">
+                            {item.count.toLocaleString()} posts
+                            {item.recent_tweets > 0 && (
+                              <span className="ml-2 text-blue-500">
+                                • {item.recent_tweets} recent
+                              </span>
+                            )}
+                          </p>
+                        </div>
                       </div>
-                      <div>
-                        <p className="font-bold text-gray-900">{topic.hashtag}</p>
-                        <p className="text-sm text-gray-500">{topic.tweets} Tweets</p>
+                      <div className="flex items-center space-x-1 text-gray-400">
+                        <TrendingUp className="w-4 h-4" />
+                        <span className="text-sm">#{index + 1}</span>
                       </div>
-                    </div>
-                    <div className="flex items-center space-x-1 text-gray-400">
-                      <TrendingUp className="w-4 h-4" />
-                      <span className="text-sm">#{index + 1}</span>
                     </div>
                   </div>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            )}
           </div>
         ) : (
           /* Search Results */
@@ -262,7 +304,9 @@ export const SearchPage: React.FC = () => {
                           </div>
                           <div>
                             <p className="font-bold text-gray-900">{result.data as string}</p>
-                            <p className="text-gray-500 text-sm">Hashtag</p>
+                            <p className="text-gray-500 text-sm">
+                              {getHashtagStats(result.data as string)}
+                            </p>
                           </div>
                         </div>
                       </div>

@@ -115,6 +115,12 @@ export const MobileTweetCard: React.FC<MobileTweetCardProps> = ({
     // Handle share functionality
   };
 
+  const handleHashtagClick = (hashtag: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    const cleanHashtag = hashtag.replace('#', '');
+    navigate(`/hashtag/${cleanHashtag}`);
+  };
+
   const isOwnTweet = currentUserId === tweet.author.id;
   const tweetReplies = replies[tweet.id] || [];
   const hasReplies = tweet.replies > 0 && !isReply;
@@ -219,19 +225,23 @@ export const MobileTweetCard: React.FC<MobileTweetCardProps> = ({
               </div>
             </div>
 
-            {/* Tweet Text */}
+            {/* Tweet Text with Hashtag Links */}
             <div className="text-gray-900 mb-3 text-sm leading-5">
               {tweet.content.split(' ').map((word, index) => {
                 if (word.startsWith('#')) {
                   return (
-                    <span key={index} className="text-blue-500">
+                    <span 
+                      key={index} 
+                      className="text-blue-500 hover:underline cursor-pointer"
+                      onClick={(e) => handleHashtagClick(word, e)}
+                    >
                       {word}{' '}
                     </span>
                   );
                 }
                 if (word.startsWith('@')) {
                   return (
-                    <span key={index} className="text-blue-500">
+                    <span key={index} className="text-blue-500 hover:underline cursor-pointer">
                       {word}{' '}
                     </span>
                   );

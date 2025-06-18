@@ -7,6 +7,7 @@ import { ComposePage } from './components/Tweet/ComposePage';
 import { ProfilePage } from './components/Profile/ProfilePage';
 import { UserProfilePage } from './components/Profile/UserProfilePage';
 import { SearchPage } from './components/Search/SearchPage';
+import { HashtagPage } from './components/Search/HashtagPage';
 import { NotificationsPage } from './components/Notifications/NotificationsPage';
 import { FloatingActionButton } from './components/ui/FloatingActionButton';
 import { AuthPage } from './components/Auth/AuthPage';
@@ -45,6 +46,7 @@ function App() {
               <Route path="/" element={<Timeline />} />
               <Route path="/compose" element={<ComposePage />} />
               <Route path="/search" element={<SearchPage />} />
+              <Route path="/hashtag/:hashtag" element={<HashtagPage />} />
               <Route path="/notifications" element={<NotificationsPage />} />
               <Route path="/profile/:username" element={<ProfilePage />} />
               <Route path="/profile" element={<UserProfilePage />} />
