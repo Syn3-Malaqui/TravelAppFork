@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { 
   Home, 
@@ -19,6 +19,7 @@ import {
 import { useAuth } from '../../hooks/useAuth';
 import { useNotifications } from '../../hooks/useNotifications';
 import { storageService } from '../../lib/storage';
+import { supabase } from '../../lib/supabase';
 
 const sidebarItems = [
   { icon: Home, label: 'Home', path: '/' },
@@ -33,6 +34,44 @@ export const Sidebar: React.FC = () => {
   const { user, signOut } = useAuth();
   const { unreadCount } = useNotifications();
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [userProfile, setUserProfile] = useState<{
+    displayName: string;
+    username: string;
+    avatar: string;
+  } | null>(null);
+
+  // Fetch user profile data
+  useEffect(() => {
+    const fetchUserProfile = async () => {
+      if (!user) return;
+
+      try {
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('display_name, username, avatar_url')
+          .eq('id', user.id)
+          .single();
+
+        if (error) throw error;
+
+        setUserProfile({
+          displayName: data.display_name,
+          username: data.username,
+          avatar: data.avatar_url || '',
+        });
+      } catch (error) {
+        console.error('Error fetching user profile:', error);
+        // Fallback to auth metadata
+        setUserProfile({
+          displayName: user.user_metadata?.display_name || 'User',
+          username: user.user_metadata?.username || 'user',
+          avatar: user.user_metadata?.avatar_url || '',
+        });
+      }
+    };
+
+    fetchUserProfile();
+  }, [user]);
 
   const handleTweetClick = () => {
     navigate('/compose');
@@ -51,9 +90,9 @@ export const Sidebar: React.FC = () => {
     navigate(path);
   };
 
-  const userAvatarUrl = user?.user_metadata?.avatar_url;
-  const userDisplayName = user?.user_metadata?.display_name || 'User';
-  const userUsername = user?.user_metadata?.username || 'user';
+  const handleProfileClick = () => {
+    navigate('/profile');
+  };
 
   return (
     <div className="w-64 h-screen fixed left-0 top-0 border-r border-gray-200 bg-white p-4 flex flex-col z-40">
@@ -135,16 +174,19 @@ export const Sidebar: React.FC = () => {
         </DropdownMenu>
 
         {/* User Profile */}
-        <div className="flex items-center p-3">
+        <div 
+          className="flex items-center p-3 hover:bg-gray-50 rounded-lg cursor-pointer transition-colors"
+          onClick={handleProfileClick}
+        >
           <Avatar className="w-10 h-10 mr-3">
             <AvatarImage 
-              src={userAvatarUrl ? storageService.getOptimizedImageUrl(userAvatarUrl, { width: 80, quality: 80 }) : undefined} 
+              src={userProfile?.avatar ? storageService.getOptimizedImageUrl(userProfile.avatar, { width: 80, quality: 80 }) : undefined} 
             />
-            <AvatarFallback>{userDisplayName[0]?.toUpperCase()}</AvatarFallback>
+            <AvatarFallback>{userProfile?.displayName[0]?.toUpperCase() || 'U'}</AvatarFallback>
           </Avatar>
-          <div className="flex-1">
-            <div className="font-bold text-sm">{userDisplayName}</div>
-            <div className="text-gray-500 text-sm">@{userUsername}</div>
+          <div className="flex-1 min-w-0">
+            <div className="font-bold text-sm truncate">{userProfile?.displayName || 'User'}</div>
+            <div className="text-gray-500 text-sm truncate">@{userProfile?.username || 'user'}</div>
           </div>
         </div>
       </div>
