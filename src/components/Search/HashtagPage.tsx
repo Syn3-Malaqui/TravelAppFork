@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Hash, TrendingUp, Clock, BarChart3 } from 'lucide-react';
+import { ArrowLeft, Hash, TrendingUp, Clock, BarChart3, Share, Bookmark } from 'lucide-react';
 import { Button } from '../ui/button';
 import { TweetCard } from '../Tweet/TweetCard';
 import { MobileTweetCard } from '../Tweet/MobileTweetCard';
@@ -12,8 +12,8 @@ export const HashtagPage: React.FC = () => {
   const { hashtag } = useParams<{ hashtag: string }>();
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { hashtagTweets, loading, error, searchHashtagTweets } = useHashtags();
-  const { likeTweet, unlikeTweet } = useTweets();
+  const { hashtagTweets, loading, error, searchHashtagTweets, trendingHashtags } = useHashtags();
+  const { likeTweet, unlikeTweet, retweetTweet, unretweetTweet, bookmarkTweet, unbookmarkTweet } = useTweets();
   const [sortBy, setSortBy] = useState<'recent' | 'top'>('recent');
 
   useEffect(() => {
@@ -38,12 +38,49 @@ export const HashtagPage: React.FC = () => {
     }
   };
 
-  const handleRetweet = (tweetId: string) => {
-    console.log('Retweet:', tweetId);
+  const handleRetweet = async (tweetId: string, isCurrentlyRetweeted: boolean) => {
+    try {
+      if (isCurrentlyRetweeted) {
+        await unretweetTweet(tweetId);
+      } else {
+        await retweetTweet(tweetId);
+      }
+      // Refresh hashtag tweets to update retweet counts
+      if (hashtag) {
+        searchHashtagTweets(hashtag, sortBy);
+      }
+    } catch (error) {
+      console.error('Error toggling retweet:', error);
+    }
   };
 
-  const handleBookmark = (tweetId: string) => {
-    console.log('Bookmark:', tweetId);
+  const handleBookmark = async (tweetId: string, isCurrentlyBookmarked: boolean) => {
+    try {
+      if (isCurrentlyBookmarked) {
+        await unbookmarkTweet(tweetId);
+      } else {
+        await bookmarkTweet(tweetId);
+      }
+      // Refresh hashtag tweets to update bookmark status
+      if (hashtag) {
+        searchHashtagTweets(hashtag, sortBy);
+      }
+    } catch (error) {
+      console.error('Error toggling bookmark:', error);
+    }
+  };
+
+  const handleShare = () => {
+    if (navigator.share && hashtag) {
+      navigator.share({
+        title: `${hashtag.startsWith('#') ? hashtag : `#${hashtag}`} on travelTwitter`,
+        text: `Check out posts about ${hashtag.startsWith('#') ? hashtag : `#${hashtag}`}`,
+        url: window.location.href,
+      });
+    } else {
+      // Fallback: copy to clipboard
+      navigator.clipboard.writeText(window.location.href);
+    }
   };
 
   if (!hashtag) {
@@ -55,6 +92,14 @@ export const HashtagPage: React.FC = () => {
   }
 
   const displayHashtag = hashtag.startsWith('#') ? hashtag : `#${hashtag}`;
+  
+  // Get hashtag stats from trending data
+  const hashtagStats = trendingHashtags.find(item => 
+    item.hashtag.toLowerCase() === displayHashtag.toLowerCase()
+  );
+
+  const totalPosts = hashtagStats?.count || hashtagTweets.length;
+  const recentPosts = hashtagStats?.recent_tweets || 0;
 
   return (
     <div className="min-h-screen bg-white">
@@ -72,13 +117,41 @@ export const HashtagPage: React.FC = () => {
             </Button>
             <div>
               <div className="flex items-center space-x-2">
-                <Hash className="h-5 w-5 text-blue-500" />
+                <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
+                  <Hash className="h-4 w-4 text-blue-500" />
+                </div>
                 <h1 className="text-xl font-bold">{displayHashtag}</h1>
+                {hashtagStats && (
+                  <div className="flex items-center space-x-1 text-blue-500">
+                    <TrendingUp className="h-4 w-4" />
+                    <span className="text-sm font-medium">Trending</span>
+                  </div>
+                )}
               </div>
-              <p className="text-sm text-gray-500">
-                {hashtagTweets.length} {hashtagTweets.length === 1 ? 'post' : 'posts'}
-              </p>
+              <div className="flex items-center space-x-4 text-sm text-gray-500 mt-1">
+                <span>
+                  {totalPosts.toLocaleString()} {totalPosts === 1 ? 'post' : 'posts'}
+                </span>
+                {recentPosts > 0 && (
+                  <span className="text-blue-500">
+                    • {recentPosts} recent
+                  </span>
+                )}
+              </div>
             </div>
+          </div>
+
+          {/* Action Buttons */}
+          <div className="flex items-center space-x-2">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleShare}
+              className="p-2 hover:bg-gray-100"
+              title="Share hashtag"
+            >
+              <Share className="h-5 w-5" />
+            </Button>
           </div>
         </div>
 
@@ -123,6 +196,13 @@ export const HashtagPage: React.FC = () => {
             <div className="text-red-500 text-center">
               <p className="text-lg font-semibold mb-2">Error loading posts</p>
               <p className="text-sm text-gray-600">{error}</p>
+              <Button
+                variant="outline"
+                onClick={() => hashtag && searchHashtagTweets(hashtag, sortBy)}
+                className="mt-4"
+              >
+                Try again
+              </Button>
             </div>
           </div>
         ) : hashtagTweets.length === 0 ? (
@@ -131,37 +211,66 @@ export const HashtagPage: React.FC = () => {
               <Hash className="w-8 h-8 text-gray-400" />
             </div>
             <p className="text-lg mb-2">No posts found for {displayHashtag}</p>
-            <p className="text-sm text-gray-400">
+            <p className="text-sm text-gray-400 mb-4">
               Be the first to post with this hashtag!
             </p>
+            <Button
+              onClick={() => navigate('/compose')}
+              className="bg-blue-500 hover:bg-blue-600 text-white px-6 py-2 rounded-full font-medium"
+            >
+              Create post
+            </Button>
           </div>
         ) : (
-          <div className="divide-y divide-gray-100">
-            {hashtagTweets.map((tweet) => (
-              <div key={`${tweet.id}-${tweet.retweetedAt || tweet.createdAt}`}>
-                {/* Desktop Tweet Card */}
-                <div className="hidden md:block">
-                  <TweetCard 
-                    tweet={tweet} 
-                    onLike={() => handleLike(tweet.id, tweet.isLiked)}
-                    onRetweet={() => handleRetweet(tweet.id)}
-                    onBookmark={() => handleBookmark(tweet.id)}
-                    currentUserId={user?.id}
-                  />
+          <>
+            {/* Sort indicator */}
+            <div className="bg-gray-50 border-b border-gray-200 px-4 py-2">
+              <p className="text-sm text-gray-600">
+                {sortBy === 'recent' ? (
+                  <>Showing most recent posts with {displayHashtag}</>
+                ) : (
+                  <>Showing top posts with {displayHashtag} by engagement</>
+                )}
+              </p>
+            </div>
+
+            {/* Tweets */}
+            <div className="divide-y divide-gray-100">
+              {hashtagTweets.map((tweet) => (
+                <div key={`${tweet.id}-${tweet.retweetedAt || tweet.createdAt}`}>
+                  {/* Desktop Tweet Card */}
+                  <div className="hidden md:block">
+                    <TweetCard 
+                      tweet={tweet} 
+                      onLike={() => handleLike(tweet.id, tweet.isLiked)}
+                      onRetweet={() => handleRetweet(tweet.id, tweet.isRetweeted)}
+                      onBookmark={() => handleBookmark(tweet.id, tweet.isBookmarked)}
+                      currentUserId={user?.id}
+                    />
+                  </div>
+                  {/* Mobile Tweet Card */}
+                  <div className="md:hidden">
+                    <MobileTweetCard 
+                      tweet={tweet}
+                      onLike={() => handleLike(tweet.id, tweet.isLiked)}
+                      onRetweet={() => handleRetweet(tweet.id, tweet.isRetweeted)}
+                      onBookmark={() => handleBookmark(tweet.id, tweet.isBookmarked)}
+                      currentUserId={user?.id}
+                    />
+                  </div>
                 </div>
-                {/* Mobile Tweet Card */}
-                <div className="md:hidden">
-                  <MobileTweetCard 
-                    tweet={tweet}
-                    onLike={() => handleLike(tweet.id, tweet.isLiked)}
-                    onRetweet={() => handleRetweet(tweet.id)}
-                    onBookmark={() => handleBookmark(tweet.id)}
-                    currentUserId={user?.id}
-                  />
-                </div>
+              ))}
+            </div>
+
+            {/* Load more indicator */}
+            {hashtagTweets.length >= 50 && (
+              <div className="text-center py-8">
+                <p className="text-gray-500 text-sm">
+                  Showing latest {hashtagTweets.length} posts
+                </p>
               </div>
-            ))}
-          </div>
+            )}
+          </>
         )}
       </div>
     </div>

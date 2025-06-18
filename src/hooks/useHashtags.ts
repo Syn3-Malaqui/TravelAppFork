@@ -239,7 +239,7 @@ export const useHashtags = () => {
         query = query.order('likes_count', { ascending: false });
       }
 
-      const { data, error } = await query.limit(50);
+      const { data, error } = await query.limit(100);
 
       if (error) throw error;
 
