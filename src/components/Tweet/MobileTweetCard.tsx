@@ -8,7 +8,8 @@ import {
   MoreHorizontal,
   CheckCircle,
   ChevronDown,
-  ChevronUp
+  ChevronUp,
+  X
 } from 'lucide-react';
 import { Button } from '../ui/button';
 import { Avatar, AvatarImage, AvatarFallback } from '../ui/avatar';
@@ -43,6 +44,7 @@ export const MobileTweetCard: React.FC<MobileTweetCardProps> = ({
   const navigate = useNavigate();
   const [showReplies, setShowReplies] = useState(false);
   const [showReplyComposer, setShowReplyComposer] = useState(false);
+  const [selectedImageIndex, setSelectedImageIndex] = useState<number | null>(null);
   const { replies, fetchReplies, createRetweet, removeRetweet } = useTweets();
 
   const formatNumber = (num: number): string => {
@@ -121,6 +123,25 @@ export const MobileTweetCard: React.FC<MobileTweetCardProps> = ({
     navigate(`/hashtag/${cleanHashtag}`);
   };
 
+  const handleImageClick = (index: number, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setSelectedImageIndex(index);
+  };
+
+  const closeImageModal = () => {
+    setSelectedImageIndex(null);
+  };
+
+  const navigateImage = (direction: 'prev' | 'next') => {
+    if (!tweet.images || selectedImageIndex === null) return;
+    
+    if (direction === 'prev') {
+      setSelectedImageIndex(selectedImageIndex > 0 ? selectedImageIndex - 1 : tweet.images.length - 1);
+    } else {
+      setSelectedImageIndex(selectedImageIndex < tweet.images.length - 1 ? selectedImageIndex + 1 : 0);
+    }
+  };
+
   const isOwnTweet = currentUserId === tweet.author.id;
   const tweetReplies = replies[tweet.id] || [];
   const hasReplies = tweet.replies > 0 && !isReply;
@@ -131,245 +152,363 @@ export const MobileTweetCard: React.FC<MobileTweetCardProps> = ({
     : tweet.content;
 
   return (
-    <div className={`border-b border-gray-100 bg-white ${isReply ? 'ml-8 border-l-2 border-gray-200' : ''}`}>
-      {/* Retweet indicator */}
-      {tweet.isRetweet && tweet.retweetedBy && (
-        <div className="px-4 pt-3 pb-1">
-          <div className="flex items-center space-x-2 text-gray-500 text-xs">
-            <Repeat2 className="w-3 h-3" />
-            <span 
-              className="hover:underline cursor-pointer"
-              onClick={handleRetweeterProfileClick}
-            >
-              <span className="font-medium">{tweet.retweetedBy.displayName}</span> retweeted
-            </span>
-            <span>·</span>
-            <span>{formatDistanceToNow(tweet.retweetedAt!, { addSuffix: true }).replace('about ', '')}</span>
+    <>
+      <div className={`border-b border-gray-100 bg-white ${isReply ? 'ml-8 border-l-2 border-gray-200' : ''}`}>
+        {/* Retweet indicator */}
+        {tweet.isRetweet && tweet.retweetedBy && (
+          <div className="px-4 pt-3 pb-1">
+            <div className="flex items-center space-x-2 text-gray-500 text-xs">
+              <Repeat2 className="w-3 h-3" />
+              <span 
+                className="hover:underline cursor-pointer"
+                onClick={handleRetweeterProfileClick}
+              >
+                <span className="font-medium">{tweet.retweetedBy.displayName}</span> retweeted
+              </span>
+              <span>·</span>
+              <span>{formatDistanceToNow(tweet.retweetedAt!, { addSuffix: true }).replace('about ', '')}</span>
+            </div>
           </div>
-        </div>
-      )}
+        )}
 
-      <div 
-        className={`p-4 ${hasReplies ? 'cursor-pointer' : ''}`}
-        onClick={handleTweetClick}
-      >
-        <div className="flex gap-3">
-          {/* Avatar */}
-          <Avatar className="w-10 h-10 flex-shrink-0 cursor-pointer" onClick={handleProfileClick}>
-            <AvatarImage src={tweet.author.avatar} />
-            <AvatarFallback>{tweet.author.displayName[0]}</AvatarFallback>
-          </Avatar>
+        <div 
+          className={`p-4 ${hasReplies ? 'cursor-pointer' : ''}`}
+          onClick={handleTweetClick}
+        >
+          <div className="flex gap-3">
+            {/* Avatar */}
+            <Avatar className="w-10 h-10 flex-shrink-0 cursor-pointer" onClick={handleProfileClick}>
+              <AvatarImage src={tweet.author.avatar} />
+              <AvatarFallback>{tweet.author.displayName[0]}</AvatarFallback>
+            </Avatar>
 
-          {/* Content */}
-          <div className="flex-1 min-w-0">
-            {/* Header */}
-            <div className="flex items-center justify-between mb-1">
-              {/* User info and timestamp */}
-              <div className="flex items-center space-x-1 min-w-0">
-                <span 
-                  className="font-bold text-gray-900 text-sm truncate cursor-pointer hover:underline"
-                  onClick={handleProfileClick}
-                >
-                  {tweet.author.displayName}
-                </span>
-                {tweet.author.verified && (
-                  <CheckCircle className="w-4 h-4 text-blue-500 fill-current flex-shrink-0" />
-                )}
-                <span 
-                  className="text-gray-500 text-sm truncate cursor-pointer hover:underline"
-                  onClick={handleProfileClick}
-                >
-                  @{tweet.author.username}
-                </span>
-                <span className="text-gray-500 text-sm">·</span>
-                <span className="text-gray-500 text-sm flex-shrink-0">
-                  {formatDistanceToNow(tweet.createdAt, { addSuffix: true }).replace('about ', '')}
-                </span>
-              </div>
-
-              {/* More Options */}
-              <div className="relative">
-                <DropdownMenu modal={false}>
-                  <DropdownMenuTrigger asChild>
-                    <Button 
-                      variant="ghost" 
-                      size="sm" 
-                      className="h-6 w-6 p-0 hover:bg-gray-100 flex-shrink-0"
-                      onClick={(e) => e.stopPropagation()}
-                    >
-                      <MoreHorizontal className="h-4 w-4 text-gray-500" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent 
-                    align="end" 
-                    side="bottom"
-                    className="w-48 z-50"
-                    sideOffset={4}
-                    avoidCollisions={true}
-                    collisionPadding={8}
+            {/* Content */}
+            <div className="flex-1 min-w-0">
+              {/* Header */}
+              <div className="flex items-center justify-between mb-1">
+                {/* User info and timestamp */}
+                <div className="flex items-center space-x-1 min-w-0">
+                  <span 
+                    className="font-bold text-gray-900 text-sm truncate cursor-pointer hover:underline"
+                    onClick={handleProfileClick}
                   >
-                    {isOwnTweet ? (
-                      <DropdownMenuItem onClick={handleDelete} className="text-red-600 hover:bg-red-50">
-                        Delete Tweet
-                      </DropdownMenuItem>
-                    ) : (
-                      <>
-                        <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleProfileClick(e); }} className="hover:bg-gray-50">
-                          View Profile
-                        </DropdownMenuItem>
-                        <DropdownMenuItem className="hover:bg-gray-50">
-                          Mute @{tweet.author.username}
-                        </DropdownMenuItem>
-                        <DropdownMenuItem className="text-red-600 hover:bg-red-50">
-                          Report post
-                        </DropdownMenuItem>
-                      </>
-                    )}
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              </div>
-            </div>
+                    {tweet.author.displayName}
+                  </span>
+                  {tweet.author.verified && (
+                    <CheckCircle className="w-4 h-4 text-blue-500 fill-current flex-shrink-0" />
+                  )}
+                  <span 
+                    className="text-gray-500 text-sm truncate cursor-pointer hover:underline"
+                    onClick={handleProfileClick}
+                  >
+                    @{tweet.author.username}
+                  </span>
+                  <span className="text-gray-500 text-sm">·</span>
+                  <span className="text-gray-500 text-sm flex-shrink-0">
+                    {formatDistanceToNow(tweet.createdAt, { addSuffix: true }).replace('about ', '')}
+                  </span>
+                </div>
 
-            {/* Tweet Text with Hashtag Links */}
-            <div className="text-gray-900 mb-3 text-sm leading-5">
-              {displayContent.split(' ').map((word, index) => {
-                if (word.startsWith('#')) {
-                  return (
-                    <span 
-                      key={index} 
-                      className="text-blue-500 hover:underline cursor-pointer"
-                      onClick={(e) => handleHashtagClick(word, e)}
+                {/* More Options */}
+                <div className="relative">
+                  <DropdownMenu modal={false}>
+                    <DropdownMenuTrigger asChild>
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        className="h-6 w-6 p-0 hover:bg-gray-100 flex-shrink-0"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <MoreHorizontal className="h-4 w-4 text-gray-500" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent 
+                      align="end" 
+                      side="bottom"
+                      className="w-48 z-50"
+                      sideOffset={4}
+                      avoidCollisions={true}
+                      collisionPadding={8}
                     >
-                      {word}{' '}
-                    </span>
-                  );
-                }
-                if (word.startsWith('@')) {
-                  return (
-                    <span key={index} className="text-blue-500 hover:underline cursor-pointer">
-                      {word}{' '}
-                    </span>
-                  );
-                }
-                return word + ' ';
-              })}
-              {tweet.content.length > 200 && (
-                <span className="text-gray-500 text-xs italic"> (truncated)</span>
-              )}
-            </div>
-
-            {/* Images - Fixed aspect ratio */}
-            {tweet.images && tweet.images.length > 0 && (
-              <div className="mb-3 rounded-xl overflow-hidden">
-                <div className="w-full aspect-[4/3]">
-                  <img 
-                    src={tweet.images[0]} 
-                    alt="Tweet image" 
-                    className="w-full h-full object-cover"
-                  />
+                      {isOwnTweet ? (
+                        <DropdownMenuItem onClick={handleDelete} className="text-red-600 hover:bg-red-50">
+                          Delete Tweet
+                        </DropdownMenuItem>
+                      ) : (
+                        <>
+                          <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleProfileClick(e); }} className="hover:bg-gray-50">
+                            View Profile
+                          </DropdownMenuItem>
+                          <DropdownMenuItem className="hover:bg-gray-50">
+                            Mute @{tweet.author.username}
+                          </DropdownMenuItem>
+                          <DropdownMenuItem className="text-red-600 hover:bg-red-50">
+                            Report post
+                          </DropdownMenuItem>
+                        </>
+                      )}
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                 </div>
               </div>
-            )}
 
-            {/* Click to view replies indicator */}
-            {hasReplies && (
-              <div className="mb-3 text-sm text-blue-500 flex items-center space-x-1">
-                {showReplies ? (
-                  <>
-                    <ChevronUp className="w-4 h-4" />
-                    <span>Hide {tweet.replies} {tweet.replies === 1 ? 'reply' : 'replies'}</span>
-                  </>
-                ) : (
-                  <>
-                    <ChevronDown className="w-4 h-4" />
-                    <span>Show {tweet.replies} {tweet.replies === 1 ? 'reply' : 'replies'}</span>
-                  </>
+              {/* Tweet Text with Hashtag Links */}
+              <div className="text-gray-900 mb-3 text-sm leading-5">
+                {displayContent.split(' ').map((word, index) => {
+                  if (word.startsWith('#')) {
+                    return (
+                      <span 
+                        key={index} 
+                        className="text-blue-500 hover:underline cursor-pointer"
+                        onClick={(e) => handleHashtagClick(word, e)}
+                      >
+                        {word}{' '}
+                      </span>
+                    );
+                  }
+                  if (word.startsWith('@')) {
+                    return (
+                      <span key={index} className="text-blue-500 hover:underline cursor-pointer">
+                        {word}{' '}
+                      </span>
+                    );
+                  }
+                  return word + ' ';
+                })}
+                {tweet.content.length > 200 && (
+                  <span className="text-gray-500 text-xs italic"> (truncated)</span>
                 )}
               </div>
-            )}
 
-            {/* Actions */}
-            <div className="flex items-center justify-between space-x-4 mt-2">
-              {/* Reply */}
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                className="text-gray-500 p-1 h-8 flex items-center"
-                onClick={handleReplyClick}
-              >
-                <MessageCircle className="w-4 h-4" />
-                <span className="text-xs ml-1">{formatNumber(tweet.replies)}</span>
-              </Button>
+              {/* Images */}
+              {tweet.images && tweet.images.length > 0 && (
+                <div className="mb-3 rounded-xl overflow-hidden">
+                  {tweet.images.length === 1 ? (
+                    // Single image - full width
+                    <div className="w-full aspect-[4/3] cursor-pointer" onClick={(e) => handleImageClick(0, e)}>
+                      <img 
+                        src={tweet.images[0]} 
+                        alt="Tweet image" 
+                        className="w-full h-full object-cover hover:opacity-95 transition-opacity"
+                      />
+                    </div>
+                  ) : tweet.images.length === 2 ? (
+                    // Two images - side by side
+                    <div className="grid grid-cols-2 gap-1">
+                      {tweet.images.map((image, index) => (
+                        <div 
+                          key={index} 
+                          className="aspect-square cursor-pointer"
+                          onClick={(e) => handleImageClick(index, e)}
+                        >
+                          <img 
+                            src={image} 
+                            alt={`Tweet image ${index + 1}`} 
+                            className="w-full h-full object-cover hover:opacity-95 transition-opacity"
+                          />
+                        </div>
+                      ))}
+                    </div>
+                  ) : tweet.images.length === 3 ? (
+                    // Three images - first large, two small
+                    <div className="grid grid-cols-2 gap-1 aspect-[4/3]">
+                      <div className="cursor-pointer" onClick={(e) => handleImageClick(0, e)}>
+                        <img 
+                          src={tweet.images[0]} 
+                          alt="Tweet image 1" 
+                          className="w-full h-full object-cover hover:opacity-95 transition-opacity"
+                        />
+                      </div>
+                      <div className="grid grid-rows-2 gap-1">
+                        {tweet.images.slice(1).map((image, index) => (
+                          <div 
+                            key={index + 1} 
+                            className="cursor-pointer"
+                            onClick={(e) => handleImageClick(index + 1, e)}
+                          >
+                            <img 
+                              src={image} 
+                              alt={`Tweet image ${index + 2}`} 
+                              className="w-full h-full object-cover hover:opacity-95 transition-opacity"
+                            />
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  ) : (
+                    // Four images - 2x2 grid
+                    <div className="grid grid-cols-2 gap-1 aspect-square">
+                      {tweet.images.map((image, index) => (
+                        <div 
+                          key={index} 
+                          className="cursor-pointer"
+                          onClick={(e) => handleImageClick(index, e)}
+                        >
+                          <img 
+                            src={image} 
+                            alt={`Tweet image ${index + 1}`} 
+                            className="w-full h-full object-cover hover:opacity-95 transition-opacity"
+                          />
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
 
-              {/* Retweet */}
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                className={`p-1 h-8 flex items-center ${
-                  tweet.isRetweeted 
-                    ? 'text-green-500' 
-                    : 'text-gray-500'
-                }`}
-                onClick={handleRetweetClick}
-              >
-                <Repeat2 className="w-4 h-4" />
-                <span className="text-xs ml-1">{formatNumber(tweet.retweets)}</span>
-              </Button>
+              {/* Click to view replies indicator */}
+              {hasReplies && (
+                <div className="mb-3 text-sm text-blue-500 flex items-center space-x-1">
+                  {showReplies ? (
+                    <>
+                      <ChevronUp className="w-4 h-4" />
+                      <span>Hide {tweet.replies} {tweet.replies === 1 ? 'reply' : 'replies'}</span>
+                    </>
+                  ) : (
+                    <>
+                      <ChevronDown className="w-4 h-4" />
+                      <span>Show {tweet.replies} {tweet.replies === 1 ? 'reply' : 'replies'}</span>
+                    </>
+                  )}
+                </div>
+              )}
 
-              {/* Like */}
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                className={`p-1 h-8 flex items-center ${
-                  tweet.isLiked 
-                    ? 'text-red-500' 
-                    : 'text-gray-500'
-                }`}
-                onClick={handleLikeClick}
-              >
-                <Heart className={`w-4 h-4 ${tweet.isLiked ? 'fill-current' : ''}`} />
-                <span className="text-xs ml-1">{formatNumber(tweet.likes)}</span>
-              </Button>
+              {/* Actions */}
+              <div className="flex items-center justify-between space-x-4 mt-2">
+                {/* Reply */}
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  className="text-gray-500 p-1 h-8 flex items-center"
+                  onClick={handleReplyClick}
+                >
+                  <MessageCircle className="w-4 h-4" />
+                  <span className="text-xs ml-1">{formatNumber(tweet.replies)}</span>
+                </Button>
 
-              {/* Share */}
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                className="text-gray-500 p-1 h-8"
-                onClick={handleShareClick}
-              >
-                <Share className="w-4 h-4" />
-              </Button>
+                {/* Retweet */}
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  className={`p-1 h-8 flex items-center ${
+                    tweet.isRetweeted 
+                      ? 'text-green-500' 
+                      : 'text-gray-500'
+                  }`}
+                  onClick={handleRetweetClick}
+                >
+                  <Repeat2 className="w-4 h-4" />
+                  <span className="text-xs ml-1">{formatNumber(tweet.retweets)}</span>
+                </Button>
+
+                {/* Like */}
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  className={`p-1 h-8 flex items-center ${
+                    tweet.isLiked 
+                      ? 'text-red-500' 
+                      : 'text-gray-500'
+                  }`}
+                  onClick={handleLikeClick}
+                >
+                  <Heart className={`w-4 h-4 ${tweet.isLiked ? 'fill-current' : ''}`} />
+                  <span className="text-xs ml-1">{formatNumber(tweet.likes)}</span>
+                </Button>
+
+                {/* Share */}
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  className="text-gray-500 p-1 h-8"
+                  onClick={handleShareClick}
+                >
+                  <Share className="w-4 h-4" />
+                </Button>
+              </div>
             </div>
           </div>
+
+          {/* Reply Composer */}
+          {showReplyComposer && (
+            <ReplyComposer
+              tweet={tweet}
+              onCancel={() => setShowReplyComposer(false)}
+              onReplySuccess={handleReplySuccess}
+            />
+          )}
         </div>
 
-        {/* Reply Composer */}
-        {showReplyComposer && (
-          <ReplyComposer
-            tweet={tweet}
-            onCancel={() => setShowReplyComposer(false)}
-            onReplySuccess={handleReplySuccess}
-          />
+        {/* Replies */}
+        {showReplies && tweetReplies.length > 0 && (
+          <div className="border-t border-gray-100">
+            {tweetReplies.map((reply) => (
+              <MobileTweetCard
+                key={reply.id}
+                tweet={reply}
+                onLike={() => {}} // TODO: Implement reply like
+                onRetweet={() => {}} // TODO: Implement reply retweet
+                onBookmark={() => {}} // TODO: Implement reply bookmark
+                currentUserId={currentUserId}
+                isReply={true}
+              />
+            ))}
+          </div>
         )}
       </div>
 
-      {/* Replies */}
-      {showReplies && tweetReplies.length > 0 && (
-        <div className="border-t border-gray-100">
-          {tweetReplies.map((reply) => (
-            <MobileTweetCard
-              key={reply.id}
-              tweet={reply}
-              onLike={() => {}} // TODO: Implement reply like
-              onRetweet={() => {}} // TODO: Implement reply retweet
-              onBookmark={() => {}} // TODO: Implement reply bookmark
-              currentUserId={currentUserId}
-              isReply={true}
+      {/* Image Modal */}
+      {selectedImageIndex !== null && tweet.images && (
+        <div className="fixed inset-0 bg-black/90 z-50 flex items-center justify-center">
+          <div className="relative max-w-full max-h-full w-full h-full flex items-center justify-center p-4">
+            {/* Close button */}
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={closeImageModal}
+              className="absolute top-4 right-4 text-white hover:bg-white/20 p-2 rounded-full z-10"
+            >
+              <X className="h-6 w-6" />
+            </Button>
+
+            {/* Navigation buttons */}
+            {tweet.images.length > 1 && (
+              <>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => navigateImage('prev')}
+                  className="absolute left-4 top-1/2 transform -translate-y-1/2 text-white hover:bg-white/20 p-3 rounded-full"
+                >
+                  <ChevronDown className="h-6 w-6 transform rotate-90" />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => navigateImage('next')}
+                  className="absolute right-4 top-1/2 transform -translate-y-1/2 text-white hover:bg-white/20 p-3 rounded-full"
+                >
+                  <ChevronDown className="h-6 w-6 transform -rotate-90" />
+                </Button>
+              </>
+            )}
+
+            {/* Image */}
+            <img
+              src={tweet.images[selectedImageIndex]}
+              alt={`Tweet image ${selectedImageIndex + 1}`}
+              className="max-w-full max-h-full object-contain"
             />
-          ))}
+
+            {/* Image counter */}
+            {tweet.images.length > 1 && (
+              <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 bg-black/50 text-white px-3 py-1 rounded-full text-sm">
+                {selectedImageIndex + 1} / {tweet.images.length}
+              </div>
+            )}
+          </div>
         </div>
       )}
-    </div>
+    </>
   );
 };

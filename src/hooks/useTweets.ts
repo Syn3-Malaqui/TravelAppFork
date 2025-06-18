@@ -464,7 +464,7 @@ export const useTweets = () => {
     }
   };
 
-  const createReply = async (content: string, replyToId: string) => {
+  const createReply = async (content: string, replyToId: string, imageUrls: string[] = []) => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('User not authenticated');
@@ -479,6 +479,7 @@ export const useTweets = () => {
           content,
           author_id: user.id,
           reply_to: replyToId,
+          image_urls: imageUrls,
           hashtags,
           mentions,
         })

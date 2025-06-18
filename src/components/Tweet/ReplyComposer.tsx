@@ -18,8 +18,10 @@ export const ReplyComposer: React.FC<ReplyComposerProps> = ({
   onReplySuccess 
 }) => {
   const [content, setContent] = useState('');
+  const [images, setImages] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [uploadingImage, setUploadingImage] = useState(false);
   const { user } = useAuth();
   const { createReply } = useTweets();
 
@@ -38,8 +40,9 @@ export const ReplyComposer: React.FC<ReplyComposerProps> = ({
     setError('');
     
     try {
-      await createReply(content, tweet.id);
+      await createReply(content, tweet.id, images);
       setContent('');
+      setImages([]);
       onReplySuccess();
     } catch (err: any) {
       setError(err.message || 'Failed to post reply');
@@ -48,8 +51,69 @@ export const ReplyComposer: React.FC<ReplyComposerProps> = ({
     }
   };
 
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+
+    // Check if adding these images would exceed the limit
+    if (images.length + files.length > 4) {
+      setError('You can only attach up to 4 images per reply');
+      return;
+    }
+
+    setUploadingImage(true);
+    setError('');
+
+    try {
+      const newImageUrls: string[] = [];
+
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        
+        // Validate file type
+        if (!file.type.startsWith('image/')) {
+          setError('Please select only image files');
+          continue;
+        }
+
+        // Validate file size (max 5MB)
+        if (file.size > 5 * 1024 * 1024) {
+          setError('Images must be smaller than 5MB');
+          continue;
+        }
+
+        // For demo purposes, we'll use placeholder images from Pexels
+        const placeholderImages = [
+          'https://images.pexels.com/photos/1040880/pexels-photo-1040880.jpeg?auto=compress&cs=tinysrgb&w=600',
+          'https://images.pexels.com/photos/1181671/pexels-photo-1181671.jpeg?auto=compress&cs=tinysrgb&w=600',
+          'https://images.pexels.com/photos/1181677/pexels-photo-1181677.jpeg?auto=compress&cs=tinysrgb&w=600',
+          'https://images.pexels.com/photos/1279330/pexels-photo-1279330.jpeg?auto=compress&cs=tinysrgb&w=600',
+        ];
+
+        // Simulate upload delay
+        await new Promise(resolve => setTimeout(resolve, 300));
+        
+        // Use a random placeholder image
+        const randomImage = placeholderImages[Math.floor(Math.random() * placeholderImages.length)];
+        newImageUrls.push(randomImage);
+      }
+
+      setImages(prev => [...prev, ...newImageUrls]);
+    } catch (err: any) {
+      setError('Failed to upload images. Please try again.');
+    } finally {
+      setUploadingImage(false);
+      // Reset the input
+      e.target.value = '';
+    }
+  };
+
+  const removeImage = (index: number) => {
+    setImages(prev => prev.filter((_, i) => i !== index));
+  };
+
   const characterCount = content.length;
-  const maxCharacters = 200; // Changed from 280 to 200
+  const maxCharacters = 200;
   const isOverLimit = characterCount > maxCharacters;
 
   return (
@@ -99,12 +163,50 @@ export const ReplyComposer: React.FC<ReplyComposerProps> = ({
             autoFocus
           />
 
+          {/* Image Preview */}
+          {images.length > 0 && (
+            <div className="mt-3">
+              <div className="grid grid-cols-2 gap-2">
+                {images.map((image, index) => (
+                  <div key={index} className="relative group">
+                    <img 
+                      src={image} 
+                      alt={`Reply image ${index + 1}`}
+                      className="w-full h-20 object-cover rounded-lg border border-gray-200"
+                    />
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="absolute top-1 right-1 bg-black/70 text-white hover:bg-black/90 p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                      onClick={() => removeImage(index)}
+                    >
+                      <X className="h-3 w-3" />
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
           {/* Actions */}
           <div className="flex items-center justify-between mt-3">
             <div className="flex items-center space-x-3">
-              <Button variant="ghost" size="sm" className="p-1">
-                <Image className="h-5 w-5 text-blue-500" />
-              </Button>
+              {/* Image Upload */}
+              <label className={`cursor-pointer ${images.length >= 4 ? 'opacity-50 cursor-not-allowed' : ''}`}>
+                <input
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  className="hidden"
+                  onChange={handleImageUpload}
+                  disabled={images.length >= 4 || uploadingImage}
+                />
+                {uploadingImage ? (
+                  <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-500"></div>
+                ) : (
+                  <Image className="h-5 w-5 text-blue-500" />
+                )}
+              </label>
             </div>
 
             <div className="flex items-center space-x-3">

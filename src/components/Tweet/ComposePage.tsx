@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { X, Image, Smile, Calendar, MapPin, ArrowLeft, Tag, Globe } from 'lucide-react';
+import { X, Image, Smile, Calendar, MapPin, ArrowLeft, Tag, Globe, Upload, Trash2 } from 'lucide-react';
 import { Button } from '../ui/button';
 import { TWEET_CATEGORIES, TweetCategory, FILTER_COUNTRIES } from '../../types';
 import { useTweets } from '../../hooks/useTweets';
@@ -13,6 +13,7 @@ export const ComposePage: React.FC = () => {
   const [selectedCountries, setSelectedCountries] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [uploadingImage, setUploadingImage] = useState(false);
   const { createTweet } = useTweets();
 
   const handleSubmit = async () => {
@@ -49,16 +50,70 @@ export const ComposePage: React.FC = () => {
     }
   };
 
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
-    if (files) {
-      // In a real app, you'd upload to a server and get URLs back
-      // For demo purposes, we'll use placeholder images
-      const newImages = Array.from(files).map(() => 
-        'https://images.pexels.com/photos/1040880/pexels-photo-1040880.jpeg?auto=compress&cs=tinysrgb&w=600'
-      );
-      setImages(prev => [...prev, ...newImages]);
+    if (!files || files.length === 0) return;
+
+    // Check if adding these images would exceed the limit
+    if (images.length + files.length > 4) {
+      setError('You can only attach up to 4 images per tweet');
+      return;
     }
+
+    setUploadingImage(true);
+    setError('');
+
+    try {
+      const newImageUrls: string[] = [];
+
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        
+        // Validate file type
+        if (!file.type.startsWith('image/')) {
+          setError('Please select only image files');
+          continue;
+        }
+
+        // Validate file size (max 5MB)
+        if (file.size > 5 * 1024 * 1024) {
+          setError('Images must be smaller than 5MB');
+          continue;
+        }
+
+        // For demo purposes, we'll use placeholder images from Pexels
+        // In a real app, you would upload to a service like Supabase Storage
+        const placeholderImages = [
+          'https://images.pexels.com/photos/1040880/pexels-photo-1040880.jpeg?auto=compress&cs=tinysrgb&w=800',
+          'https://images.pexels.com/photos/1181671/pexels-photo-1181671.jpeg?auto=compress&cs=tinysrgb&w=800',
+          'https://images.pexels.com/photos/1181677/pexels-photo-1181677.jpeg?auto=compress&cs=tinysrgb&w=800',
+          'https://images.pexels.com/photos/1279330/pexels-photo-1279330.jpeg?auto=compress&cs=tinysrgb&w=800',
+          'https://images.pexels.com/photos/1440476/pexels-photo-1440476.jpeg?auto=compress&cs=tinysrgb&w=800',
+          'https://images.pexels.com/photos/1661179/pexels-photo-1661179.jpeg?auto=compress&cs=tinysrgb&w=800',
+          'https://images.pexels.com/photos/1640777/pexels-photo-1640777.jpeg?auto=compress&cs=tinysrgb&w=800',
+          'https://images.pexels.com/photos/2070033/pexels-photo-2070033.jpeg?auto=compress&cs=tinysrgb&w=800',
+        ];
+
+        // Simulate upload delay
+        await new Promise(resolve => setTimeout(resolve, 500));
+        
+        // Use a random placeholder image
+        const randomImage = placeholderImages[Math.floor(Math.random() * placeholderImages.length)];
+        newImageUrls.push(randomImage);
+      }
+
+      setImages(prev => [...prev, ...newImageUrls]);
+    } catch (err: any) {
+      setError('Failed to upload images. Please try again.');
+    } finally {
+      setUploadingImage(false);
+      // Reset the input
+      e.target.value = '';
+    }
+  };
+
+  const removeImage = (index: number) => {
+    setImages(prev => prev.filter((_, i) => i !== index));
   };
 
   const toggleCategory = (category: TweetCategory) => {
@@ -80,7 +135,7 @@ export const ComposePage: React.FC = () => {
   };
 
   const characterCount = content.length;
-  const maxCharacters = 200; // Changed from 280 to 200
+  const maxCharacters = 200;
   const isOverLimit = characterCount > maxCharacters;
   const isNearLimit = characterCount > 180;
   const remainingChars = maxCharacters - characterCount;
@@ -89,9 +144,9 @@ export const ComposePage: React.FC = () => {
   const selectableCountries = FILTER_COUNTRIES.filter(country => country.code !== 'ALL');
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-white flex flex-col">
       {/* Header */}
-      <div className="sticky top-0 bg-white border-b border-gray-200 px-4 py-3 flex items-center justify-between z-10">
+      <div className="bg-white border-b border-gray-200 px-4 py-3 flex items-center justify-between z-10 flex-shrink-0">
         <div className="flex items-center space-x-4">
           <Button
             variant="ghost"
@@ -124,221 +179,257 @@ export const ComposePage: React.FC = () => {
         </div>
       </div>
 
-      {/* Error Message */}
-      {error && (
-        <div className="mx-4 mt-4 p-4 bg-red-50 border border-red-200 rounded-lg">
-          <p className="text-red-700 text-sm">{error}</p>
-        </div>
-      )}
+      {/* Scrollable Content */}
+      <div className="flex-1 overflow-y-auto">
+        <div className="p-4">
+          {/* Error Message */}
+          {error && (
+            <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg">
+              <p className="text-red-700 text-sm">{error}</p>
+            </div>
+          )}
 
-      {/* Character limit warning */}
-      {isNearLimit && (
-        <div className="mx-4 mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
-          <p className="text-yellow-700 text-sm font-medium">
-            {isOverLimit ? (
-              <>⚠️ You've exceeded the 200 character limit by {Math.abs(remainingChars)} characters</>
-            ) : (
-              <>⏰ You have {remainingChars} characters remaining</>
-            )}
-          </p>
-        </div>
-      )}
-
-      {/* Compose Area */}
-      <div className="p-4">
-        <div className="flex space-x-4">
-          {/* Avatar */}
-          <div className="w-12 h-12 bg-gray-300 rounded-full flex-shrink-0"></div>
-
-          {/* Text Area */}
-          <div className="flex-1 min-w-0">
-            <textarea
-              value={content}
-              onChange={(e) => setContent(e.target.value)}
-              placeholder="What's happening?"
-              className={`w-full text-xl placeholder-gray-500 border-none outline-none resize-none min-h-[200px] bg-transparent focus:ring-0 focus:border-none focus:outline-none ${
-                isOverLimit ? 'text-red-600' : ''
-              }`}
-              autoFocus
-            />
-
-            {/* Real-time Character Count Display */}
-            <div className="mt-4 flex items-center justify-between">
-              <div className="text-sm text-gray-500">
-                {content.length === 0 ? (
-                  'Start typing your tweet...'
+          {/* Character limit warning */}
+          {isNearLimit && (
+            <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+              <p className="text-yellow-700 text-sm font-medium">
+                {isOverLimit ? (
+                  <>⚠️ You've exceeded the 200 character limit by {Math.abs(remainingChars)} characters</>
                 ) : (
-                  `${content.split(' ').length} words`
+                  <>⏰ You have {remainingChars} characters remaining</>
                 )}
-              </div>
-              
-              <div className="flex items-center space-x-3">
-                {/* Character Progress Bar */}
-                <div className="w-20 h-2 bg-gray-200 rounded-full overflow-hidden">
-                  <div 
-                    className={`h-full transition-all duration-300 ${
-                      isOverLimit ? 'bg-red-500' : 
-                      isNearLimit ? 'bg-yellow-500' :
-                      'bg-blue-500'
-                    }`}
-                    style={{ 
-                      width: `${Math.min((characterCount / maxCharacters) * 100, 100)}%` 
-                    }}
-                  />
+              </p>
+            </div>
+          )}
+
+          {/* Compose Area */}
+          <div className="flex space-x-4">
+            {/* Avatar */}
+            <div className="w-12 h-12 bg-gray-300 rounded-full flex-shrink-0"></div>
+
+            {/* Text Area */}
+            <div className="flex-1 min-w-0">
+              <textarea
+                value={content}
+                onChange={(e) => setContent(e.target.value)}
+                placeholder="What's happening?"
+                className={`w-full text-xl placeholder-gray-500 border-none outline-none resize-none min-h-[200px] bg-transparent focus:ring-0 focus:border-none focus:outline-none ${
+                  isOverLimit ? 'text-red-600' : ''
+                }`}
+                autoFocus
+              />
+
+              {/* Real-time Character Count Display */}
+              <div className="mt-4 flex items-center justify-between">
+                <div className="text-sm text-gray-500">
+                  {content.length === 0 ? (
+                    'Start typing your tweet...'
+                  ) : (
+                    `${content.split(' ').length} words`
+                  )}
                 </div>
                 
-                {/* Numeric Count */}
-                <div className={`text-sm font-bold min-w-[60px] text-right ${
-                  isOverLimit ? 'text-red-500' : 
-                  isNearLimit ? 'text-yellow-600' :
-                  'text-gray-500'
-                }`}>
-                  {characterCount}/{maxCharacters}
+                <div className="flex items-center space-x-3">
+                  {/* Character Progress Bar */}
+                  <div className="w-20 h-2 bg-gray-200 rounded-full overflow-hidden">
+                    <div 
+                      className={`h-full transition-all duration-300 ${
+                        isOverLimit ? 'bg-red-500' : 
+                        isNearLimit ? 'bg-yellow-500' :
+                        'bg-blue-500'
+                      }`}
+                      style={{ 
+                        width: `${Math.min((characterCount / maxCharacters) * 100, 100)}%` 
+                      }}
+                    />
+                  </div>
+                  
+                  {/* Numeric Count */}
+                  <div className={`text-sm font-bold min-w-[60px] text-right ${
+                    isOverLimit ? 'text-red-500' : 
+                    isNearLimit ? 'text-yellow-600' :
+                    'text-gray-500'
+                  }`}>
+                    {characterCount}/{maxCharacters}
+                  </div>
                 </div>
               </div>
-            </div>
 
-            {/* Categories Selection */}
-            <div className="mt-4">
-              <div className="flex items-center space-x-2 mb-3">
-                <Tag className="h-5 w-5 text-gray-500" />
-                <span className="text-sm font-medium text-gray-700">Add categories:</span>
-              </div>
-              <div className="flex flex-wrap gap-2">
-                {TWEET_CATEGORIES.map((category) => (
-                  <Button
-                    key={category}
-                    variant="outline"
-                    size="sm"
-                    onClick={() => toggleCategory(category)}
-                    className={`rounded-full px-3 py-1 text-sm transition-colors ${
-                      selectedCategories.includes(category)
-                        ? 'bg-blue-500 text-white border-blue-500 hover:bg-blue-600'
-                        : 'border-gray-300 text-gray-700 hover:bg-gray-50'
-                    }`}
-                  >
-                    {category}
-                  </Button>
-                ))}
-              </div>
-            </div>
-
-            {/* Countries Selection */}
-            <div className="mt-4">
-              <div className="flex items-center space-x-2 mb-3">
-                <Globe className="h-5 w-5 text-gray-500" />
-                <span className="text-sm font-medium text-gray-700">Add countries:</span>
-              </div>
-              <div className="flex flex-wrap gap-2 max-h-32 overflow-y-auto">
-                {selectableCountries.map((country) => (
-                  <Button
-                    key={country.code}
-                    variant="outline"
-                    size="sm"
-                    onClick={() => toggleCountry(country.code)}
-                    className={`rounded-full px-3 py-1 text-sm transition-colors flex items-center space-x-1 ${
-                      selectedCountries.includes(country.code)
-                        ? 'bg-green-500 text-white border-green-500 hover:bg-green-600'
-                        : 'border-gray-300 text-gray-700 hover:bg-gray-50'
-                    }`}
-                  >
-                    <span>{country.flag}</span>
-                    <span>{country.name}</span>
-                  </Button>
-                ))}
-              </div>
-            </div>
-
-            {/* Selected Tags Display */}
-            {(selectedCategories.length > 0 || selectedCountries.length > 0) && (
-              <div className="mt-4">
-                <div className="text-sm font-medium text-gray-700 mb-2">Selected tags:</div>
-                <div className="flex flex-wrap gap-2">
-                  {/* Category Tags */}
-                  {selectedCategories.map((category) => (
-                    <span
-                      key={category}
-                      className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-50 text-blue-700 border border-blue-200"
-                    >
-                      <Tag className="w-3 h-3 mr-1" />
-                      {category}
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => toggleCategory(category)}
-                        className="ml-1 h-4 w-4 p-0 hover:bg-blue-100 rounded-full"
+              {/* Image Preview */}
+              {images.length > 0 && (
+                <div className="mt-4">
+                  <div className={`grid gap-2 ${
+                    images.length === 1 ? 'grid-cols-1' :
+                    images.length === 2 ? 'grid-cols-2' :
+                    images.length === 3 ? 'grid-cols-2' :
+                    'grid-cols-2'
+                  }`}>
+                    {images.map((image, index) => (
+                      <div 
+                        key={index} 
+                        className={`relative group ${
+                          images.length === 3 && index === 0 ? 'row-span-2' : ''
+                        }`}
                       >
-                        <X className="h-3 w-3" />
-                      </Button>
-                    </span>
-                  ))}
-                  
-                  {/* Country Tags */}
-                  {selectedCountries.map((countryCode) => {
-                    const country = FILTER_COUNTRIES.find(c => c.code === countryCode);
-                    return (
-                      <span
-                        key={countryCode}
-                        className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-50 text-green-700 border border-green-200"
-                      >
-                        <Globe className="w-3 h-3 mr-1" />
-                        <span className="mr-1">{country?.flag}</span>
-                        {country?.name}
+                        <img 
+                          src={image} 
+                          alt={`Upload ${index + 1}`}
+                          className="w-full h-32 object-cover rounded-lg border border-gray-200"
+                        />
+                        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors rounded-lg" />
                         <Button
                           variant="ghost"
                           size="sm"
-                          onClick={() => toggleCountry(countryCode)}
-                          className="ml-1 h-4 w-4 p-0 hover:bg-green-100 rounded-full"
+                          className="absolute top-2 right-2 bg-black/70 text-white hover:bg-black/90 p-2 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                          onClick={() => removeImage(index)}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                  
+                  {/* Image count indicator */}
+                  <div className="mt-2 text-sm text-gray-500 flex items-center justify-between">
+                    <span>{images.length}/4 images</span>
+                    {images.length < 4 && (
+                      <span className="text-blue-500">You can add {4 - images.length} more image{4 - images.length !== 1 ? 's' : ''}</span>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* Categories Selection */}
+              <div className="mt-6">
+                <div className="flex items-center space-x-2 mb-3">
+                  <Tag className="h-5 w-5 text-gray-500" />
+                  <span className="text-sm font-medium text-gray-700">Add categories:</span>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {TWEET_CATEGORIES.map((category) => (
+                    <Button
+                      key={category}
+                      variant="outline"
+                      size="sm"
+                      onClick={() => toggleCategory(category)}
+                      className={`rounded-full px-3 py-1 text-sm transition-colors ${
+                        selectedCategories.includes(category)
+                          ? 'bg-blue-500 text-white border-blue-500 hover:bg-blue-600'
+                          : 'border-gray-300 text-gray-700 hover:bg-gray-50'
+                      }`}
+                    >
+                      {category}
+                    </Button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Countries Selection */}
+              <div className="mt-4">
+                <div className="flex items-center space-x-2 mb-3">
+                  <Globe className="h-5 w-5 text-gray-500" />
+                  <span className="text-sm font-medium text-gray-700">Add countries:</span>
+                </div>
+                <div className="flex flex-wrap gap-2 max-h-32 overflow-y-auto">
+                  {selectableCountries.map((country) => (
+                    <Button
+                      key={country.code}
+                      variant="outline"
+                      size="sm"
+                      onClick={() => toggleCountry(country.code)}
+                      className={`rounded-full px-3 py-1 text-sm transition-colors flex items-center space-x-1 ${
+                        selectedCountries.includes(country.code)
+                          ? 'bg-green-500 text-white border-green-500 hover:bg-green-600'
+                          : 'border-gray-300 text-gray-700 hover:bg-gray-50'
+                      }`}
+                    >
+                      <span>{country.flag}</span>
+                      <span>{country.name}</span>
+                    </Button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Selected Tags Display */}
+              {(selectedCategories.length > 0 || selectedCountries.length > 0) && (
+                <div className="mt-4">
+                  <div className="text-sm font-medium text-gray-700 mb-2">Selected tags:</div>
+                  <div className="flex flex-wrap gap-2">
+                    {/* Category Tags */}
+                    {selectedCategories.map((category) => (
+                      <span
+                        key={category}
+                        className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-50 text-blue-700 border border-blue-200"
+                      >
+                        <Tag className="w-3 h-3 mr-1" />
+                        {category}
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => toggleCategory(category)}
+                          className="ml-1 h-4 w-4 p-0 hover:bg-blue-100 rounded-full"
                         >
                           <X className="h-3 w-3" />
                         </Button>
                       </span>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
-
-            {/* Image Preview */}
-            {images.length > 0 && (
-              <div className="mt-4 grid grid-cols-2 gap-2">
-                {images.map((image, index) => (
-                  <div key={index} className="relative">
-                    <img 
-                      src={image} 
-                      alt={`Upload ${index + 1}`}
-                      className="w-full h-32 object-cover rounded-lg"
-                    />
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="absolute top-2 right-2 bg-black/50 text-white hover:bg-black/70 p-1"
-                      onClick={() => setImages(prev => prev.filter((_, i) => i !== index))}
-                    >
-                      <X className="h-4 w-4" />
-                    </Button>
+                    ))}
+                    
+                    {/* Country Tags */}
+                    {selectedCountries.map((countryCode) => {
+                      const country = FILTER_COUNTRIES.find(c => c.code === countryCode);
+                      return (
+                        <span
+                          key={countryCode}
+                          className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-50 text-green-700 border border-green-200"
+                        >
+                          <Globe className="w-3 h-3 mr-1" />
+                          <span className="mr-1">{country?.flag}</span>
+                          {country?.name}
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => toggleCountry(countryCode)}
+                            className="ml-1 h-4 w-4 p-0 hover:bg-green-100 rounded-full"
+                          >
+                            <X className="h-3 w-3" />
+                          </Button>
+                        </span>
+                      );
+                    })}
                   </div>
-                ))}
-              </div>
-            )}
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </div>
 
       {/* Bottom Actions */}
-      <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-4">
+      <div className="bg-white border-t border-gray-200 p-4 flex-shrink-0">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-4">
-            <label className="cursor-pointer">
+            {/* Image Upload */}
+            <label className={`cursor-pointer ${images.length >= 4 ? 'opacity-50 cursor-not-allowed' : ''}`}>
               <input
                 type="file"
                 accept="image/*"
                 multiple
                 className="hidden"
                 onChange={handleImageUpload}
+                disabled={images.length >= 4 || uploadingImage}
               />
-              <Image className="h-6 w-6 text-blue-500 hover:text-blue-600" />
+              <div className="flex items-center space-x-2 text-blue-500 hover:text-blue-600 transition-colors">
+                {uploadingImage ? (
+                  <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-500"></div>
+                ) : (
+                  <Image className="h-6 w-6" />
+                )}
+                <span className="text-sm font-medium hidden md:block">
+                  {uploadingImage ? 'Uploading...' : 'Add photos'}
+                </span>
+              </div>
             </label>
+
             <Button variant="ghost" size="sm" className="p-1 hidden md:block">
               <Smile className="h-6 w-6 text-blue-500" />
             </Button>
