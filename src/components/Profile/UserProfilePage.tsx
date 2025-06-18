@@ -5,6 +5,7 @@ import { Button } from '../ui/button';
 import { Avatar, AvatarImage, AvatarFallback } from '../ui/avatar';
 import { TweetCard } from '../Tweet/TweetCard';
 import { MobileTweetCard } from '../Tweet/MobileTweetCard';
+import { EditProfileModal } from './EditProfileModal';
 import { useAuth } from '../../hooks/useAuth';
 import { supabase } from '../../lib/supabase';
 import { Tweet, User } from '../../types';
@@ -20,6 +21,7 @@ export const UserProfilePage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'tweets' | 'replies' | 'media' | 'likes'>('tweets');
+  const [showEditModal, setShowEditModal] = useState(false);
 
   useEffect(() => {
     if (currentUser) {
@@ -149,6 +151,7 @@ export const UserProfilePage: React.FC = () => {
         followers: profileData.followers_count,
         following: profileData.following_count,
         joinedDate: new Date(profileData.created_at),
+        coverImage: profileData.cover_image || '',
       };
 
       // Format tweets data
@@ -210,8 +213,11 @@ export const UserProfilePage: React.FC = () => {
   };
 
   const handleEditProfile = () => {
-    // TODO: Implement edit profile functionality
-    console.log('Edit profile');
+    setShowEditModal(true);
+  };
+
+  const handleProfileUpdate = () => {
+    fetchUserProfile();
   };
 
   const getCurrentTabTweets = () => {
@@ -281,10 +287,18 @@ export const UserProfilePage: React.FC = () => {
         {/* Profile Header */}
         <div className="relative">
           {/* Cover Image */}
-          <div className="h-48 bg-gradient-to-r from-blue-400 to-purple-500 relative">
+          <div 
+            className="h-48 bg-gradient-to-r from-blue-400 to-purple-500 relative"
+            style={{
+              backgroundImage: profile.coverImage ? `url(${profile.coverImage})` : undefined,
+              backgroundSize: 'cover',
+              backgroundPosition: 'center'
+            }}
+          >
             <Button
               variant="ghost"
               size="sm"
+              onClick={handleEditProfile}
               className="absolute top-4 right-4 bg-black/50 text-white hover:bg-black/70 p-2 rounded-full"
             >
               <Camera className="h-4 w-4" />
@@ -303,6 +317,7 @@ export const UserProfilePage: React.FC = () => {
                 <Button
                   variant="ghost"
                   size="sm"
+                  onClick={handleEditProfile}
                   className="absolute bottom-2 right-2 bg-black/50 text-white hover:bg-black/70 p-2 rounded-full"
                 >
                   <Camera className="h-3 w-3" />
@@ -442,6 +457,23 @@ export const UserProfilePage: React.FC = () => {
           )}
         </div>
       </div>
+
+      {/* Edit Profile Modal */}
+      {profile && (
+        <EditProfileModal
+          isOpen={showEditModal}
+          onClose={() => setShowEditModal(false)}
+          profile={{
+            id: profile.id,
+            username: profile.username,
+            displayName: profile.displayName,
+            avatar: profile.avatar,
+            bio: profile.bio || '',
+            coverImage: profile.coverImage
+          }}
+          onProfileUpdate={handleProfileUpdate}
+        />
+      )}
     </div>
   );
 };
