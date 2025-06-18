@@ -86,8 +86,8 @@ export const Timeline: React.FC = () => {
     return (
       <div className="min-h-screen w-full">
         <div className="w-full border-r border-gray-200 overflow-hidden">
-          {/* Desktop Header with Tabs */}
-          <div className="hidden md:block sticky top-0 bg-white/80 backdrop-blur-md border-b border-gray-200 z-10">
+          {/* Desktop Header with Tabs - Fixed */}
+          <div className="hidden md:block fixed top-0 left-64 right-0 bg-white/95 backdrop-blur-md border-b border-gray-200 z-50">
             {/* Top section with title and filters */}
             <div className="flex items-center justify-between p-4 border-b border-gray-100">
               <h1 className="text-xl font-bold">Home</h1>
@@ -133,8 +133,8 @@ export const Timeline: React.FC = () => {
           {/* Mobile Tabs */}
           <MobileTabs activeTab={activeTab} onTabChange={handleTabChange} />
 
-          {/* Loading State */}
-          <div className="flex items-center justify-center py-12">
+          {/* Loading State - Add top margin for desktop to account for fixed header */}
+          <div className="flex items-center justify-center py-12 md:mt-32">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
             <span className="ml-3 text-gray-500">Loading tweets...</span>
           </div>
@@ -147,8 +147,8 @@ export const Timeline: React.FC = () => {
     return (
       <div className="min-h-screen w-full">
         <div className="w-full border-r border-gray-200 overflow-hidden">
-          {/* Desktop Header with Tabs */}
-          <div className="hidden md:block sticky top-0 bg-white/80 backdrop-blur-md border-b border-gray-200 z-10">
+          {/* Desktop Header with Tabs - Fixed */}
+          <div className="hidden md:block fixed top-0 left-64 right-0 bg-white/95 backdrop-blur-md border-b border-gray-200 z-50">
             {/* Top section with title and filters */}
             <div className="flex items-center justify-between p-4 border-b border-gray-100">
               <h1 className="text-xl font-bold">Home</h1>
@@ -194,8 +194,8 @@ export const Timeline: React.FC = () => {
           {/* Mobile Tabs */}
           <MobileTabs activeTab={activeTab} onTabChange={handleTabChange} />
 
-          {/* Error State */}
-          <div className="flex flex-col items-center justify-center py-12 px-4">
+          {/* Error State - Add top margin for desktop to account for fixed header */}
+          <div className="flex flex-col items-center justify-center py-12 px-4 md:mt-32">
             <div className="text-red-500 text-center">
               <p className="text-lg font-semibold mb-2">Error loading tweets</p>
               <p className="text-sm text-gray-600">{error}</p>
@@ -209,8 +209,8 @@ export const Timeline: React.FC = () => {
   return (
     <div className="min-h-screen w-full">
       <div className="w-full border-r border-gray-200 overflow-hidden flex flex-col">
-        {/* Desktop Header with Tabs */}
-        <div className="hidden md:block sticky top-0 bg-white/80 backdrop-blur-md border-b border-gray-200 z-10">
+        {/* Desktop Header with Tabs - Fixed */}
+        <div className="hidden md:block fixed top-0 left-64 right-0 bg-white/95 backdrop-blur-md border-b border-gray-200 z-50">
           {/* Top section with title and filters */}
           <div className="flex items-center justify-between p-4 border-b border-gray-100">
             <h1 className="text-xl font-bold">Home</h1>
@@ -281,8 +281,8 @@ export const Timeline: React.FC = () => {
           </div>
         </div>
 
-        {/* Desktop Tweet Composer */}
-        <div className="hidden md:block border-b border-gray-200 p-4 flex-shrink-0">
+        {/* Desktop Tweet Composer - Add top margin to account for fixed header */}
+        <div className="hidden md:block border-b border-gray-200 p-4 flex-shrink-0 mt-32">
           <div className="flex space-x-4">
             <div className="w-12 h-12 bg-gray-300 rounded-full"></div>
             <div className="flex-1">
