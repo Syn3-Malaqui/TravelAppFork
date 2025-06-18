@@ -384,6 +384,9 @@ export const TweetCard: React.FC<TweetCardProps> = ({
               >
                 <span className="font-medium">{tweet.retweetedBy.displayName}</span> retweeted
               </span>
+              {tweet.retweetedBy.verified && (
+                <CheckCircle className="w-4 h-4 text-blue-500 fill-current" />
+              )}
               <span>·</span>
               <span>{formatDistanceToNow(tweet.retweetedAt!, { addSuffix: true })}</span>
             </div>
@@ -432,7 +435,7 @@ export const TweetCard: React.FC<TweetCardProps> = ({
                     {tweet.author.displayName}
                   </span>
                   {tweet.author.verified && (
-                    <CheckCircle className="w-4 h-4 text-blue-500 fill-current flex-shrink-0" />
+                    <CheckCircle className="w-5 h-5 text-blue-500 fill-current flex-shrink-0" />
                   )}
                   <span 
                     className="text-gray-500 truncate cursor-pointer hover:underline"
@@ -518,7 +521,7 @@ export const TweetCard: React.FC<TweetCardProps> = ({
                           {originalTweet.author.displayName}
                         </span>
                         {originalTweet.author.verified && (
-                          <CheckCircle className="w-3 h-3 text-blue-500 fill-current flex-shrink-0" />
+                          <CheckCircle className="w-4 h-4 text-blue-500 fill-current flex-shrink-0" />
                         )}
                         <span className="text-gray-500 text-sm truncate">
                           @{originalTweet.author.username}

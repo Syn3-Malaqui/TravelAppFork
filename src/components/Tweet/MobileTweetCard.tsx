@@ -383,6 +383,9 @@ export const MobileTweetCard: React.FC<MobileTweetCardProps> = ({
               >
                 <span className="font-medium">{tweet.retweetedBy.displayName}</span> retweeted
               </span>
+              {tweet.retweetedBy.verified && (
+                <CheckCircle className="w-3 h-3 text-blue-500 fill-current" />
+              )}
               <span>·</span>
               <span>{formatDistanceToNow(tweet.retweetedAt!, { addSuffix: true }).replace('about ', '')}</span>
             </div>
