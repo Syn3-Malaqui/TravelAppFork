@@ -315,27 +315,26 @@ export const MobileTweetCard: React.FC<MobileTweetCardProps> = ({
                   ) : tweet.images.length === 3 ? (
                     // Three images - first takes full left side, two small on right
                     <div className="grid grid-cols-2 gap-1 h-64">
-                      <div className="cursor-pointer" onClick={(e) => handleImageClick(0, e)}>
+                      <div className="row-span-2 cursor-pointer" onClick={(e) => handleImageClick(0, e)}>
                         <img 
                           src={tweet.images[0]} 
                           alt="Tweet image 1" 
                           className="w-full h-full object-cover hover:opacity-95 transition-opacity"
                         />
                       </div>
-                      <div className="grid grid-rows-2 gap-1">
-                        {tweet.images.slice(1).map((image, index) => (
-                          <div 
-                            key={index + 1} 
-                            className="cursor-pointer"
-                            onClick={(e) => handleImageClick(index + 1, e)}
-                          >
-                            <img 
-                              src={image} 
-                              alt={`Tweet image ${index + 2}`} 
-                              className="w-full h-full object-cover hover:opacity-95 transition-opacity"
-                            />
-                          </div>
-                        ))}
+                      <div className="cursor-pointer" onClick={(e) => handleImageClick(1, e)}>
+                        <img 
+                          src={tweet.images[1]} 
+                          alt="Tweet image 2" 
+                          className="w-full h-full object-cover hover:opacity-95 transition-opacity"
+                        />
+                      </div>
+                      <div className="cursor-pointer" onClick={(e) => handleImageClick(2, e)}>
+                        <img 
+                          src={tweet.images[2]} 
+                          alt="Tweet image 3" 
+                          className="w-full h-full object-cover hover:opacity-95 transition-opacity"
+                        />
                       </div>
                     </div>
                   ) : (
