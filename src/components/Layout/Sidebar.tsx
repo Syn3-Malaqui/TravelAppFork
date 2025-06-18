@@ -63,8 +63,12 @@ export const Sidebar: React.FC = () => {
     <div className="w-64 h-screen fixed left-0 top-0 border-r border-gray-200 bg-white p-4 flex flex-col z-40">
       {/* Logo */}
       <div className="mb-8">
-        <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center">
-          <span className="text-white font-bold text-lg">X</span>
+        <div className="w-12 h-12">
+          <img 
+            src="https://i.ibb.co/3YPVCWX2/Website-Logo.jpg" 
+            alt="Logo" 
+            className="w-full h-full object-contain"
+          />
         </div>
       </div>
 

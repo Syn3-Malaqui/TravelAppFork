@@ -153,8 +153,12 @@ export const AuthPage: React.FC = () => {
         <div className="w-full max-w-sm">
           {/* Logo */}
           <div className="text-center mb-12">
-            <div className="w-12 h-12 bg-black rounded-full flex items-center justify-center mx-auto mb-8">
-              <span className="text-white font-bold text-xl">X</span>
+            <div className="w-20 h-20 mx-auto mb-8">
+              <img 
+                src="https://i.ibb.co/3YPVCWX2/Website-Logo.jpg" 
+                alt="Logo" 
+                className="w-full h-full object-contain"
+              />
             </div>
             <h1 className="text-3xl font-bold text-black mb-2">Welcome!</h1>
           </div>
@@ -205,8 +209,12 @@ export const AuthPage: React.FC = () => {
           >
             <ArrowLeft className="h-5 w-5" />
           </Button>
-          <div className="w-8 h-8 bg-black rounded-full flex items-center justify-center">
-            <span className="text-white font-bold text-sm">X</span>
+          <div className="w-10 h-10">
+            <img 
+              src="https://i.ibb.co/3YPVCWX2/Website-Logo.jpg" 
+              alt="Logo" 
+              className="w-full h-full object-contain"
+            />
           </div>
           <div className="w-9"></div> {/* Spacer for centering */}
         </div>
@@ -305,8 +313,12 @@ export const AuthPage: React.FC = () => {
         >
           <ArrowLeft className="h-5 w-5" />
         </Button>
-        <div className="w-8 h-8 bg-black rounded-full flex items-center justify-center">
-          <span className="text-white font-bold text-sm">X</span>
+        <div className="w-10 h-10">
+          <img 
+            src="https://i.ibb.co/3YPVCWX2/Website-Logo.jpg" 
+            alt="Logo" 
+            className="w-full h-full object-contain"
+          />
         </div>
         <div className="w-9"></div> {/* Spacer for centering */}
       </div>
