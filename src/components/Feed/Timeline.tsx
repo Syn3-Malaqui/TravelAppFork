@@ -344,61 +344,62 @@ export const Timeline: React.FC = () => {
             </div>
           </div>
 
-          {/* Desktop Tweet Composer */}
-          <div className="border-b border-gray-200 p-4 flex-shrink-0">
-            <div className="flex space-x-4">
-              <Avatar className="w-12 h-12 flex-shrink-0">
-                <AvatarImage 
-                  src={userProfile?.avatar ? storageService.getOptimizedImageUrl(userProfile.avatar, { width: 80, quality: 80 }) : undefined} 
-                />
-                <AvatarFallback>{userProfile?.displayName[0]?.toUpperCase() || 'U'}</AvatarFallback>
-              </Avatar>
-              <div className="flex-1">
-                <div 
-                  className="text-xl text-gray-500 py-3 cursor-pointer hover:bg-gray-50 rounded-lg px-4"
-                  onClick={handleComposeClick}
-                >
-                  What's happening?
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Filter indicators */}
-          {(categoryFilter || countryFilter !== 'ALL') && (
-            <div className="bg-blue-50 border-b border-blue-200 px-4 py-2 flex-shrink-0">
-              <div className="text-sm text-blue-700 flex items-center space-x-4">
-                {categoryFilter && (
-                  <span>
-                    Category: <span className="font-semibold">{categoryFilter}</span>
-                    <button 
-                      onClick={() => setCategoryFilter(null)}
-                      className="ml-2 text-blue-500 hover:text-blue-700 underline"
-                    >
-                      Clear
-                    </button>
-                  </span>
-                )}
-                {countryFilter !== 'ALL' && (
-                  <span>
-                    Country: <span className="font-semibold">
-                      {FILTER_COUNTRIES.find(c => c.code === countryFilter)?.name}
-                    </span>
-                    <button 
-                      onClick={() => setCountryFilter('ALL')}
-                      className="ml-2 text-blue-500 hover:text-blue-700 underline"
-                    >
-                      Clear
-                    </button>
-                  </span>
-                )}
-              </div>
-            </div>
-          )}
-
           {/* Timeline - Scrollable container */}
           <div className="flex-1 overflow-y-auto">
             <div className="flex flex-col">
+              {/* Desktop Tweet Composer - Now inside scrollable area */}
+              <div className="border-b border-gray-200 p-4 bg-white">
+                <div className="flex space-x-4">
+                  <Avatar className="w-12 h-12 flex-shrink-0">
+                    <AvatarImage 
+                      src={userProfile?.avatar ? storageService.getOptimizedImageUrl(userProfile.avatar, { width: 80, quality: 80 }) : undefined} 
+                    />
+                    <AvatarFallback>{userProfile?.displayName[0]?.toUpperCase() || 'U'}</AvatarFallback>
+                  </Avatar>
+                  <div className="flex-1">
+                    <div 
+                      className="text-xl text-gray-500 py-3 cursor-pointer hover:bg-gray-50 rounded-lg px-4 transition-colors"
+                      onClick={handleComposeClick}
+                    >
+                      What's happening?
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Filter indicators */}
+              {(categoryFilter || countryFilter !== 'ALL') && (
+                <div className="bg-blue-50 border-b border-blue-200 px-4 py-2">
+                  <div className="text-sm text-blue-700 flex items-center space-x-4">
+                    {categoryFilter && (
+                      <span>
+                        Category: <span className="font-semibold">{categoryFilter}</span>
+                        <button 
+                          onClick={() => setCategoryFilter(null)}
+                          className="ml-2 text-blue-500 hover:text-blue-700 underline"
+                        >
+                          Clear
+                        </button>
+                      </span>
+                    )}
+                    {countryFilter !== 'ALL' && (
+                      <span>
+                        Country: <span className="font-semibold">
+                          {FILTER_COUNTRIES.find(c => c.code === countryFilter)?.name}
+                        </span>
+                        <button 
+                          onClick={() => setCountryFilter('ALL')}
+                          className="ml-2 text-blue-500 hover:text-blue-700 underline"
+                        >
+                          Clear
+                        </button>
+                      </span>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* Tweets */}
               {filteredTweets.length === 0 ? (
                 <div className="w-full text-center py-12 text-gray-500">
                   {activeTab === 'following' && currentTweets.length === 0 ? (
