@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { X, Image, Smile, Calendar, MapPin, ArrowLeft, Tag, Globe, Upload, Trash2 } from 'lucide-react';
 import { Button } from '../ui/button';
@@ -7,6 +7,7 @@ import { TWEET_CATEGORIES, TweetCategory, FILTER_COUNTRIES } from '../../types';
 import { useTweets } from '../../hooks/useTweets';
 import { useAuth } from '../../hooks/useAuth';
 import { storageService } from '../../lib/storage';
+import { supabase } from '../../lib/supabase';
 
 export const ComposePage: React.FC = () => {
   const navigate = useNavigate();
@@ -19,7 +20,53 @@ export const ComposePage: React.FC = () => {
   const [error, setError] = useState('');
   const [uploadingImage, setUploadingImage] = useState(false);
   const [uploadProgress, setUploadProgress] = useState<{ [key: string]: number }>({});
+  const [userProfile, setUserProfile] = useState<{
+    displayName: string;
+    username: string;
+    avatar: string;
+  } | null>(null);
+  const [profileLoading, setProfileLoading] = useState(true);
   const { createTweet } = useTweets();
+
+  // Fetch user profile data
+  useEffect(() => {
+    const fetchUserProfile = async () => {
+      if (!user) {
+        setProfileLoading(false);
+        return;
+      }
+
+      try {
+        setProfileLoading(true);
+        
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('display_name, username, avatar_url')
+          .eq('id', user.id)
+          .single();
+
+        if (error) throw error;
+
+        setUserProfile({
+          displayName: data.display_name,
+          username: data.username,
+          avatar: data.avatar_url || '',
+        });
+      } catch (error) {
+        console.error('Error fetching user profile:', error);
+        // Fallback to auth metadata
+        setUserProfile({
+          displayName: user.user_metadata?.display_name || 'User',
+          username: user.user_metadata?.username || 'user',
+          avatar: user.user_metadata?.avatar_url || '',
+        });
+      } finally {
+        setProfileLoading(false);
+      }
+    };
+
+    fetchUserProfile();
+  }, [user]);
 
   const handleSubmit = async () => {
     if (!content.trim()) {
@@ -181,9 +228,6 @@ export const ComposePage: React.FC = () => {
 
   const hasUploadProgress = Object.keys(uploadProgress).length > 0;
 
-  const userAvatarUrl = user?.user_metadata?.avatar_url;
-  const userDisplayName = user?.user_metadata?.display_name || 'User';
-
   return (
     <div className="min-h-screen bg-white flex flex-col">
       {/* Header */}
@@ -270,15 +314,31 @@ export const ComposePage: React.FC = () => {
           {/* Compose Area */}
           <div className="flex space-x-4">
             {/* Avatar */}
-            <Avatar className="w-12 h-12 flex-shrink-0">
-              <AvatarImage 
-                src={userAvatarUrl ? storageService.getOptimizedImageUrl(userAvatarUrl, { width: 80, quality: 80 }) : undefined} 
-              />
-              <AvatarFallback>{userDisplayName[0]?.toUpperCase()}</AvatarFallback>
-            </Avatar>
+            <div className="flex-shrink-0">
+              {profileLoading ? (
+                <div className="w-12 h-12 bg-gray-200 rounded-full animate-shimmer"></div>
+              ) : (
+                <Avatar className="w-12 h-12">
+                  <AvatarImage 
+                    src={userProfile?.avatar ? storageService.getOptimizedImageUrl(userProfile.avatar, { width: 96, quality: 80 }) : undefined} 
+                  />
+                  <AvatarFallback className="bg-blue-500 text-white font-bold">
+                    {userProfile?.displayName?.[0]?.toUpperCase() || 'U'}
+                  </AvatarFallback>
+                </Avatar>
+              )}
+            </div>
 
             {/* Text Area */}
             <div className="flex-1 min-w-0">
+              {/* User Info Display */}
+              {userProfile && !profileLoading && (
+                <div className="mb-3 text-sm text-gray-600">
+                  Posting as <span className="font-medium text-gray-900">{userProfile.displayName}</span>
+                  <span className="text-gray-500 ml-1">@{userProfile.username}</span>
+                </div>
+              )}
+
               <textarea
                 value={content}
                 onChange={(e) => setContent(e.target.value)}
