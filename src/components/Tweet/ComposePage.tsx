@@ -4,9 +4,12 @@ import { X, Image, Smile, Calendar, MapPin, ArrowLeft, Tag, Globe, Upload, Trash
 import { Button } from '../ui/button';
 import { TWEET_CATEGORIES, TweetCategory, FILTER_COUNTRIES } from '../../types';
 import { useTweets } from '../../hooks/useTweets';
+import { useAuth } from '../../hooks/useAuth';
+import { storageService } from '../../lib/storage';
 
 export const ComposePage: React.FC = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [content, setContent] = useState('');
   const [images, setImages] = useState<string[]>([]);
   const [selectedCategories, setSelectedCategories] = useState<TweetCategory[]>([]);
@@ -14,6 +17,7 @@ export const ComposePage: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [uploadingImage, setUploadingImage] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState<{ [key: string]: number }>({});
   const { createTweet } = useTweets();
 
   const handleSubmit = async () => {
@@ -52,7 +56,7 @@ export const ComposePage: React.FC = () => {
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
-    if (!files || files.length === 0) return;
+    if (!files || files.length === 0 || !user) return;
 
     // Check if adding these images would exceed the limit
     if (images.length + files.length > 4) {
@@ -64,47 +68,66 @@ export const ComposePage: React.FC = () => {
     setError('');
 
     try {
-      const newImageUrls: string[] = [];
-
+      const validFiles: File[] = [];
+      
+      // Validate all files first
       for (let i = 0; i < files.length; i++) {
         const file = files[i];
+        const validation = storageService.validateImageFile(file);
         
-        // Validate file type
-        if (!file.type.startsWith('image/')) {
-          setError('Please select only image files');
+        if (!validation.isValid) {
+          setError(validation.error || 'Invalid file');
           continue;
         }
-
-        // Validate file size (max 5MB)
-        if (file.size > 5 * 1024 * 1024) {
-          setError('Images must be smaller than 5MB');
-          continue;
-        }
-
-        // For demo purposes, we'll use placeholder images from Pexels
-        // In a real app, you would upload to a service like Supabase Storage
-        const placeholderImages = [
-          'https://images.pexels.com/photos/1040880/pexels-photo-1040880.jpeg?auto=compress&cs=tinysrgb&w=800',
-          'https://images.pexels.com/photos/1181671/pexels-photo-1181671.jpeg?auto=compress&cs=tinysrgb&w=800',
-          'https://images.pexels.com/photos/1181677/pexels-photo-1181677.jpeg?auto=compress&cs=tinysrgb&w=800',
-          'https://images.pexels.com/photos/1279330/pexels-photo-1279330.jpeg?auto=compress&cs=tinysrgb&w=800',
-          'https://images.pexels.com/photos/1440476/pexels-photo-1440476.jpeg?auto=compress&cs=tinysrgb&w=800',
-          'https://images.pexels.com/photos/1661179/pexels-photo-1661179.jpeg?auto=compress&cs=tinysrgb&w=800',
-          'https://images.pexels.com/photos/1640777/pexels-photo-1640777.jpeg?auto=compress&cs=tinysrgb&w=800',
-          'https://images.pexels.com/photos/2070033/pexels-photo-2070033.jpeg?auto=compress&cs=tinysrgb&w=800',
-        ];
-
-        // Simulate upload delay
-        await new Promise(resolve => setTimeout(resolve, 500));
         
-        // Use a random placeholder image
-        const randomImage = placeholderImages[Math.floor(Math.random() * placeholderImages.length)];
-        newImageUrls.push(randomImage);
+        validFiles.push(file);
       }
 
+      if (validFiles.length === 0) {
+        setUploadingImage(false);
+        return;
+      }
+
+      // Upload files to Supabase Storage
+      const uploadPromises = validFiles.map(async (file, index) => {
+        const fileId = `${Date.now()}-${index}`;
+        setUploadProgress(prev => ({ ...prev, [fileId]: 0 }));
+        
+        try {
+          // Simulate progress for better UX
+          const progressInterval = setInterval(() => {
+            setUploadProgress(prev => ({
+              ...prev,
+              [fileId]: Math.min((prev[fileId] || 0) + 10, 90)
+            }));
+          }, 100);
+
+          const imageUrl = await storageService.uploadImage(file, user.id);
+          
+          clearInterval(progressInterval);
+          setUploadProgress(prev => ({ ...prev, [fileId]: 100 }));
+          
+          return imageUrl;
+        } catch (error) {
+          setUploadProgress(prev => {
+            const newProgress = { ...prev };
+            delete newProgress[fileId];
+            return newProgress;
+          });
+          throw error;
+        }
+      });
+
+      const newImageUrls = await Promise.all(uploadPromises);
       setImages(prev => [...prev, ...newImageUrls]);
+      
+      // Clear progress after a short delay
+      setTimeout(() => {
+        setUploadProgress({});
+      }, 1000);
+
     } catch (err: any) {
-      setError('Failed to upload images. Please try again.');
+      setError(err.message || 'Failed to upload images. Please try again.');
     } finally {
       setUploadingImage(false);
       // Reset the input
@@ -112,8 +135,20 @@ export const ComposePage: React.FC = () => {
     }
   };
 
-  const removeImage = (index: number) => {
-    setImages(prev => prev.filter((_, i) => i !== index));
+  const removeImage = async (index: number) => {
+    const imageUrl = images[index];
+    
+    try {
+      // Remove from storage
+      await storageService.deleteImage(imageUrl);
+      
+      // Remove from state
+      setImages(prev => prev.filter((_, i) => i !== index));
+    } catch (error) {
+      console.error('Error deleting image:', error);
+      // Still remove from state even if deletion fails
+      setImages(prev => prev.filter((_, i) => i !== index));
+    }
   };
 
   const toggleCategory = (category: TweetCategory) => {
@@ -143,6 +178,8 @@ export const ComposePage: React.FC = () => {
   // Filter out "All Countries" option for selection
   const selectableCountries = FILTER_COUNTRIES.filter(country => country.code !== 'ALL');
 
+  const hasUploadProgress = Object.keys(uploadProgress).length > 0;
+
   return (
     <div className="min-h-screen bg-white flex flex-col">
       {/* Header */}
@@ -171,7 +208,7 @@ export const ComposePage: React.FC = () => {
           
           <Button
             onClick={handleSubmit}
-            disabled={!content.trim() || isOverLimit || loading}
+            disabled={!content.trim() || isOverLimit || loading || uploadingImage}
             className="bg-blue-500 hover:bg-blue-600 text-white font-bold px-6 py-2 rounded-full disabled:opacity-50"
           >
             {loading ? 'Posting...' : 'Tweet'}
@@ -199,6 +236,30 @@ export const ComposePage: React.FC = () => {
                   <>⏰ You have {remainingChars} characters remaining</>
                 )}
               </p>
+            </div>
+          )}
+
+          {/* Upload Progress */}
+          {hasUploadProgress && (
+            <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+              <div className="flex items-center space-x-2 mb-2">
+                <Upload className="h-4 w-4 text-blue-600" />
+                <span className="text-blue-700 text-sm font-medium">Uploading images...</span>
+              </div>
+              {Object.entries(uploadProgress).map(([fileId, progress]) => (
+                <div key={fileId} className="mb-2 last:mb-0">
+                  <div className="flex items-center justify-between text-xs text-blue-600 mb-1">
+                    <span>Image {fileId.split('-')[1] || '1'}</span>
+                    <span>{progress}%</span>
+                  </div>
+                  <div className="w-full bg-blue-200 rounded-full h-2">
+                    <div 
+                      className="bg-blue-600 h-2 rounded-full transition-all duration-300"
+                      style={{ width: `${progress}%` }}
+                    />
+                  </div>
+                </div>
+              ))}
             </div>
           )}
 
@@ -272,7 +333,7 @@ export const ComposePage: React.FC = () => {
                         }`}
                       >
                         <img 
-                          src={image} 
+                          src={storageService.getOptimizedImageUrl(image, { width: 400, quality: 80 })}
                           alt={`Upload ${index + 1}`}
                           className="w-full h-32 object-cover rounded-lg border border-gray-200"
                         />
@@ -409,7 +470,7 @@ export const ComposePage: React.FC = () => {
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-4">
             {/* Image Upload */}
-            <label className={`cursor-pointer ${images.length >= 4 ? 'opacity-50 cursor-not-allowed' : ''}`}>
+            <label className={`cursor-pointer ${images.length >= 4 || uploadingImage ? 'opacity-50 cursor-not-allowed' : ''}`}>
               <input
                 type="file"
                 accept="image/*"

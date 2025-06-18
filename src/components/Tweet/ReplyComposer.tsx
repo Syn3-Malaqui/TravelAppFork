@@ -5,6 +5,7 @@ import { Avatar, AvatarImage, AvatarFallback } from '../ui/avatar';
 import { Tweet } from '../../types';
 import { useAuth } from '../../hooks/useAuth';
 import { useTweets } from '../../hooks/useTweets';
+import { storageService } from '../../lib/storage';
 
 interface ReplyComposerProps {
   tweet: Tweet;
@@ -53,7 +54,7 @@ export const ReplyComposer: React.FC<ReplyComposerProps> = ({
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
-    if (!files || files.length === 0) return;
+    if (!files || files.length === 0 || !user) return;
 
     // Check if adding these images would exceed the limit
     if (images.length + files.length > 4) {
@@ -65,42 +66,32 @@ export const ReplyComposer: React.FC<ReplyComposerProps> = ({
     setError('');
 
     try {
-      const newImageUrls: string[] = [];
-
+      const validFiles: File[] = [];
+      
+      // Validate all files first
       for (let i = 0; i < files.length; i++) {
         const file = files[i];
+        const validation = storageService.validateImageFile(file);
         
-        // Validate file type
-        if (!file.type.startsWith('image/')) {
-          setError('Please select only image files');
+        if (!validation.isValid) {
+          setError(validation.error || 'Invalid file');
           continue;
         }
-
-        // Validate file size (max 5MB)
-        if (file.size > 5 * 1024 * 1024) {
-          setError('Images must be smaller than 5MB');
-          continue;
-        }
-
-        // For demo purposes, we'll use placeholder images from Pexels
-        const placeholderImages = [
-          'https://images.pexels.com/photos/1040880/pexels-photo-1040880.jpeg?auto=compress&cs=tinysrgb&w=600',
-          'https://images.pexels.com/photos/1181671/pexels-photo-1181671.jpeg?auto=compress&cs=tinysrgb&w=600',
-          'https://images.pexels.com/photos/1181677/pexels-photo-1181677.jpeg?auto=compress&cs=tinysrgb&w=600',
-          'https://images.pexels.com/photos/1279330/pexels-photo-1279330.jpeg?auto=compress&cs=tinysrgb&w=600',
-        ];
-
-        // Simulate upload delay
-        await new Promise(resolve => setTimeout(resolve, 300));
         
-        // Use a random placeholder image
-        const randomImage = placeholderImages[Math.floor(Math.random() * placeholderImages.length)];
-        newImageUrls.push(randomImage);
+        validFiles.push(file);
       }
 
+      if (validFiles.length === 0) {
+        setUploadingImage(false);
+        return;
+      }
+
+      // Upload files to Supabase Storage
+      const newImageUrls = await storageService.uploadImages(validFiles, user.id);
       setImages(prev => [...prev, ...newImageUrls]);
+
     } catch (err: any) {
-      setError('Failed to upload images. Please try again.');
+      setError(err.message || 'Failed to upload images. Please try again.');
     } finally {
       setUploadingImage(false);
       // Reset the input
@@ -108,8 +99,20 @@ export const ReplyComposer: React.FC<ReplyComposerProps> = ({
     }
   };
 
-  const removeImage = (index: number) => {
-    setImages(prev => prev.filter((_, i) => i !== index));
+  const removeImage = async (index: number) => {
+    const imageUrl = images[index];
+    
+    try {
+      // Remove from storage
+      await storageService.deleteImage(imageUrl);
+      
+      // Remove from state
+      setImages(prev => prev.filter((_, i) => i !== index));
+    } catch (error) {
+      console.error('Error deleting image:', error);
+      // Still remove from state even if deletion fails
+      setImages(prev => prev.filter((_, i) => i !== index));
+    }
   };
 
   const characterCount = content.length;
@@ -170,7 +173,7 @@ export const ReplyComposer: React.FC<ReplyComposerProps> = ({
                 {images.map((image, index) => (
                   <div key={index} className="relative group">
                     <img 
-                      src={image} 
+                      src={storageService.getOptimizedImageUrl(image, { width: 200, quality: 80 })}
                       alt={`Reply image ${index + 1}`}
                       className="w-full h-20 object-cover rounded-lg border border-gray-200"
                     />
@@ -192,7 +195,7 @@ export const ReplyComposer: React.FC<ReplyComposerProps> = ({
           <div className="flex items-center justify-between mt-3">
             <div className="flex items-center space-x-3">
               {/* Image Upload */}
-              <label className={`cursor-pointer ${images.length >= 4 ? 'opacity-50 cursor-not-allowed' : ''}`}>
+              <label className={`cursor-pointer ${images.length >= 4 || uploadingImage ? 'opacity-50 cursor-not-allowed' : ''}`}>
                 <input
                   type="file"
                   accept="image/*"
@@ -232,7 +235,7 @@ export const ReplyComposer: React.FC<ReplyComposerProps> = ({
               {/* Reply Button */}
               <Button
                 onClick={handleSubmit}
-                disabled={!content.trim() || isOverLimit || loading}
+                disabled={!content.trim() || isOverLimit || loading || uploadingImage}
                 className="bg-blue-500 hover:bg-blue-600 text-white font-bold px-4 py-2 rounded-full text-sm disabled:opacity-50"
               >
                 {loading ? 'Replying...' : 'Reply'}
