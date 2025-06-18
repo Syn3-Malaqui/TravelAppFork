@@ -195,18 +195,8 @@ export const MobileTweetCard: React.FC<MobileTweetCardProps> = ({
   };
 
   const handleTweetClick = async () => {
-    // Navigate to tweet detail page for main tweets
-    if (!isReply) {
-      navigate(`/tweet/${tweet.id}`);
-    }
-  };
-
-  const handleShowRepliesClick = async (e: React.MouseEvent) => {
-    e.stopPropagation();
-    if (!showReplies) {
-      await fetchReplies(tweet.id);
-    }
-    setShowReplies(!showReplies);
+    // Navigate to tweet detail page instead of showing replies inline
+    navigate(`/tweet/${tweet.id}`);
   };
 
   const handleReplyClick = (e: React.MouseEvent, targetTweetId?: string) => {
@@ -385,8 +375,8 @@ export const MobileTweetCard: React.FC<MobileTweetCardProps> = ({
         )}
 
         <div 
-          className={`p-4 ${!isReply ? 'cursor-pointer' : ''}`}
-          onClick={!isReply ? handleTweetClick : undefined}
+          className="p-4 cursor-pointer"
+          onClick={handleTweetClick}
         >
           <div className="flex gap-3">
             {/* Avatar */}
@@ -586,30 +576,6 @@ export const MobileTweetCard: React.FC<MobileTweetCardProps> = ({
                       ))}
                     </div>
                   )}
-                </div>
-              )}
-
-              {/* Show replies button for main tweets */}
-              {hasReplies && (
-                <div className="mb-3">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={handleShowRepliesClick}
-                    className="text-blue-500 hover:text-blue-600 hover:bg-blue-50 p-2 rounded-full flex items-center space-x-1"
-                  >
-                    {showReplies ? (
-                      <>
-                        <ChevronUp className="w-3 h-3" />
-                        <span className="text-xs">Hide {tweet.replies} {tweet.replies === 1 ? 'reply' : 'replies'}</span>
-                      </>
-                    ) : (
-                      <>
-                        <ChevronDown className="w-3 h-3" />
-                        <span className="text-xs">Show {tweet.replies} {tweet.replies === 1 ? 'reply' : 'replies'}</span>
-                      </>
-                    )}
-                  </Button>
                 </div>
               )}
 
