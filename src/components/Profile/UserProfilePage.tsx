@@ -5,8 +5,10 @@ import { Button } from '../ui/button';
 import { Avatar, AvatarImage, AvatarFallback } from '../ui/avatar';
 import { TweetCard } from '../Tweet/TweetCard';
 import { MobileTweetCard } from '../Tweet/MobileTweetCard';
+import { EditProfileModal } from './EditProfileModal';
 import { useAuth } from '../../hooks/useAuth';
 import { supabase } from '../../lib/supabase';
+import { storageService } from '../../lib/storage';
 import { Tweet, User } from '../../types';
 
 export const UserProfilePage: React.FC = () => {
@@ -20,6 +22,7 @@ export const UserProfilePage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'tweets' | 'replies' | 'media' | 'likes'>('tweets');
+  const [showEditModal, setShowEditModal] = useState(false);
 
   useEffect(() => {
     if (currentUser) {
@@ -149,6 +152,8 @@ export const UserProfilePage: React.FC = () => {
         followers: profileData.followers_count,
         following: profileData.following_count,
         joinedDate: new Date(profileData.created_at),
+        coverImage: profileData.cover_image,
+        country: profileData.country,
       };
 
       // Format tweets data
@@ -209,9 +214,8 @@ export const UserProfilePage: React.FC = () => {
     console.log('Bookmark:', tweetId);
   };
 
-  const handleEditProfile = () => {
-    // TODO: Implement edit profile functionality
-    console.log('Edit profile');
+  const handleProfileUpdate = () => {
+    fetchUserProfile();
   };
 
   const getCurrentTabTweets = () => {
@@ -282,9 +286,17 @@ export const UserProfilePage: React.FC = () => {
         <div className="relative">
           {/* Cover Image */}
           <div className="h-48 bg-gradient-to-r from-blue-400 to-purple-500 relative">
+            {profile.coverImage && (
+              <img
+                src={storageService.getOptimizedImageUrl(profile.coverImage, { width: 800, quality: 80 })}
+                alt="Cover"
+                className="w-full h-full object-cover"
+              />
+            )}
             <Button
               variant="ghost"
               size="sm"
+              onClick={() => setShowEditModal(true)}
               className="absolute top-4 right-4 bg-black/50 text-white hover:bg-black/70 p-2 rounded-full"
             >
               <Camera className="h-4 w-4" />
@@ -297,12 +309,15 @@ export const UserProfilePage: React.FC = () => {
             <div className="flex items-end justify-between -mt-16 mb-4">
               <div className="relative">
                 <Avatar className="w-32 h-32 border-4 border-white bg-white">
-                  <AvatarImage src={profile.avatar} />
+                  <AvatarImage 
+                    src={profile.avatar ? storageService.getOptimizedImageUrl(profile.avatar, { width: 200, quality: 80 }) : undefined} 
+                  />
                   <AvatarFallback className="text-2xl">{profile.displayName[0]}</AvatarFallback>
                 </Avatar>
                 <Button
                   variant="ghost"
                   size="sm"
+                  onClick={() => setShowEditModal(true)}
                   className="absolute bottom-2 right-2 bg-black/50 text-white hover:bg-black/70 p-2 rounded-full"
                 >
                   <Camera className="h-3 w-3" />
@@ -311,7 +326,7 @@ export const UserProfilePage: React.FC = () => {
               
               <Button 
                 variant="outline" 
-                onClick={handleEditProfile}
+                onClick={() => setShowEditModal(true)}
                 className="mt-16 px-6 py-2 font-bold rounded-full border-gray-300 hover:bg-gray-50"
               >
                 <Edit3 className="w-4 h-4 mr-2" />
@@ -442,6 +457,19 @@ export const UserProfilePage: React.FC = () => {
           )}
         </div>
       </div>
+
+      {/* Edit Profile Modal */}
+      <EditProfileModal
+        isOpen={showEditModal}
+        onClose={() => setShowEditModal(false)}
+        currentProfile={{
+          displayName: profile.displayName,
+          bio: profile.bio || '',
+          avatar: profile.avatar,
+          coverImage: profile.coverImage,
+        }}
+        onProfileUpdate={handleProfileUpdate}
+      />
     </div>
   );
 };
