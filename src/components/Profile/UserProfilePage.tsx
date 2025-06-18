@@ -6,6 +6,8 @@ import { Avatar, AvatarImage, AvatarFallback } from '../ui/avatar';
 import { TweetCard } from '../Tweet/TweetCard';
 import { MobileTweetCard } from '../Tweet/MobileTweetCard';
 import { EditProfileModal } from './EditProfileModal';
+import { ProfileSkeleton } from './ProfileSkeleton';
+import { TweetSkeletonList } from '../Tweet/TweetSkeleton';
 import { useAuth } from '../../hooks/useAuth';
 import { supabase } from '../../lib/supabase';
 import { storageService } from '../../lib/storage';
@@ -234,14 +236,7 @@ export const UserProfilePage: React.FC = () => {
   };
 
   if (loading) {
-    return (
-      <div className="min-h-screen bg-white flex flex-col">
-        <div className="flex items-center justify-center py-12">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
-          <span className="ml-3 text-gray-500">Loading profile...</span>
-        </div>
-      </div>
-    );
+    return <ProfileSkeleton isMobile={window.innerWidth < 768} />;
   }
 
   if (error || !profile) {

@@ -20,6 +20,7 @@ import {
   DropdownMenuTrigger,
 } from '../ui/dropdown-menu';
 import { useNotifications } from '../../hooks/useNotifications';
+import { NotificationsPageSkeleton } from './NotificationSkeleton';
 import { Notification } from '../../types';
 import { useNavigate } from 'react-router-dom';
 import { storageService } from '../../lib/storage';
@@ -97,27 +98,7 @@ export const NotificationsPage: React.FC = () => {
     : notifications;
 
   if (loading) {
-    return (
-      <div className="min-h-screen bg-white">
-        <div className="sticky top-0 bg-white/80 backdrop-blur-md border-b border-gray-200 px-4 py-3 z-10">
-          <div className="flex items-center space-x-4">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => navigate('/')}
-              className="p-2 md:hidden"
-            >
-              <ArrowLeft className="h-5 w-5" />
-            </Button>
-            <h1 className="text-xl font-bold">Notifications</h1>
-          </div>
-        </div>
-        <div className="flex items-center justify-center py-12">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
-          <span className="ml-3 text-gray-500">Loading notifications...</span>
-        </div>
-      </div>
-    );
+    return <NotificationsPageSkeleton />;
   }
 
   if (error) {
