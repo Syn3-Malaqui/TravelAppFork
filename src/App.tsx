@@ -33,13 +33,13 @@ function App() {
   return (
     <Router>
       <div className="min-h-screen bg-white">
-        <div className="max-w-6xl mx-auto flex">
+        <div className="flex">
           {/* Desktop Sidebar */}
           <div className="hidden md:block">
             <Sidebar />
           </div>
           
-          {/* Main Content */}
+          {/* Main Content - Takes remaining space */}
           <div className="flex-1 md:ml-64">
             <Routes>
               <Route path="/" element={<Timeline />} />
@@ -49,8 +49,6 @@ function App() {
               <Route path="/profile/:username" element={<ProfilePage />} />
               <Route path="/profile" element={<UserProfilePage />} />
               <Route path="/explore" element={<div className="p-8 text-center text-gray-500">Explore Page</div>} />
-              <Route path="/messages" element={<div className="p-8 text-center text-gray-500">Messages Page</div>} />
-              <Route path="/bookmarks" element={<div className="p-8 text-center text-gray-500">Bookmarks Page</div>} />
             </Routes>
           </div>
         </div>

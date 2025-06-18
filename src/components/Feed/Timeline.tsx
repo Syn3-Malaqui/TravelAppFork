@@ -83,8 +83,8 @@ export const Timeline: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen w-full flex justify-end">
-        <div className="w-full max-w-2xl border-r border-gray-200 overflow-hidden">
+      <div className="min-h-screen w-full">
+        <div className="w-full border-r border-gray-200 overflow-hidden">
           {/* Desktop Header */}
           <div className="hidden md:block sticky top-0 bg-white/80 backdrop-blur-md border-b border-gray-200 p-4 z-10">
             <div className="flex items-center justify-between">
@@ -117,8 +117,8 @@ export const Timeline: React.FC = () => {
 
   if (error) {
     return (
-      <div className="min-h-screen w-full flex justify-end">
-        <div className="w-full max-w-2xl border-r border-gray-200 overflow-hidden">
+      <div className="min-h-screen w-full">
+        <div className="w-full border-r border-gray-200 overflow-hidden">
           {/* Desktop Header */}
           <div className="hidden md:block sticky top-0 bg-white/80 backdrop-blur-md border-b border-gray-200 p-4 z-10">
             <div className="flex items-center justify-between">
@@ -152,8 +152,8 @@ export const Timeline: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen w-full flex justify-end">
-      <div className="w-full max-w-2xl border-r border-gray-200 overflow-hidden flex flex-col">
+    <div className="min-h-screen w-full">
+      <div className="w-full border-r border-gray-200 overflow-hidden flex flex-col">
         {/* Desktop Header */}
         <div className="hidden md:block sticky top-0 bg-white/80 backdrop-blur-md border-b border-gray-200 p-4 z-10">
           <div className="flex items-center justify-between">
@@ -203,7 +203,7 @@ export const Timeline: React.FC = () => {
         <div className="hidden md:block border-b border-gray-200 p-4 flex-shrink-0">
           <div className="flex space-x-4">
             <div className="w-12 h-12 bg-gray-300 rounded-full"></div>
-            <div className="flex-1 max-w-lg">
+            <div className="flex-1">
               <div 
                 className="text-xl text-gray-500 py-3 cursor-pointer hover:bg-gray-50 rounded-lg px-4"
                 onClick={handleComposeClick}
@@ -248,7 +248,7 @@ export const Timeline: React.FC = () => {
 
         {/* Timeline - Scrollable container */}
         <div className="flex-1 overflow-y-auto">
-          <div className="flex flex-col items-end pb-20 md:pb-0">
+          <div className="flex flex-col pb-20 md:pb-0">
             {filteredTweets.length === 0 ? (
               <div className="w-full text-center py-12 text-gray-500">
                 {activeTab === 'following' && currentTweets.length === 0 ? (
@@ -299,7 +299,7 @@ export const Timeline: React.FC = () => {
               </div>
             ) : (
               filteredTweets.map((tweet) => (
-                <div key={`${tweet.id}-${tweet.retweetedAt || tweet.createdAt}`} className="w-full max-w-2xl">
+                <div key={`${tweet.id}-${tweet.retweetedAt || tweet.createdAt}`} className="w-full">
                   {/* Desktop Tweet Card */}
                   <div className="hidden md:block">
                     <TweetCard 
