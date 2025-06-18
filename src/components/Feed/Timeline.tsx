@@ -427,24 +427,23 @@ export const Timeline: React.FC = () => {
         {/* Mobile Tabs */}
         <MobileTabs activeTab={activeTab} onTabChange={handleTabChange} />
 
-        {/* Mobile Filters - Compact Icon Row */}
+        {/* Mobile Filters - Desktop-Style with Rounded Buttons */}
         <div className="bg-white border-b border-gray-200 px-4 py-3">
           <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-3">
-              <span className="text-sm font-medium text-gray-700">Filters:</span>
-              <MobileCountryFilter 
+            <div className="flex items-center space-x-3 flex-1">
+              <CategoriesFilter 
+                selectedCategory={categoryFilter}
+                onCategoryChange={handleCategoryFilter}
+              />
+              <CountryFilter 
                 selectedCountry={countryFilter}
                 onCountryChange={handleCountryFilter}
-              />
-              <MobileTags 
-                onCategoryFilter={handleCategoryFilter} 
-                activeFilter={categoryFilter} 
               />
             </div>
             
             {/* Active Filters Indicator */}
             {(categoryFilter || countryFilter !== 'ALL') && (
-              <div className="flex items-center space-x-1">
+              <div className="flex items-center space-x-1 ml-3">
                 <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
                 <span className="text-xs text-blue-600 font-medium">Active</span>
               </div>
