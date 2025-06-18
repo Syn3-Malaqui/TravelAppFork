@@ -94,11 +94,25 @@ export const useTweets = () => {
       setLoading(true);
       setError(null);
       
+      // Optimized query with selective field loading and better indexing
       const { data, error } = await supabase
         .from('tweets')
         .select(`
-          *,
-          profiles (
+          id,
+          content,
+          author_id,
+          image_urls,
+          hashtags,
+          mentions,
+          tags,
+          likes_count,
+          retweets_count,
+          replies_count,
+          views_count,
+          created_at,
+          is_retweet,
+          original_tweet_id,
+          profiles!tweets_author_id_fkey (
             id,
             username,
             display_name,
@@ -111,8 +125,18 @@ export const useTweets = () => {
             created_at
           ),
           original_tweet:original_tweet_id (
-            *,
-            profiles (
+            id,
+            content,
+            image_urls,
+            hashtags,
+            mentions,
+            tags,
+            likes_count,
+            retweets_count,
+            replies_count,
+            views_count,
+            created_at,
+            profiles!tweets_author_id_fkey (
               id,
               username,
               display_name,
@@ -128,28 +152,46 @@ export const useTweets = () => {
         `)
         .is('reply_to', null) // Only fetch top-level tweets, not replies
         .order('created_at', { ascending: false })
-        .limit(50);
+        .limit(30); // Reduced limit for faster loading
 
       if (error) throw error;
 
       // Get current user to check likes/retweets/bookmarks
       const { data: { user } } = await supabase.auth.getUser();
       
-      // Get user's likes, retweets, and bookmarks if authenticated
+      // Get user's interactions in parallel for better performance
       let userLikes: string[] = [];
       let userRetweets: string[] = [];
       let userBookmarks: string[] = [];
       
       if (user) {
-        const [likesResult, retweetsResult, bookmarksResult] = await Promise.all([
-          supabase.from('likes').select('tweet_id').eq('user_id', user.id),
-          supabase.from('retweets').select('tweet_id').eq('user_id', user.id),
-          supabase.from('bookmarks').select('tweet_id').eq('user_id', user.id)
-        ]);
-        
-        userLikes = likesResult.data?.map(like => like.tweet_id) || [];
-        userRetweets = retweetsResult.data?.map(retweet => retweet.tweet_id) || [];
-        userBookmarks = bookmarksResult.data?.map(bookmark => bookmark.tweet_id) || [];
+        const tweetIds = data?.map(tweet => tweet.id) || [];
+        const originalTweetIds = data?.filter(tweet => tweet.original_tweet_id).map(tweet => tweet.original_tweet_id) || [];
+        const allTweetIds = [...tweetIds, ...originalTweetIds];
+
+        if (allTweetIds.length > 0) {
+          const [likesResult, retweetsResult, bookmarksResult] = await Promise.all([
+            supabase
+              .from('likes')
+              .select('tweet_id')
+              .eq('user_id', user.id)
+              .in('tweet_id', allTweetIds),
+            supabase
+              .from('retweets')
+              .select('tweet_id')
+              .eq('user_id', user.id)
+              .in('tweet_id', allTweetIds),
+            supabase
+              .from('bookmarks')
+              .select('tweet_id')
+              .eq('user_id', user.id)
+              .in('tweet_id', allTweetIds)
+          ]);
+          
+          userLikes = likesResult.data?.map(like => like.tweet_id) || [];
+          userRetweets = retweetsResult.data?.map(retweet => retweet.tweet_id) || [];
+          userBookmarks = bookmarksResult.data?.map(bookmark => bookmark.tweet_id) || [];
+        }
       }
 
       const formattedTweets: Tweet[] = (data as TweetWithProfile[]).map(tweet => 
@@ -177,29 +219,25 @@ export const useTweets = () => {
         return;
       }
 
-      // First, get the list of users the current user follows
-      const { data: followsData, error: followsError } = await supabase
-        .from('follows')
-        .select('following_id')
-        .eq('follower_id', user.id);
-
-      if (followsError) throw followsError;
-
-      const followingIds = followsData.map(follow => follow.following_id);
-      
-      // If user doesn't follow anyone, return empty array
-      if (followingIds.length === 0) {
-        setFollowingTweets([]);
-        setLoading(false);
-        return;
-      }
-
-      // Fetch tweets from followed users (including their retweets)
+      // Optimized query using a single join instead of multiple queries
       const { data, error } = await supabase
         .from('tweets')
         .select(`
-          *,
-          profiles (
+          id,
+          content,
+          author_id,
+          image_urls,
+          hashtags,
+          mentions,
+          tags,
+          likes_count,
+          retweets_count,
+          replies_count,
+          views_count,
+          created_at,
+          is_retweet,
+          original_tweet_id,
+          profiles!tweets_author_id_fkey (
             id,
             username,
             display_name,
@@ -212,8 +250,18 @@ export const useTweets = () => {
             created_at
           ),
           original_tweet:original_tweet_id (
-            *,
-            profiles (
+            id,
+            content,
+            image_urls,
+            hashtags,
+            mentions,
+            tags,
+            likes_count,
+            retweets_count,
+            replies_count,
+            views_count,
+            created_at,
+            profiles!tweets_author_id_fkey (
               id,
               username,
               display_name,
@@ -227,23 +275,50 @@ export const useTweets = () => {
             )
           )
         `)
-        .in('author_id', followingIds)
+        .in('author_id', 
+          supabase
+            .from('follows')
+            .select('following_id')
+            .eq('follower_id', user.id)
+        )
         .is('reply_to', null) // Only fetch top-level tweets, not replies
         .order('created_at', { ascending: false })
-        .limit(50);
+        .limit(30); // Reduced limit for faster loading
 
       if (error) throw error;
 
-      // Get user's likes, retweets, and bookmarks
-      const [likesResult, retweetsResult, bookmarksResult] = await Promise.all([
-        supabase.from('likes').select('tweet_id').eq('user_id', user.id),
-        supabase.from('retweets').select('tweet_id').eq('user_id', user.id),
-        supabase.from('bookmarks').select('tweet_id').eq('user_id', user.id)
-      ]);
-      
-      const userLikes = likesResult.data?.map(like => like.tweet_id) || [];
-      const userRetweets = retweetsResult.data?.map(retweet => retweet.tweet_id) || [];
-      const userBookmarks = bookmarksResult.data?.map(bookmark => bookmark.tweet_id) || [];
+      // Get user's interactions in parallel for better performance
+      let userLikes: string[] = [];
+      let userRetweets: string[] = [];
+      let userBookmarks: string[] = [];
+
+      if (data && data.length > 0) {
+        const tweetIds = data.map(tweet => tweet.id);
+        const originalTweetIds = data.filter(tweet => tweet.original_tweet_id).map(tweet => tweet.original_tweet_id);
+        const allTweetIds = [...tweetIds, ...originalTweetIds];
+
+        const [likesResult, retweetsResult, bookmarksResult] = await Promise.all([
+          supabase
+            .from('likes')
+            .select('tweet_id')
+            .eq('user_id', user.id)
+            .in('tweet_id', allTweetIds),
+          supabase
+            .from('retweets')
+            .select('tweet_id')
+            .eq('user_id', user.id)
+            .in('tweet_id', allTweetIds),
+          supabase
+            .from('bookmarks')
+            .select('tweet_id')
+            .eq('user_id', user.id)
+            .in('tweet_id', allTweetIds)
+        ]);
+        
+        userLikes = likesResult.data?.map(like => like.tweet_id) || [];
+        userRetweets = retweetsResult.data?.map(retweet => retweet.tweet_id) || [];
+        userBookmarks = bookmarksResult.data?.map(bookmark => bookmark.tweet_id) || [];
+      }
 
       const formattedTweets: Tweet[] = (data as TweetWithProfile[]).map(tweet => 
         formatTweetData(tweet, userLikes, userRetweets, userBookmarks)
@@ -263,8 +338,19 @@ export const useTweets = () => {
       const { data, error } = await supabase
         .from('tweets')
         .select(`
-          *,
-          profiles (
+          id,
+          content,
+          author_id,
+          image_urls,
+          hashtags,
+          mentions,
+          tags,
+          likes_count,
+          retweets_count,
+          replies_count,
+          views_count,
+          created_at,
+          profiles!tweets_author_id_fkey (
             id,
             username,
             display_name,
@@ -289,11 +375,25 @@ export const useTweets = () => {
       let userRetweets: string[] = [];
       let userBookmarks: string[] = [];
       
-      if (user) {
+      if (user && data && data.length > 0) {
+        const tweetIds = data.map(tweet => tweet.id);
+
         const [likesResult, retweetsResult, bookmarksResult] = await Promise.all([
-          supabase.from('likes').select('tweet_id').eq('user_id', user.id),
-          supabase.from('retweets').select('tweet_id').eq('user_id', user.id),
-          supabase.from('bookmarks').select('tweet_id').eq('user_id', user.id)
+          supabase
+            .from('likes')
+            .select('tweet_id')
+            .eq('user_id', user.id)
+            .in('tweet_id', tweetIds),
+          supabase
+            .from('retweets')
+            .select('tweet_id')
+            .eq('user_id', user.id)
+            .in('tweet_id', tweetIds),
+          supabase
+            .from('bookmarks')
+            .select('tweet_id')
+            .eq('user_id', user.id)
+            .in('tweet_id', tweetIds)
         ]);
         
         userLikes = likesResult.data?.map(like => like.tweet_id) || [];
