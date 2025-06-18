@@ -7,6 +7,7 @@ import { TweetCard } from './TweetCard';
 import { MobileTweetCard } from './MobileTweetCard';
 import { TweetSkeleton } from './TweetSkeleton';
 import { ReplyComposer } from './ReplyComposer';
+import { TrendingSidebar } from '../Layout/TrendingSidebar';
 import { useAuth } from '../../hooks/useAuth';
 import { useTweets } from '../../hooks/useTweets';
 import { supabase } from '../../lib/supabase';
@@ -25,6 +26,24 @@ export const TweetDetailPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showReplyComposer, setShowReplyComposer] = useState(false);
+  const [showSidebar, setShowSidebar] = useState(true);
+
+  // Handle window resize to show/hide sidebar
+  useEffect(() => {
+    const handleResize = () => {
+      // Hide sidebar when window width is less than 1280px (xl breakpoint)
+      setShowSidebar(window.innerWidth >= 1280);
+    };
+
+    // Set initial state
+    handleResize();
+
+    // Add event listener
+    window.addEventListener('resize', handleResize);
+
+    // Cleanup
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   useEffect(() => {
     if (tweetId) {
@@ -278,22 +297,52 @@ export const TweetDetailPage: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-white flex flex-col">
-        {/* Header Skeleton */}
-        <div className="bg-white/80 backdrop-blur-md border-b border-gray-200 px-4 py-3 flex items-center z-10 flex-shrink-0">
-          <div className="w-6 h-6 bg-gray-200 rounded animate-shimmer"></div>
-          <div className="ml-4 h-5 bg-gray-200 rounded animate-shimmer w-16"></div>
+      <div className="min-h-screen bg-white flex h-screen overflow-hidden">
+        {/* Desktop Layout with Conditional Sidebar */}
+        <div className="hidden md:flex flex-1">
+          {/* Main Content */}
+          <div className={`flex-1 border-r border-gray-200 flex flex-col ${showSidebar ? '' : 'border-r-0'}`}>
+            {/* Header Skeleton */}
+            <div className="bg-white/80 backdrop-blur-md border-b border-gray-200 px-4 py-3 flex items-center z-10 flex-shrink-0">
+              <div className="w-6 h-6 bg-gray-200 rounded animate-shimmer"></div>
+              <div className="ml-4 h-5 bg-gray-200 rounded animate-shimmer w-16"></div>
+            </div>
+
+            {/* Content Skeleton */}
+            <div className="flex-1 overflow-y-auto">
+              <div className="p-4">
+                <TweetSkeleton showImages={true} />
+              </div>
+              <div className="border-t border-gray-200">
+                <TweetSkeleton />
+                <TweetSkeleton />
+                <TweetSkeleton />
+              </div>
+            </div>
+          </div>
+
+          {/* Right Sidebar - Conditionally Rendered */}
+          {showSidebar && <TrendingSidebar />}
         </div>
 
-        {/* Content Skeleton */}
-        <div className="flex-1 overflow-y-auto">
-          <div className="p-4">
-            <TweetSkeleton showImages={true} />
+        {/* Mobile Layout */}
+        <div className="md:hidden w-full flex flex-col">
+          {/* Header Skeleton */}
+          <div className="bg-white/80 backdrop-blur-md border-b border-gray-200 px-4 py-3 flex items-center z-10 flex-shrink-0">
+            <div className="w-6 h-6 bg-gray-200 rounded animate-shimmer"></div>
+            <div className="ml-4 h-5 bg-gray-200 rounded animate-shimmer w-16"></div>
           </div>
-          <div className="border-t border-gray-200">
-            <TweetSkeleton />
-            <TweetSkeleton />
-            <TweetSkeleton />
+
+          {/* Content Skeleton */}
+          <div className="flex-1 overflow-y-auto">
+            <div className="p-4">
+              <TweetSkeleton showImages={true} isMobile={true} />
+            </div>
+            <div className="border-t border-gray-200">
+              <TweetSkeleton isMobile={true} />
+              <TweetSkeleton isMobile={true} />
+              <TweetSkeleton isMobile={true} />
+            </div>
           </div>
         </div>
       </div>
@@ -302,7 +351,359 @@ export const TweetDetailPage: React.FC = () => {
 
   if (error || !tweet) {
     return (
-      <div className="min-h-screen bg-white flex flex-col">
+      <div className="min-h-screen bg-white flex h-screen overflow-hidden">
+        {/* Desktop Layout with Conditional Sidebar */}
+        <div className="hidden md:flex flex-1">
+          {/* Main Content */}
+          <div className={`flex-1 border-r border-gray-200 flex flex-col ${showSidebar ? '' : 'border-r-0'}`}>
+            <div className="bg-white/80 backdrop-blur-md border-b border-gray-200 px-4 py-3 flex items-center z-10 flex-shrink-0">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => navigate(-1)}
+                className="p-2"
+              >
+                <ArrowLeft className="h-5 w-5" />
+              </Button>
+              <h1 className="ml-4 text-lg font-bold">Tweet</h1>
+            </div>
+            
+            <div className="flex flex-col items-center justify-center py-12 px-4">
+              <div className="text-center">
+                <p className="text-lg font-semibold mb-2 text-gray-900">Tweet not found</p>
+                <p className="text-sm text-gray-600 mb-4">{error || 'This tweet does not exist or has been deleted.'}</p>
+                <Button onClick={() => navigate(-1)} variant="outline">
+                  Go back
+                </Button>
+              </div>
+            </div>
+          </div>
+
+          {/* Right Sidebar - Conditionally Rendered */}
+          {showSidebar && <TrendingSidebar />}
+        </div>
+
+        {/* Mobile Layout */}
+        <div className="md:hidden w-full flex flex-col">
+          <div className="bg-white/80 backdrop-blur-md border-b border-gray-200 px-4 py-3 flex items-center z-10 flex-shrink-0">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => navigate(-1)}
+              className="p-2"
+            >
+              <ArrowLeft className="h-5 w-5" />
+            </Button>
+            <h1 className="ml-4 text-lg font-bold">Tweet</h1>
+          </div>
+          
+          <div className="flex flex-col items-center justify-center py-12 px-4">
+            <div className="text-center">
+              <p className="text-lg font-semibold mb-2 text-gray-900">Tweet not found</p>
+              <p className="text-sm text-gray-600 mb-4">{error || 'This tweet does not exist or has been deleted.'}</p>
+              <Button onClick={() => navigate(-1)} variant="outline">
+                Go back
+              </Button>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  const tweetReplies = replies[tweet.id] || [];
+
+  return (
+    <div className="min-h-screen bg-white flex h-screen overflow-hidden">
+      {/* Desktop Layout with Conditional Sidebar */}
+      <div className="hidden md:flex flex-1">
+        {/* Main Content */}
+        <div className={`flex-1 border-r border-gray-200 flex flex-col ${showSidebar ? '' : 'border-r-0'}`}>
+          {/* Header */}
+          <div className="bg-white/80 backdrop-blur-md border-b border-gray-200 px-4 py-3 flex items-center z-10 flex-shrink-0">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => navigate(-1)}
+              className="p-2"
+            >
+              <ArrowLeft className="h-5 w-5" />
+            </Button>
+            <h1 className="ml-4 text-lg font-bold">Tweet</h1>
+          </div>
+
+          {/* Scrollable Content */}
+          <div className="flex-1 overflow-y-auto">
+            {/* Parent Tweet (if this is a reply) */}
+            {parentTweet && (
+              <div className="border-b border-gray-200">
+                <div className="p-4">
+                  <div className="flex items-center space-x-2 text-gray-500 text-sm mb-3">
+                    <CornerUpLeft className="w-4 h-4" />
+                    <span>Replying to</span>
+                    <button
+                      onClick={handleParentTweetClick}
+                      className="text-blue-500 hover:text-blue-600 hover:underline font-medium transition-colors"
+                    >
+                      @{parentTweet.author.username}
+                    </button>
+                  </div>
+                  
+                  <div 
+                    className="cursor-pointer hover:bg-gray-50 rounded-lg p-3 -m-3 transition-colors"
+                    onClick={handleParentTweetClick}
+                  >
+                    <div className="flex space-x-3">
+                      <Avatar className="w-10 h-10 flex-shrink-0">
+                        <AvatarImage 
+                          src={parentTweet.author.avatar ? storageService.getOptimizedImageUrl(parentTweet.author.avatar, { width: 80, quality: 80 }) : undefined} 
+                        />
+                        <AvatarFallback>{parentTweet.author.displayName[0]}</AvatarFallback>
+                      </Avatar>
+                      
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center space-x-2 mb-1">
+                          <span className="font-bold text-gray-900 text-sm">
+                            {parentTweet.author.displayName}
+                          </span>
+                          <span className="text-gray-500 text-sm">
+                            @{parentTweet.author.username}
+                          </span>
+                          <span className="text-gray-500 text-sm">·</span>
+                          <span className="text-gray-500 text-sm">
+                            {formatDistanceToNow(parentTweet.createdAt, { addSuffix: true })}
+                          </span>
+                        </div>
+                        <p className="text-gray-900 text-sm line-clamp-3">
+                          {parentTweet.content}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Main Tweet - Enhanced Display */}
+            <div className="border-b border-gray-200 bg-white">
+              <div className="p-6">
+                {/* Author Info */}
+                <div className="flex items-center space-x-3 mb-4">
+                  <Avatar 
+                    className="w-12 h-12 cursor-pointer" 
+                    onClick={() => navigate(`/profile/${tweet.author.username}`)}
+                  >
+                    <AvatarImage 
+                      src={tweet.author.avatar ? storageService.getOptimizedImageUrl(tweet.author.avatar, { width: 96, quality: 80 }) : undefined} 
+                    />
+                    <AvatarFallback>{tweet.author.displayName[0]}</AvatarFallback>
+                  </Avatar>
+                  
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center space-x-2">
+                      <span 
+                        className="font-bold text-gray-900 hover:underline cursor-pointer"
+                        onClick={() => navigate(`/profile/${tweet.author.username}`)}
+                      >
+                        {tweet.author.displayName}
+                      </span>
+                      {tweet.author.verified && (
+                        <div className="w-5 h-5 bg-blue-500 rounded-full flex items-center justify-center">
+                          <span className="text-white text-xs">✓</span>
+                        </div>
+                      )}
+                    </div>
+                    <span 
+                      className="text-gray-500 hover:underline cursor-pointer"
+                      onClick={() => navigate(`/profile/${tweet.author.username}`)}
+                    >
+                      @{tweet.author.username}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Tweet Content */}
+                <div className="text-gray-900 text-xl leading-relaxed mb-4">
+                  {tweet.content}
+                </div>
+
+                {/* Images */}
+                {tweet.images && tweet.images.length > 0 && (
+                  <div className="mb-4 rounded-2xl overflow-hidden border border-gray-200">
+                    {tweet.images.length === 1 ? (
+                      <img 
+                        src={tweet.images[0]} 
+                        alt="Tweet image" 
+                        className="w-full max-h-96 object-cover"
+                      />
+                    ) : (
+                      <div className={`grid gap-1 ${
+                        tweet.images.length === 2 ? 'grid-cols-2' :
+                        tweet.images.length === 3 ? 'grid-cols-2 grid-rows-2' :
+                        'grid-cols-2'
+                      }`}>
+                        {tweet.images.map((image, index) => (
+                          <div 
+                            key={index} 
+                            className={`${
+                              tweet.images!.length === 3 && index === 0 ? 'row-span-2' : ''
+                            }`}
+                          >
+                            <img 
+                              src={image} 
+                              alt={`Tweet image ${index + 1}`} 
+                              className="w-full h-full object-cover"
+                            />
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Timestamp */}
+                <div className="text-gray-500 text-sm mb-4 pb-4 border-b border-gray-100">
+                  {tweet.createdAt.toLocaleString('en-US', {
+                    hour: 'numeric',
+                    minute: '2-digit',
+                    hour12: true,
+                    month: 'short',
+                    day: 'numeric',
+                    year: 'numeric'
+                  })}
+                </div>
+
+                {/* Engagement Stats */}
+                <div className="flex items-center space-x-6 text-sm text-gray-500 mb-4 pb-4 border-b border-gray-100">
+                  <div>
+                    <span className="font-bold text-gray-900">{tweet.retweets.toLocaleString()}</span>
+                    <span className="ml-1">Retweets</span>
+                  </div>
+                  <div>
+                    <span className="font-bold text-gray-900">{tweet.likes.toLocaleString()}</span>
+                    <span className="ml-1">Likes</span>
+                  </div>
+                  <div>
+                    <span className="font-bold text-gray-900">{tweet.views.toLocaleString()}</span>
+                    <span className="ml-1">Views</span>
+                  </div>
+                </div>
+
+                {/* Actions */}
+                <div className="flex items-center justify-around py-2">
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    className="text-gray-500 hover:text-blue-500 hover:bg-blue-50 p-3 flex items-center"
+                    onClick={() => setShowReplyComposer(!showReplyComposer)}
+                  >
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                    </svg>
+                  </Button>
+
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    className={`p-3 flex items-center ${
+                      tweet.isRetweeted 
+                        ? 'text-green-500 hover:text-green-600 hover:bg-green-50' 
+                        : 'text-gray-500 hover:text-green-500 hover:bg-green-50'
+                    }`}
+                    onClick={() => handleRetweet(tweet.id)}
+                  >
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                    </svg>
+                  </Button>
+
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    className={`p-3 flex items-center ${
+                      tweet.isLiked 
+                        ? 'text-red-500 hover:text-red-600 hover:bg-red-50' 
+                        : 'text-gray-500 hover:text-red-500 hover:bg-red-50'
+                    }`}
+                    onClick={() => handleLike(tweet.id, tweet.isLiked)}
+                  >
+                    <svg className={`w-5 h-5 ${tweet.isLiked ? 'fill-current' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+                    </svg>
+                  </Button>
+
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    className={`p-3 flex items-center ${
+                      tweet.isBookmarked 
+                        ? 'text-blue-500 hover:text-blue-600 hover:bg-blue-50' 
+                        : 'text-gray-500 hover:text-blue-500 hover:bg-blue-50'
+                    }`}
+                    onClick={() => handleBookmark(tweet.id)}
+                  >
+                    <svg className={`w-5 h-5 ${tweet.isBookmarked ? 'fill-current' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
+                    </svg>
+                  </Button>
+
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    className="text-gray-500 hover:text-blue-500 hover:bg-blue-50 p-3"
+                  >
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.367 2.684 3 3 0 00-5.367-2.684z" />
+                    </svg>
+                  </Button>
+                </div>
+              </div>
+
+              {/* Reply Composer */}
+              {showReplyComposer && (
+                <ReplyComposer
+                  tweet={tweet}
+                  onCancel={() => setShowReplyComposer(false)}
+                  onReplySuccess={handleReplySuccess}
+                />
+              )}
+            </div>
+
+            {/* Replies */}
+            <div className="pb-20 md:pb-0">
+              {tweetReplies.length === 0 ? (
+                <div className="text-center py-12 text-gray-500">
+                  <p className="text-lg">No replies yet</p>
+                  <p className="text-sm mt-2">Be the first to reply!</p>
+                </div>
+              ) : (
+                <div className="divide-y divide-gray-100">
+                  {tweetReplies.map((reply) => (
+                    <div key={reply.id} className="hover:bg-gray-50 transition-colors">
+                      <TweetCard 
+                        tweet={reply} 
+                        onLike={() => handleLike(reply.id, reply.isLiked)}
+                        onRetweet={() => handleRetweet(reply.id)}
+                        onBookmark={() => handleBookmark(reply.id)}
+                        currentUserId={user?.id}
+                        isReply={true}
+                        parentTweetId={tweet.id}
+                      />
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Right Sidebar - Conditionally Rendered */}
+        {showSidebar && <TrendingSidebar />}
+      </div>
+
+      {/* Mobile Layout */}
+      <div className="md:hidden w-full flex flex-col h-screen overflow-hidden">
+        {/* Header */}
         <div className="bg-white/80 backdrop-blur-md border-b border-gray-200 px-4 py-3 flex items-center z-10 flex-shrink-0">
           <Button
             variant="ghost"
@@ -314,299 +715,255 @@ export const TweetDetailPage: React.FC = () => {
           </Button>
           <h1 className="ml-4 text-lg font-bold">Tweet</h1>
         </div>
-        
-        <div className="flex flex-col items-center justify-center py-12 px-4">
-          <div className="text-center">
-            <p className="text-lg font-semibold mb-2 text-gray-900">Tweet not found</p>
-            <p className="text-sm text-gray-600 mb-4">{error || 'This tweet does not exist or has been deleted.'}</p>
-            <Button onClick={() => navigate(-1)} variant="outline">
-              Go back
-            </Button>
-          </div>
-        </div>
-      </div>
-    );
-  }
 
-  const tweetReplies = replies[tweet.id] || [];
-
-  return (
-    <div className="min-h-screen bg-white flex flex-col h-screen overflow-hidden">
-      {/* Header */}
-      <div className="bg-white/80 backdrop-blur-md border-b border-gray-200 px-4 py-3 flex items-center z-10 flex-shrink-0">
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => navigate(-1)}
-          className="p-2"
-        >
-          <ArrowLeft className="h-5 w-5" />
-        </Button>
-        <h1 className="ml-4 text-lg font-bold">Tweet</h1>
-      </div>
-
-      {/* Scrollable Content */}
-      <div className="flex-1 overflow-y-auto">
-        {/* Parent Tweet (if this is a reply) */}
-        {parentTweet && (
-          <div className="border-b border-gray-200">
-            <div className="p-4">
-              <div className="flex items-center space-x-2 text-gray-500 text-sm mb-3">
-                <CornerUpLeft className="w-4 h-4" />
-                <span>Replying to</span>
-                <button
+        {/* Scrollable Content */}
+        <div className="flex-1 overflow-y-auto">
+          {/* Parent Tweet (if this is a reply) */}
+          {parentTweet && (
+            <div className="border-b border-gray-200">
+              <div className="p-4">
+                <div className="flex items-center space-x-2 text-gray-500 text-xs mb-3">
+                  <CornerUpLeft className="w-3 h-3" />
+                  <span>Replying to</span>
+                  <button
+                    onClick={handleParentTweetClick}
+                    className="text-blue-500 hover:text-blue-600 hover:underline font-medium transition-colors"
+                  >
+                    @{parentTweet.author.username}
+                  </button>
+                </div>
+                
+                <div 
+                  className="cursor-pointer hover:bg-gray-50 rounded-lg p-3 -m-3 transition-colors"
                   onClick={handleParentTweetClick}
-                  className="text-blue-500 hover:text-blue-600 hover:underline font-medium transition-colors"
                 >
-                  @{parentTweet.author.username}
-                </button>
-              </div>
-              
-              <div 
-                className="cursor-pointer hover:bg-gray-50 rounded-lg p-3 -m-3 transition-colors"
-                onClick={handleParentTweetClick}
-              >
-                <div className="flex space-x-3">
-                  <Avatar className="w-10 h-10 flex-shrink-0">
-                    <AvatarImage 
-                      src={parentTweet.author.avatar ? storageService.getOptimizedImageUrl(parentTweet.author.avatar, { width: 80, quality: 80 }) : undefined} 
-                    />
-                    <AvatarFallback>{parentTweet.author.displayName[0]}</AvatarFallback>
-                  </Avatar>
-                  
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center space-x-2 mb-1">
-                      <span className="font-bold text-gray-900 text-sm">
-                        {parentTweet.author.displayName}
-                      </span>
-                      <span className="text-gray-500 text-sm">
-                        @{parentTweet.author.username}
-                      </span>
-                      <span className="text-gray-500 text-sm">·</span>
-                      <span className="text-gray-500 text-sm">
-                        {formatDistanceToNow(parentTweet.createdAt, { addSuffix: true })}
-                      </span>
+                  <div className="flex space-x-2">
+                    <Avatar className="w-8 h-8 flex-shrink-0">
+                      <AvatarImage 
+                        src={parentTweet.author.avatar ? storageService.getOptimizedImageUrl(parentTweet.author.avatar, { width: 64, quality: 80 }) : undefined} 
+                      />
+                      <AvatarFallback className="text-xs">{parentTweet.author.displayName[0]}</AvatarFallback>
+                    </Avatar>
+                    
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center space-x-1 mb-1">
+                        <span className="font-bold text-gray-900 text-xs">
+                          {parentTweet.author.displayName}
+                        </span>
+                        <span className="text-gray-500 text-xs">
+                          @{parentTweet.author.username}
+                        </span>
+                        <span className="text-gray-500 text-xs">·</span>
+                        <span className="text-gray-500 text-xs">
+                          {formatDistanceToNow(parentTweet.createdAt, { addSuffix: true }).replace('about ', '')}
+                        </span>
+                      </div>
+                      <p className="text-gray-900 text-xs line-clamp-2">
+                        {parentTweet.content}
+                      </p>
                     </div>
-                    <p className="text-gray-900 text-sm line-clamp-3">
-                      {parentTweet.content}
-                    </p>
                   </div>
                 </div>
               </div>
             </div>
-          </div>
-        )}
+          )}
 
-        {/* Main Tweet - Enhanced Display */}
-        <div className="border-b border-gray-200 bg-white">
-          <div className="p-6">
-            {/* Author Info */}
-            <div className="flex items-center space-x-3 mb-4">
-              <Avatar 
-                className="w-12 h-12 cursor-pointer" 
-                onClick={() => navigate(`/profile/${tweet.author.username}`)}
-              >
-                <AvatarImage 
-                  src={tweet.author.avatar ? storageService.getOptimizedImageUrl(tweet.author.avatar, { width: 96, quality: 80 }) : undefined} 
-                />
-                <AvatarFallback>{tweet.author.displayName[0]}</AvatarFallback>
-              </Avatar>
-              
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center space-x-2">
+          {/* Main Tweet - Enhanced Mobile Display */}
+          <div className="border-b border-gray-200 bg-white">
+            <div className="p-4">
+              {/* Author Info */}
+              <div className="flex items-center space-x-3 mb-3">
+                <Avatar 
+                  className="w-10 h-10 cursor-pointer" 
+                  onClick={() => navigate(`/profile/${tweet.author.username}`)}
+                >
+                  <AvatarImage 
+                    src={tweet.author.avatar ? storageService.getOptimizedImageUrl(tweet.author.avatar, { width: 80, quality: 80 }) : undefined} 
+                  />
+                  <AvatarFallback>{tweet.author.displayName[0]}</AvatarFallback>
+                </Avatar>
+                
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center space-x-2">
+                    <span 
+                      className="font-bold text-gray-900 hover:underline cursor-pointer text-sm"
+                      onClick={() => navigate(`/profile/${tweet.author.username}`)}
+                    >
+                      {tweet.author.displayName}
+                    </span>
+                    {tweet.author.verified && (
+                      <div className="w-4 h-4 bg-blue-500 rounded-full flex items-center justify-center">
+                        <span className="text-white text-xs">✓</span>
+                      </div>
+                    )}
+                  </div>
                   <span 
-                    className="font-bold text-gray-900 hover:underline cursor-pointer"
+                    className="text-gray-500 hover:underline cursor-pointer text-sm"
                     onClick={() => navigate(`/profile/${tweet.author.username}`)}
                   >
-                    {tweet.author.displayName}
+                    @{tweet.author.username}
                   </span>
-                  {tweet.author.verified && (
-                    <div className="w-5 h-5 bg-blue-500 rounded-full flex items-center justify-center">
-                      <span className="text-white text-xs">✓</span>
+                </div>
+              </div>
+
+              {/* Tweet Content */}
+              <div className="text-gray-900 text-lg leading-relaxed mb-3">
+                {tweet.content}
+              </div>
+
+              {/* Images */}
+              {tweet.images && tweet.images.length > 0 && (
+                <div className="mb-3 rounded-xl overflow-hidden">
+                  {tweet.images.length === 1 ? (
+                    <img 
+                      src={tweet.images[0]} 
+                      alt="Tweet image" 
+                      className="w-full aspect-[16/9] object-cover"
+                    />
+                  ) : (
+                    <div className={`grid gap-1 ${
+                      tweet.images.length === 2 ? 'grid-cols-2' :
+                      tweet.images.length === 3 ? 'grid-cols-2 grid-rows-2' :
+                      'grid-cols-2'
+                    }`}>
+                      {tweet.images.map((image, index) => (
+                        <div 
+                          key={index} 
+                          className={`aspect-[16/9] ${
+                            tweet.images!.length === 3 && index === 0 ? 'row-span-2' : ''
+                          }`}
+                        >
+                          <img 
+                            src={image} 
+                            alt={`Tweet image ${index + 1}`} 
+                            className="w-full h-full object-cover"
+                          />
+                        </div>
+                      ))}
                     </div>
                   )}
                 </div>
-                <span 
-                  className="text-gray-500 hover:underline cursor-pointer"
-                  onClick={() => navigate(`/profile/${tweet.author.username}`)}
+              )}
+
+              {/* Timestamp */}
+              <div className="text-gray-500 text-sm mb-3 pb-3 border-b border-gray-100">
+                {tweet.createdAt.toLocaleString('en-US', {
+                  hour: 'numeric',
+                  minute: '2-digit',
+                  hour12: true,
+                  month: 'short',
+                  day: 'numeric',
+                  year: 'numeric'
+                })}
+              </div>
+
+              {/* Engagement Stats */}
+              <div className="flex items-center space-x-4 text-sm text-gray-500 mb-3 pb-3 border-b border-gray-100">
+                <div>
+                  <span className="font-bold text-gray-900">{tweet.retweets.toLocaleString()}</span>
+                  <span className="ml-1">Retweets</span>
+                </div>
+                <div>
+                  <span className="font-bold text-gray-900">{tweet.likes.toLocaleString()}</span>
+                  <span className="ml-1">Likes</span>
+                </div>
+                <div>
+                  <span className="font-bold text-gray-900">{tweet.views.toLocaleString()}</span>
+                  <span className="ml-1">Views</span>
+                </div>
+              </div>
+
+              {/* Actions */}
+              <div className="flex items-center justify-around py-2">
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  className="text-gray-500 hover:text-blue-500 hover:bg-blue-50 p-2 flex items-center"
+                  onClick={() => setShowReplyComposer(!showReplyComposer)}
                 >
-                  @{tweet.author.username}
-                </span>
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                  </svg>
+                </Button>
+
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  className={`p-2 flex items-center ${
+                    tweet.isRetweeted 
+                      ? 'text-green-500 hover:text-green-600 hover:bg-green-50' 
+                      : 'text-gray-500 hover:text-green-500 hover:bg-green-50'
+                  }`}
+                  onClick={() => handleRetweet(tweet.id)}
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                  </svg>
+                </Button>
+
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  className={`p-2 flex items-center ${
+                    tweet.isLiked 
+                      ? 'text-red-500 hover:text-red-600 hover:bg-red-50' 
+                      : 'text-gray-500 hover:text-red-500 hover:bg-red-50'
+                  }`}
+                  onClick={() => handleLike(tweet.id, tweet.isLiked)}
+                >
+                  <svg className={`w-5 h-5 ${tweet.isLiked ? 'fill-current' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+                  </svg>
+                </Button>
+
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  className={`p-2 flex items-center ${
+                    tweet.isBookmarked 
+                      ? 'text-blue-500 hover:text-blue-600 hover:bg-blue-50' 
+                      : 'text-gray-500 hover:text-blue-500 hover:bg-blue-50'
+                  }`}
+                  onClick={() => handleBookmark(tweet.id)}
+                >
+                  <svg className={`w-5 h-5 ${tweet.isBookmarked ? 'fill-current' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
+                  </svg>
+                </Button>
+
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  className="text-gray-500 hover:text-blue-500 hover:bg-blue-50 p-2"
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.367 2.684 3 3 0 00-5.367-2.684z" />
+                  </svg>
+                </Button>
               </div>
             </div>
 
-            {/* Tweet Content */}
-            <div className="text-gray-900 text-xl leading-relaxed mb-4">
-              {tweet.content}
-            </div>
-
-            {/* Images */}
-            {tweet.images && tweet.images.length > 0 && (
-              <div className="mb-4 rounded-2xl overflow-hidden border border-gray-200">
-                {tweet.images.length === 1 ? (
-                  <img 
-                    src={tweet.images[0]} 
-                    alt="Tweet image" 
-                    className="w-full max-h-96 object-cover"
-                  />
-                ) : (
-                  <div className={`grid gap-1 ${
-                    tweet.images.length === 2 ? 'grid-cols-2' :
-                    tweet.images.length === 3 ? 'grid-cols-2 grid-rows-2' :
-                    'grid-cols-2'
-                  }`}>
-                    {tweet.images.map((image, index) => (
-                      <div 
-                        key={index} 
-                        className={`${
-                          tweet.images!.length === 3 && index === 0 ? 'row-span-2' : ''
-                        }`}
-                      >
-                        <img 
-                          src={image} 
-                          alt={`Tweet image ${index + 1}`} 
-                          className="w-full h-full object-cover"
-                        />
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
+            {/* Reply Composer */}
+            {showReplyComposer && (
+              <ReplyComposer
+                tweet={tweet}
+                onCancel={() => setShowReplyComposer(false)}
+                onReplySuccess={handleReplySuccess}
+              />
             )}
-
-            {/* Timestamp */}
-            <div className="text-gray-500 text-sm mb-4 pb-4 border-b border-gray-100">
-              {tweet.createdAt.toLocaleString('en-US', {
-                hour: 'numeric',
-                minute: '2-digit',
-                hour12: true,
-                month: 'short',
-                day: 'numeric',
-                year: 'numeric'
-              })}
-            </div>
-
-            {/* Engagement Stats */}
-            <div className="flex items-center space-x-6 text-sm text-gray-500 mb-4 pb-4 border-b border-gray-100">
-              <div>
-                <span className="font-bold text-gray-900">{tweet.retweets.toLocaleString()}</span>
-                <span className="ml-1">Retweets</span>
-              </div>
-              <div>
-                <span className="font-bold text-gray-900">{tweet.likes.toLocaleString()}</span>
-                <span className="ml-1">Likes</span>
-              </div>
-              <div>
-                <span className="font-bold text-gray-900">{tweet.views.toLocaleString()}</span>
-                <span className="ml-1">Views</span>
-              </div>
-            </div>
-
-            {/* Actions */}
-            <div className="flex items-center justify-around py-2">
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                className="text-gray-500 hover:text-blue-500 hover:bg-blue-50 p-3 flex items-center"
-                onClick={() => setShowReplyComposer(!showReplyComposer)}
-              >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-                </svg>
-              </Button>
-
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                className={`p-3 flex items-center ${
-                  tweet.isRetweeted 
-                    ? 'text-green-500 hover:text-green-600 hover:bg-green-50' 
-                    : 'text-gray-500 hover:text-green-500 hover:bg-green-50'
-                }`}
-                onClick={() => handleRetweet(tweet.id)}
-              >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                </svg>
-              </Button>
-
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                className={`p-3 flex items-center ${
-                  tweet.isLiked 
-                    ? 'text-red-500 hover:text-red-600 hover:bg-red-50' 
-                    : 'text-gray-500 hover:text-red-500 hover:bg-red-50'
-                }`}
-                onClick={() => handleLike(tweet.id, tweet.isLiked)}
-              >
-                <svg className={`w-5 h-5 ${tweet.isLiked ? 'fill-current' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
-                </svg>
-              </Button>
-
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                className={`p-3 flex items-center ${
-                  tweet.isBookmarked 
-                    ? 'text-blue-500 hover:text-blue-600 hover:bg-blue-50' 
-                    : 'text-gray-500 hover:text-blue-500 hover:bg-blue-50'
-                }`}
-                onClick={() => handleBookmark(tweet.id)}
-              >
-                <svg className={`w-5 h-5 ${tweet.isBookmarked ? 'fill-current' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
-                </svg>
-              </Button>
-
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                className="text-gray-500 hover:text-blue-500 hover:bg-blue-50 p-3"
-              >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.367 2.684 3 3 0 00-5.367-2.684z" />
-                </svg>
-              </Button>
-            </div>
           </div>
 
-          {/* Reply Composer */}
-          {showReplyComposer && (
-            <ReplyComposer
-              tweet={tweet}
-              onCancel={() => setShowReplyComposer(false)}
-              onReplySuccess={handleReplySuccess}
-            />
-          )}
-        </div>
-
-        {/* Replies */}
-        <div className="pb-20 md:pb-0">
-          {tweetReplies.length === 0 ? (
-            <div className="text-center py-12 text-gray-500">
-              <p className="text-lg">No replies yet</p>
-              <p className="text-sm mt-2">Be the first to reply!</p>
-            </div>
-          ) : (
-            <div className="divide-y divide-gray-100">
-              {tweetReplies.map((reply) => (
-                <div key={reply.id} className="hover:bg-gray-50 transition-colors">
-                  {/* Desktop */}
-                  <div className="hidden md:block">
-                    <TweetCard 
-                      tweet={reply} 
-                      onLike={() => handleLike(reply.id, reply.isLiked)}
-                      onRetweet={() => handleRetweet(reply.id)}
-                      onBookmark={() => handleBookmark(reply.id)}
-                      currentUserId={user?.id}
-                      isReply={true}
-                      parentTweetId={tweet.id}
-                    />
-                  </div>
-                  {/* Mobile */}
-                  <div className="md:hidden">
+          {/* Replies */}
+          <div className="pb-20">
+            {tweetReplies.length === 0 ? (
+              <div className="text-center py-12 text-gray-500">
+                <p className="text-lg">No replies yet</p>
+                <p className="text-sm mt-2">Be the first to reply!</p>
+              </div>
+            ) : (
+              <div className="divide-y divide-gray-100">
+                {tweetReplies.map((reply) => (
+                  <div key={reply.id}>
                     <MobileTweetCard 
                       tweet={reply}
                       onLike={() => handleLike(reply.id, reply.isLiked)}
@@ -617,10 +974,10 @@ export const TweetDetailPage: React.FC = () => {
                       parentTweetId={tweet.id}
                     />
                   </div>
-                </div>
-              ))}
-            </div>
-          )}
+                ))}
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </div>
