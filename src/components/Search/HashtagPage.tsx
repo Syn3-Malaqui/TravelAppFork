@@ -4,6 +4,7 @@ import { ArrowLeft, Hash, TrendingUp, Clock, BarChart3, Share, Bookmark } from '
 import { Button } from '../ui/button';
 import { TweetCard } from '../Tweet/TweetCard';
 import { MobileTweetCard } from '../Tweet/MobileTweetCard';
+import { TweetSkeletonList } from '../Tweet/TweetSkeleton';
 import { useHashtags } from '../../hooks/useHashtags';
 import { useAuth } from '../../hooks/useAuth';
 import { useTweets } from '../../hooks/useTweets';
@@ -188,9 +189,14 @@ export const HashtagPage: React.FC = () => {
       {/* Content */}
       <div className="pb-20 md:pb-0">
         {loading ? (
-          <div className="flex items-center justify-center py-12">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
-            <span className="ml-3 text-gray-500">Loading posts...</span>
+          <div>
+            {/* Sort indicator skeleton */}
+            <div className="bg-gray-50 border-b border-gray-200 px-4 py-2">
+              <div className="h-4 bg-gray-200 rounded animate-shimmer w-64"></div>
+            </div>
+            
+            {/* Tweet skeletons */}
+            <TweetSkeletonList count={6} isMobile={window.innerWidth < 768} />
           </div>
         ) : error ? (
           <div className="flex flex-col items-center justify-center py-12 px-4">

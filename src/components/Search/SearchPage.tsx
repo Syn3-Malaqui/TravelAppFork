@@ -4,6 +4,7 @@ import { Button } from '../ui/button';
 import { Avatar, AvatarImage, AvatarFallback } from '../ui/avatar';
 import { TweetCard } from '../Tweet/TweetCard';
 import { MobileTweetCard } from '../Tweet/MobileTweetCard';
+import { TweetSkeletonList } from '../Tweet/TweetSkeleton';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
 import { useHashtags } from '../../hooks/useHashtags';
@@ -387,9 +388,24 @@ export const SearchPage: React.FC = () => {
             </h2>
             
             {hashtagsLoading ? (
-              <div className="flex items-center justify-center py-8">
-                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-500"></div>
-                <span className="ml-3 text-gray-500">Loading trending hashtags...</span>
+              <div className="space-y-3">
+                {Array.from({ length: 10 }).map((_, index) => (
+                  <div key={index} className="p-3 rounded-lg">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-3">
+                        <div className="w-10 h-10 bg-gray-200 rounded-full animate-shimmer"></div>
+                        <div>
+                          <div className="h-4 bg-gray-200 rounded animate-shimmer w-24 mb-2"></div>
+                          <div className="h-3 bg-gray-200 rounded animate-shimmer w-16"></div>
+                        </div>
+                      </div>
+                      <div className="flex items-center space-x-1">
+                        <div className="w-4 h-4 bg-gray-200 rounded animate-shimmer"></div>
+                        <div className="w-6 h-3 bg-gray-200 rounded animate-shimmer"></div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
               </div>
             ) : (
               <div className="space-y-3">
@@ -397,7 +413,7 @@ export const SearchPage: React.FC = () => {
                   <div
                     key={item.hashtag}
                     onClick={() => handleHashtagClick(item.hashtag)}
-                    className="p-3 hover:bg-gray-50 rounded-lg cursor-pointer transition-colors"
+                    className="p-3 hover:bg-gray-50 rounded-lg cursor-pointer transition-colors group"
                   >
                     <div className="flex items-center justify-between">
                       <div className="flex items-center space-x-3">
@@ -405,8 +421,10 @@ export const SearchPage: React.FC = () => {
                           <Hash className="w-5 h-5 text-blue-500" />
                         </div>
                         <div>
-                          <p className="font-bold text-gray-900">{item.hashtag}</p>
-                          <p className="text-sm text-gray-500">
+                          <p className="font-bold text-gray-900 text-sm truncate group-hover:text-blue-600 transition-colors">
+                            {item.hashtag}
+                          </p>
+                          <p className="text-xs text-gray-500">
                             {item.count.toLocaleString()} posts
                             {item.recent_tweets > 0 && (
                               <span className="ml-2 text-blue-500">
@@ -417,8 +435,8 @@ export const SearchPage: React.FC = () => {
                         </div>
                       </div>
                       <div className="flex items-center space-x-1 text-gray-400">
-                        <TrendingUp className="w-4 h-4" />
-                        <span className="text-sm">#{index + 1}</span>
+                        <TrendingUp className="w-3 h-3" />
+                        <span className="text-xs">#{index + 1}</span>
                       </div>
                     </div>
                   </div>
@@ -464,9 +482,8 @@ export const SearchPage: React.FC = () => {
             )}
 
             {loading ? (
-              <div className="flex items-center justify-center py-12">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
-                <span className="ml-3 text-gray-500">Searching...</span>
+              <div className="p-4">
+                <TweetSkeletonList count={5} isMobile={window.innerWidth < 768} />
               </div>
             ) : filteredResults.length === 0 ? (
               <div className="text-center py-12 text-gray-500">

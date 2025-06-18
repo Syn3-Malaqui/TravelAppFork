@@ -2,6 +2,7 @@ import React, { useState, useMemo, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { TweetCard } from '../Tweet/TweetCard';
 import { MobileTweetCard } from '../Tweet/MobileTweetCard';
+import { TweetSkeletonList } from '../Tweet/TweetSkeleton';
 import { MobileTabs } from '../Layout/MobileTabs';
 import { MobileTags } from '../Layout/MobileTags';
 import { CountryFilter } from '../Layout/CountryFilter';
@@ -179,10 +180,22 @@ export const Timeline: React.FC = () => {
               </div>
             </div>
 
-            {/* Loading State */}
-            <div className="flex-1 flex items-center justify-center">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
-              <span className="ml-3 text-gray-500">Loading tweets...</span>
+            {/* Loading Skeletons */}
+            <div className="flex-1 overflow-y-auto">
+              <div className="flex flex-col">
+                {/* Desktop Tweet Composer Skeleton */}
+                <div className="border-b border-gray-200 p-4 bg-white">
+                  <div className="flex space-x-4">
+                    <div className="w-12 h-12 bg-gray-200 rounded-full animate-shimmer flex-shrink-0"></div>
+                    <div className="flex-1">
+                      <div className="h-12 bg-gray-200 rounded-lg animate-shimmer"></div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Tweet Skeletons */}
+                <TweetSkeletonList count={8} isMobile={false} />
+              </div>
             </div>
           </div>
 
@@ -191,14 +204,39 @@ export const Timeline: React.FC = () => {
         </div>
 
         {/* Mobile Layout */}
-        <div className="md:hidden w-full border-r border-gray-200 overflow-hidden">
+        <div className="md:hidden w-full border-r border-gray-200 overflow-hidden flex flex-col">
           {/* Mobile Tabs */}
           <MobileTabs activeTab={activeTab} onTabChange={handleTabChange} />
 
-          {/* Loading State */}
-          <div className="flex items-center justify-center py-12">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
-            <span className="ml-3 text-gray-500">Loading tweets...</span>
+          {/* Mobile Filters */}
+          <div className="bg-white border-b border-gray-200 px-4 py-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-3 flex-1">
+                <CategoriesFilter 
+                  selectedCategory={categoryFilter}
+                  onCategoryChange={handleCategoryFilter}
+                />
+                <CountryFilter 
+                  selectedCountry={countryFilter}
+                  onCountryChange={handleCountryFilter}
+                />
+              </div>
+              
+              {/* Active Filters Indicator */}
+              {(categoryFilter || countryFilter !== 'ALL') && (
+                <div className="flex items-center space-x-1 ml-3">
+                  <div className="w-2 h-2 bg-blue-500 rounded-full animate-shimmer"></div>
+                  <span className="text-xs text-blue-600 font-medium">Active</span>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Mobile Loading Skeletons */}
+          <div className="flex-1 overflow-y-auto">
+            <div className="flex flex-col pb-20">
+              <TweetSkeletonList count={6} isMobile={true} />
+            </div>
           </div>
         </div>
       </div>
