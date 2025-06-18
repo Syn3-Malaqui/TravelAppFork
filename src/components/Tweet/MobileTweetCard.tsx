@@ -120,8 +120,16 @@ export const MobileTweetCard: React.FC<MobileTweetCardProps> = ({
 
   const handleHashtagClick = (hashtag: string, e: React.MouseEvent) => {
     e.stopPropagation();
+    e.preventDefault();
     const cleanHashtag = hashtag.replace('#', '');
     navigate(`/hashtag/${cleanHashtag}`);
+  };
+
+  const handleMentionClick = (mention: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    e.preventDefault();
+    const cleanMention = mention.replace('@', '');
+    navigate(`/profile/${cleanMention}`);
   };
 
   const handleImageClick = (index: number, e: React.MouseEvent) => {
@@ -141,6 +149,62 @@ export const MobileTweetCard: React.FC<MobileTweetCardProps> = ({
     } else {
       setSelectedImageIndex(selectedImageIndex < tweet.images.length - 1 ? selectedImageIndex + 1 : 0);
     }
+  };
+
+  // Enhanced text parsing function for mobile
+  const parseTextWithLinks = (text: string) => {
+    const words = text.split(' ');
+    return words.map((word, index) => {
+      const key = `${index}-${word}`;
+      
+      if (word.startsWith('#') && word.length > 1) {
+        return (
+          <span key={key}>
+            <span 
+              className="text-blue-500 hover:text-blue-600 hover:underline cursor-pointer font-medium transition-colors"
+              onClick={(e) => handleHashtagClick(word, e)}
+            >
+              {word}
+            </span>
+            {index < words.length - 1 ? ' ' : ''}
+          </span>
+        );
+      }
+      
+      if (word.startsWith('@') && word.length > 1) {
+        return (
+          <span key={key}>
+            <span 
+              className="text-blue-500 hover:text-blue-600 hover:underline cursor-pointer font-medium transition-colors"
+              onClick={(e) => handleMentionClick(word, e)}
+            >
+              {word}
+            </span>
+            {index < words.length - 1 ? ' ' : ''}
+          </span>
+        );
+      }
+      
+      // Check for URLs
+      if (word.match(/^https?:\/\/.+/)) {
+        return (
+          <span key={key}>
+            <a 
+              href={word}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-blue-500 hover:text-blue-600 hover:underline transition-colors"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {word}
+            </a>
+            {index < words.length - 1 ? ' ' : ''}
+          </span>
+        );
+      }
+      
+      return word + (index < words.length - 1 ? ' ' : '');
+    });
   };
 
   const isOwnTweet = currentUserId === tweet.author.id;
@@ -255,29 +319,9 @@ export const MobileTweetCard: React.FC<MobileTweetCardProps> = ({
                 </div>
               </div>
 
-              {/* Tweet Text with Hashtag Links */}
+              {/* Tweet Text with Enhanced Link Parsing */}
               <div className="text-gray-900 mb-3 text-sm leading-5">
-                {displayContent.split(' ').map((word, index) => {
-                  if (word.startsWith('#')) {
-                    return (
-                      <span 
-                        key={index} 
-                        className="text-blue-500 hover:underline cursor-pointer"
-                        onClick={(e) => handleHashtagClick(word, e)}
-                      >
-                        {word}{' '}
-                      </span>
-                    );
-                  }
-                  if (word.startsWith('@')) {
-                    return (
-                      <span key={index} className="text-blue-500 hover:underline cursor-pointer">
-                        {word}{' '}
-                      </span>
-                    );
-                  }
-                  return word + ' ';
-                })}
+                {parseTextWithLinks(displayContent)}
                 {tweet.content.length > 200 && (
                   <span className="text-gray-500 text-xs italic"> (truncated)</span>
                 )}
