@@ -7,7 +7,7 @@ import { MobileTags } from '../Layout/MobileTags';
 import { CountryFilter } from '../Layout/CountryFilter';
 import { CategoriesFilter } from '../Layout/CategoriesFilter';
 import { MobileCountryFilter } from '../Layout/MobileCountryFilter';
-import { TrendingSidebar } from '../Layout/TrendingSidebar';
+import { TrendingSidebar } from '../Layout/TrendingSidebar.tsx';
 import { Button } from '../ui/button';
 import { useTweets } from '../../hooks/useTweets';
 import { useAuth } from '../../hooks/useAuth';
