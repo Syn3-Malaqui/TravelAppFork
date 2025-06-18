@@ -85,13 +85,13 @@ export const Timeline: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen w-full">
+      <div className="h-full flex">
         {/* Desktop Layout with Sidebar */}
-        <div className="hidden md:flex">
+        <div className="hidden md:flex flex-1">
           {/* Main Content */}
-          <div className="flex-1 border-r border-gray-200 overflow-hidden">
+          <div className="flex-1 border-r border-gray-200 flex flex-col">
             {/* Desktop Header with Tabs - Fixed */}
-            <div className="fixed top-0 left-64 right-80 bg-white/95 backdrop-blur-md border-b border-gray-200 z-50">
+            <div className="bg-white/95 backdrop-blur-md border-b border-gray-200 z-50 flex-shrink-0">
               {/* Top section with title */}
               <div className="flex items-center justify-between p-4 border-b border-gray-100">
                 <h1 className="text-xl font-bold">Home</h1>
@@ -138,14 +138,14 @@ export const Timeline: React.FC = () => {
               </div>
             </div>
 
-            {/* Loading State - Add top margin for desktop to account for fixed header */}
-            <div className="flex items-center justify-center py-12 mt-44">
+            {/* Loading State */}
+            <div className="flex-1 flex items-center justify-center">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
               <span className="ml-3 text-gray-500">Loading tweets...</span>
             </div>
           </div>
 
-          {/* Right Sidebar */}
+          {/* Right Sidebar - Fixed */}
           <TrendingSidebar />
         </div>
 
@@ -166,13 +166,13 @@ export const Timeline: React.FC = () => {
 
   if (error) {
     return (
-      <div className="min-h-screen w-full">
+      <div className="h-full flex">
         {/* Desktop Layout with Sidebar */}
-        <div className="hidden md:flex">
+        <div className="hidden md:flex flex-1">
           {/* Main Content */}
-          <div className="flex-1 border-r border-gray-200 overflow-hidden">
+          <div className="flex-1 border-r border-gray-200 flex flex-col">
             {/* Desktop Header with Tabs - Fixed */}
-            <div className="fixed top-0 left-64 right-80 bg-white/95 backdrop-blur-md border-b border-gray-200 z-50">
+            <div className="bg-white/95 backdrop-blur-md border-b border-gray-200 z-50 flex-shrink-0">
               {/* Top section with title */}
               <div className="flex items-center justify-between p-4 border-b border-gray-100">
                 <h1 className="text-xl font-bold">Home</h1>
@@ -219,8 +219,8 @@ export const Timeline: React.FC = () => {
               </div>
             </div>
 
-            {/* Error State - Add top margin for desktop to account for fixed header */}
-            <div className="flex flex-col items-center justify-center py-12 px-4 mt-44">
+            {/* Error State */}
+            <div className="flex-1 flex flex-col items-center justify-center px-4">
               <div className="text-red-500 text-center">
                 <p className="text-lg font-semibold mb-2">Error loading tweets</p>
                 <p className="text-sm text-gray-600">{error}</p>
@@ -228,7 +228,7 @@ export const Timeline: React.FC = () => {
             </div>
           </div>
 
-          {/* Right Sidebar */}
+          {/* Right Sidebar - Fixed */}
           <TrendingSidebar />
         </div>
 
@@ -250,13 +250,13 @@ export const Timeline: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen w-full">
+    <div className="h-full flex">
       {/* Desktop Layout with Sidebar */}
-      <div className="hidden md:flex">
+      <div className="hidden md:flex flex-1">
         {/* Main Content */}
-        <div className="flex-1 border-r border-gray-200 overflow-hidden flex flex-col">
+        <div className="flex-1 border-r border-gray-200 flex flex-col">
           {/* Desktop Header with Tabs - Fixed */}
-          <div className="fixed top-0 left-64 right-80 bg-white/95 backdrop-blur-md border-b border-gray-200 z-50">
+          <div className="bg-white/95 backdrop-blur-md border-b border-gray-200 z-50 flex-shrink-0">
             {/* Top section with title */}
             <div className="flex items-center justify-between p-4 border-b border-gray-100">
               <h1 className="text-xl font-bold">Home</h1>
@@ -303,8 +303,8 @@ export const Timeline: React.FC = () => {
             </div>
           </div>
 
-          {/* Desktop Tweet Composer - Add top margin to account for fixed header */}
-          <div className="border-b border-gray-200 p-4 flex-shrink-0 mt-44">
+          {/* Desktop Tweet Composer */}
+          <div className="border-b border-gray-200 p-4 flex-shrink-0">
             <div className="flex space-x-4">
               <div className="w-12 h-12 bg-gray-300 rounded-full"></div>
               <div className="flex-1">
@@ -418,7 +418,7 @@ export const Timeline: React.FC = () => {
           </div>
         </div>
 
-        {/* Right Sidebar */}
+        {/* Right Sidebar - Fixed and separate from scrolling */}
         <TrendingSidebar />
       </div>
 

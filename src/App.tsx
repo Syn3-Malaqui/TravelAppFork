@@ -34,14 +34,14 @@ function App() {
   return (
     <Router>
       <div className="min-h-screen bg-white">
-        <div className="flex">
+        <div className="flex h-screen overflow-hidden">
           {/* Desktop Sidebar */}
           <div className="hidden md:block">
             <Sidebar />
           </div>
           
           {/* Main Content - Takes remaining space, accounting for sidebar on desktop */}
-          <div className="flex-1 md:ml-64">
+          <div className="flex-1 md:ml-64 flex flex-col overflow-hidden">
             <Routes>
               <Route path="/" element={<Timeline />} />
               <Route path="/compose" element={<ComposePage />} />
