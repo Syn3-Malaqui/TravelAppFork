@@ -7,6 +7,7 @@ import { MobileTags } from '../Layout/MobileTags';
 import { CountryFilter } from '../Layout/CountryFilter';
 import { CategoriesFilter } from '../Layout/CategoriesFilter';
 import { MobileCountryFilter } from '../Layout/MobileCountryFilter';
+import { Button } from '../ui/button';
 import { useTweets } from '../../hooks/useTweets';
 import { useAuth } from '../../hooks/useAuth';
 import { FILTER_COUNTRIES } from '../../types';
@@ -85,9 +86,10 @@ export const Timeline: React.FC = () => {
     return (
       <div className="min-h-screen w-full">
         <div className="w-full border-r border-gray-200 overflow-hidden">
-          {/* Desktop Header */}
-          <div className="hidden md:block sticky top-0 bg-white/80 backdrop-blur-md border-b border-gray-200 p-4 z-10">
-            <div className="flex items-center justify-between">
+          {/* Desktop Header with Tabs */}
+          <div className="hidden md:block sticky top-0 bg-white/80 backdrop-blur-md border-b border-gray-200 z-10">
+            {/* Top section with title and filters */}
+            <div className="flex items-center justify-between p-4 border-b border-gray-100">
               <h1 className="text-xl font-bold">Home</h1>
               <div className="flex items-center space-x-3">
                 <CategoriesFilter 
@@ -99,6 +101,32 @@ export const Timeline: React.FC = () => {
                   onCountryChange={handleCountryFilter}
                 />
               </div>
+            </div>
+            
+            {/* Tabs section */}
+            <div className="flex">
+              <Button
+                variant="ghost"
+                onClick={() => handleTabChange('for-you')}
+                className={`flex-1 py-4 px-4 font-bold text-base rounded-none border-b-2 transition-colors ${
+                  activeTab === 'for-you'
+                    ? 'border-blue-500 text-black'
+                    : 'border-transparent text-gray-500 hover:bg-gray-50'
+                }`}
+              >
+                For you
+              </Button>
+              <Button
+                variant="ghost"
+                onClick={() => handleTabChange('following')}
+                className={`flex-1 py-4 px-4 font-bold text-base rounded-none border-b-2 transition-colors ${
+                  activeTab === 'following'
+                    ? 'border-blue-500 text-black'
+                    : 'border-transparent text-gray-500 hover:bg-gray-50'
+                }`}
+              >
+                Following
+              </Button>
             </div>
           </div>
 
@@ -119,9 +147,10 @@ export const Timeline: React.FC = () => {
     return (
       <div className="min-h-screen w-full">
         <div className="w-full border-r border-gray-200 overflow-hidden">
-          {/* Desktop Header */}
-          <div className="hidden md:block sticky top-0 bg-white/80 backdrop-blur-md border-b border-gray-200 p-4 z-10">
-            <div className="flex items-center justify-between">
+          {/* Desktop Header with Tabs */}
+          <div className="hidden md:block sticky top-0 bg-white/80 backdrop-blur-md border-b border-gray-200 z-10">
+            {/* Top section with title and filters */}
+            <div className="flex items-center justify-between p-4 border-b border-gray-100">
               <h1 className="text-xl font-bold">Home</h1>
               <div className="flex items-center space-x-3">
                 <CategoriesFilter 
@@ -133,6 +162,32 @@ export const Timeline: React.FC = () => {
                   onCountryChange={handleCountryFilter}
                 />
               </div>
+            </div>
+            
+            {/* Tabs section */}
+            <div className="flex">
+              <Button
+                variant="ghost"
+                onClick={() => handleTabChange('for-you')}
+                className={`flex-1 py-4 px-4 font-bold text-base rounded-none border-b-2 transition-colors ${
+                  activeTab === 'for-you'
+                    ? 'border-blue-500 text-black'
+                    : 'border-transparent text-gray-500 hover:bg-gray-50'
+                }`}
+              >
+                For you
+              </Button>
+              <Button
+                variant="ghost"
+                onClick={() => handleTabChange('following')}
+                className={`flex-1 py-4 px-4 font-bold text-base rounded-none border-b-2 transition-colors ${
+                  activeTab === 'following'
+                    ? 'border-blue-500 text-black'
+                    : 'border-transparent text-gray-500 hover:bg-gray-50'
+                }`}
+              >
+                Following
+              </Button>
             </div>
           </div>
 
@@ -154,9 +209,10 @@ export const Timeline: React.FC = () => {
   return (
     <div className="min-h-screen w-full">
       <div className="w-full border-r border-gray-200 overflow-hidden flex flex-col">
-        {/* Desktop Header */}
-        <div className="hidden md:block sticky top-0 bg-white/80 backdrop-blur-md border-b border-gray-200 p-4 z-10">
-          <div className="flex items-center justify-between">
+        {/* Desktop Header with Tabs */}
+        <div className="hidden md:block sticky top-0 bg-white/80 backdrop-blur-md border-b border-gray-200 z-10">
+          {/* Top section with title and filters */}
+          <div className="flex items-center justify-between p-4 border-b border-gray-100">
             <h1 className="text-xl font-bold">Home</h1>
             <div className="flex items-center space-x-3">
               <CategoriesFilter 
@@ -168,6 +224,32 @@ export const Timeline: React.FC = () => {
                 onCountryChange={handleCountryFilter}
               />
             </div>
+          </div>
+          
+          {/* Tabs section */}
+          <div className="flex">
+            <Button
+              variant="ghost"
+              onClick={() => handleTabChange('for-you')}
+              className={`flex-1 py-4 px-4 font-bold text-base rounded-none border-b-2 transition-colors ${
+                activeTab === 'for-you'
+                  ? 'border-blue-500 text-black'
+                  : 'border-transparent text-gray-500 hover:bg-gray-50'
+              }`}
+            >
+              For you
+            </Button>
+            <Button
+              variant="ghost"
+              onClick={() => handleTabChange('following')}
+              className={`flex-1 py-4 px-4 font-bold text-base rounded-none border-b-2 transition-colors ${
+                activeTab === 'following'
+                  ? 'border-blue-500 text-black'
+                  : 'border-transparent text-gray-500 hover:bg-gray-50'
+              }`}
+            >
+              Following
+            </Button>
           </div>
         </div>
 
