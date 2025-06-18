@@ -18,9 +18,10 @@ export const HashtagPage: React.FC = () => {
 
   useEffect(() => {
     if (hashtag) {
+      console.log('HashtagPage: Searching for hashtag:', hashtag);
       searchHashtagTweets(hashtag, sortBy);
     }
-  }, [hashtag, sortBy, searchHashtagTweets]);
+  }, [hashtag, sortBy]);
 
   const handleLike = async (tweetId: string, isCurrentlyLiked: boolean) => {
     try {
