@@ -4,8 +4,40 @@ import { supabase } from '../lib/supabase';
 export const useTweetViews = () => {
   const [viewedTweets, setViewedTweets] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(false);
+  const [initialized, setInitialized] = useState(false);
   const observerRef = useRef<IntersectionObserver | null>(null);
   const viewTimeoutsRef = useRef<Map<string, NodeJS.Timeout>>(new Map());
+
+  // Fetch existing tweet views on initialization
+  useEffect(() => {
+    const fetchExistingViews = async () => {
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) {
+          setInitialized(true);
+          return;
+        }
+
+        const { data: existingViews, error } = await supabase
+          .from('tweet_views')
+          .select('tweet_id')
+          .eq('user_id', user.id);
+
+        if (error) {
+          console.error('Error fetching existing tweet views:', error);
+        } else if (existingViews) {
+          const viewedTweetIds = new Set(existingViews.map(view => view.tweet_id));
+          setViewedTweets(viewedTweetIds);
+        }
+      } catch (error) {
+        console.error('Error initializing tweet views:', error);
+      } finally {
+        setInitialized(true);
+      }
+    };
+
+    fetchExistingViews();
+  }, []);
 
   // Initialize intersection observer for automatic view tracking
   useEffect(() => {
@@ -50,8 +82,8 @@ export const useTweetViews = () => {
 
   const recordView = async (tweetId: string) => {
     try {
-      // Don't record if already viewed
-      if (viewedTweets.has(tweetId)) return;
+      // Don't record if not initialized yet or already viewed
+      if (!initialized || viewedTweets.has(tweetId)) return;
 
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
@@ -109,6 +141,7 @@ export const useTweetViews = () => {
   return {
     viewedTweets,
     loading,
+    initialized,
     observeTweet,
     unobserveTweet,
     recordView: manualRecordView,
