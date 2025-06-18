@@ -43,8 +43,8 @@ export const TweetCard: React.FC<TweetCardProps> = ({
   isReply = false
 }) => {
   const navigate = useNavigate();
-  const [showReplyComposer, setShowReplyComposer] = useState(false);
   const [showReplies, setShowReplies] = useState(false);
+  const [showReplyComposer, setShowReplyComposer] = useState(false);
   const { replies, fetchReplies, createRetweet, removeRetweet } = useTweets();
 
   const formatNumber = (num: number): string => {
@@ -62,25 +62,30 @@ export const TweetCard: React.FC<TweetCardProps> = ({
     console.log('Delete tweet:', tweet.id);
   };
 
-  const handleProfileClick = () => {
+  const handleProfileClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
     navigate(`/profile/${tweet.author.username}`);
   };
 
-  const handleRetweeterProfileClick = () => {
+  const handleRetweeterProfileClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
     if (tweet.retweetedBy) {
       navigate(`/profile/${tweet.retweetedBy.username}`);
     }
   };
 
-  const handleReplyClick = () => {
-    setShowReplyComposer(!showReplyComposer);
+  const handleTweetClick = async () => {
+    if (!isReply && tweet.replies > 0) {
+      if (!showReplies) {
+        await fetchReplies(tweet.id);
+      }
+      setShowReplies(!showReplies);
+    }
   };
 
-  const handleShowReplies = async () => {
-    if (!showReplies) {
-      await fetchReplies(tweet.id);
-    }
-    setShowReplies(!showReplies);
+  const handleReplyClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setShowReplyComposer(!showReplyComposer);
   };
 
   const handleReplySuccess = async () => {
@@ -89,7 +94,8 @@ export const TweetCard: React.FC<TweetCardProps> = ({
     setShowReplies(true);
   };
 
-  const handleRetweetClick = async () => {
+  const handleRetweetClick = async (e: React.MouseEvent) => {
+    e.stopPropagation();
     try {
       if (tweet.isRetweeted) {
         await removeRetweet(tweet.id);
@@ -101,11 +107,32 @@ export const TweetCard: React.FC<TweetCardProps> = ({
     }
   };
 
+  const handleLikeClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    onLike();
+  };
+
+  const handleBookmarkClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    onBookmark();
+  };
+
+  const handleShareClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    // Handle share functionality
+  };
+
+  const handleViewsClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    // Handle views functionality
+  };
+
   const isOwnTweet = currentUserId === tweet.author.id;
   const tweetReplies = replies[tweet.id] || [];
+  const hasReplies = tweet.replies > 0 && !isReply;
 
   return (
-    <div className={`border-b border-gray-200 hover:bg-gray-50 transition-colors ${isReply ? 'ml-12 border-l-2 border-gray-200' : ''}`}>
+    <div className={`border-b border-gray-200 transition-colors ${isReply ? 'ml-12 border-l-2 border-gray-200' : ''}`}>
       {/* Retweet indicator */}
       {tweet.isRetweet && tweet.retweetedBy && (
         <div className="px-4 pt-3 pb-1">
@@ -123,7 +150,10 @@ export const TweetCard: React.FC<TweetCardProps> = ({
         </div>
       )}
 
-      <div className="p-4">
+      <div 
+        className={`p-4 ${hasReplies ? 'cursor-pointer hover:bg-gray-50' : ''}`}
+        onClick={handleTweetClick}
+      >
         <div className="flex gap-4">
           {/* Avatar */}
           <Avatar className="w-12 h-12 flex-shrink-0 cursor-pointer" onClick={handleProfileClick}>
@@ -162,7 +192,12 @@ export const TweetCard: React.FC<TweetCardProps> = ({
               <div className="relative">
                 <DropdownMenu modal={false}>
                   <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="sm" className="h-8 w-8 p-0 hover:bg-gray-100 flex-shrink-0">
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      className="h-8 w-8 p-0 hover:bg-gray-100 flex-shrink-0"
+                      onClick={(e) => e.stopPropagation()}
+                    >
                       <MoreHorizontal className="h-4 w-4" />
                     </Button>
                   </DropdownMenuTrigger>
@@ -180,7 +215,7 @@ export const TweetCard: React.FC<TweetCardProps> = ({
                       </DropdownMenuItem>
                     ) : (
                       <>
-                        <DropdownMenuItem onClick={handleProfileClick} className="hover:bg-gray-50">
+                        <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleProfileClick(e); }} className="hover:bg-gray-50">
                           View Profile
                         </DropdownMenuItem>
                         <DropdownMenuItem className="hover:bg-gray-50">
@@ -230,6 +265,23 @@ export const TweetCard: React.FC<TweetCardProps> = ({
               </div>
             )}
 
+            {/* Click to view replies indicator */}
+            {hasReplies && (
+              <div className="mb-3 text-sm text-blue-500 flex items-center space-x-1">
+                {showReplies ? (
+                  <>
+                    <ChevronUp className="w-4 h-4" />
+                    <span>Hide {tweet.replies} {tweet.replies === 1 ? 'reply' : 'replies'}</span>
+                  </>
+                ) : (
+                  <>
+                    <ChevronDown className="w-4 h-4" />
+                    <span>Show {tweet.replies} {tweet.replies === 1 ? 'reply' : 'replies'}</span>
+                  </>
+                )}
+              </div>
+            )}
+
             {/* Actions */}
             <div className="flex items-center justify-between space-x-4 mt-3">
               {/* Reply */}
@@ -267,14 +319,19 @@ export const TweetCard: React.FC<TweetCardProps> = ({
                     ? 'text-red-500 hover:text-red-600 hover:bg-red-50' 
                     : 'text-gray-500 hover:text-red-500 hover:bg-red-50'
                 }`}
-                onClick={onLike}
+                onClick={handleLikeClick}
               >
                 <Heart className={`w-5 h-5 ${tweet.isLiked ? 'fill-current' : ''}`} />
                 <span className="text-sm ml-1">{formatNumber(tweet.likes)}</span>
               </Button>
 
               {/* Views */}
-              <Button variant="ghost" size="sm" className="text-gray-500 hover:text-blue-500 hover:bg-blue-50 p-2 flex items-center">
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className="text-gray-500 hover:text-blue-500 hover:bg-blue-50 p-2 flex items-center"
+                onClick={handleViewsClick}
+              >
                 <Eye className="w-5 h-5" />
                 <span className="text-sm ml-1">{formatNumber(tweet.views)}</span>
               </Button>
@@ -289,11 +346,16 @@ export const TweetCard: React.FC<TweetCardProps> = ({
                       ? 'text-blue-500 hover:text-blue-600 hover:bg-blue-50' 
                       : 'text-gray-500 hover:text-blue-500 hover:bg-blue-50'
                   }`}
-                  onClick={onBookmark}
+                  onClick={handleBookmarkClick}
                 >
                   <Bookmark className={`w-5 h-5 ${tweet.isBookmarked ? 'fill-current' : ''}`} />
                 </Button>
-                <Button variant="ghost" size="sm" className="text-gray-500 hover:text-blue-500 hover:bg-blue-50 p-2">
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  className="text-gray-500 hover:text-blue-500 hover:bg-blue-50 p-2"
+                  onClick={handleShareClick}
+                >
                   <Share className="w-5 h-5" />
                 </Button>
               </div>
@@ -310,30 +372,6 @@ export const TweetCard: React.FC<TweetCardProps> = ({
           />
         )}
       </div>
-
-      {/* Show Replies Button */}
-      {tweet.replies > 0 && !isReply && (
-        <div className="px-4 pb-3">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={handleShowReplies}
-            className="text-blue-500 hover:text-blue-600 hover:bg-blue-50 text-sm flex items-center space-x-1"
-          >
-            {showReplies ? (
-              <>
-                <ChevronUp className="w-4 h-4" />
-                <span>Hide replies</span>
-              </>
-            ) : (
-              <>
-                <ChevronDown className="w-4 h-4" />
-                <span>Show replies ({tweet.replies})</span>
-              </>
-            )}
-          </Button>
-        </div>
-      )}
 
       {/* Replies */}
       {showReplies && tweetReplies.length > 0 && (
