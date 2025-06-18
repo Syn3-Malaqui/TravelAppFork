@@ -23,6 +23,7 @@ import { Tweet } from '../../types';
 import { useNavigate } from 'react-router-dom';
 import { ReplyComposer } from './ReplyComposer';
 import { useTweets } from '../../hooks/useTweets';
+import { storageService } from '../../lib/storage';
 
 interface MobileTweetCardProps {
   tweet: Tweet;
@@ -178,7 +179,9 @@ export const MobileTweetCard: React.FC<MobileTweetCardProps> = ({
           <div className="flex gap-3">
             {/* Avatar */}
             <Avatar className="w-10 h-10 flex-shrink-0 cursor-pointer" onClick={handleProfileClick}>
-              <AvatarImage src={tweet.author.avatar} />
+              <AvatarImage 
+                src={tweet.author.avatar ? storageService.getOptimizedImageUrl(tweet.author.avatar, { width: 80, quality: 80 }) : undefined} 
+              />
               <AvatarFallback>{tweet.author.displayName[0]}</AvatarFallback>
             </Avatar>
 

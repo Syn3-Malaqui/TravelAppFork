@@ -8,6 +8,7 @@ import { MobileTweetCard } from '../Tweet/MobileTweetCard';
 import { useAuth } from '../../hooks/useAuth';
 import { useFollow } from '../../hooks/useFollow';
 import { supabase } from '../../lib/supabase';
+import { storageService } from '../../lib/storage';
 import { Tweet, User } from '../../types';
 import { formatDistanceToNow } from 'date-fns';
 
@@ -153,6 +154,8 @@ export const ProfilePage: React.FC = () => {
         followers: profileData.followers_count,
         following: profileData.following_count,
         joinedDate: new Date(profileData.created_at),
+        coverImage: profileData.cover_image,
+        country: profileData.country,
       };
 
       // Format tweets data
@@ -313,14 +316,24 @@ export const ProfilePage: React.FC = () => {
         {/* Profile Header */}
         <div className="relative">
           {/* Cover Image */}
-          <div className="h-48 bg-gradient-to-r from-blue-400 to-purple-500"></div>
+          <div className="h-48 bg-gradient-to-r from-blue-400 to-purple-500">
+            {profile.coverImage && (
+              <img
+                src={storageService.getOptimizedImageUrl(profile.coverImage, { width: 800, quality: 80 })}
+                alt="Cover"
+                className="w-full h-full object-cover"
+              />
+            )}
+          </div>
           
           {/* Profile Info */}
           <div className="px-4 pb-4">
             {/* Avatar and Follow Button */}
             <div className="flex items-end justify-between -mt-16 mb-4">
               <Avatar className="w-32 h-32 border-4 border-white bg-white">
-                <AvatarImage src={profile.avatar} />
+                <AvatarImage 
+                  src={profile.avatar ? storageService.getOptimizedImageUrl(profile.avatar, { width: 200, quality: 80 }) : undefined} 
+                />
                 <AvatarFallback className="text-2xl">{profile.displayName[0]}</AvatarFallback>
               </Avatar>
               

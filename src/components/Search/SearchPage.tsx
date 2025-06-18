@@ -9,6 +9,7 @@ import { useAuth } from '../../hooks/useAuth';
 import { useHashtags } from '../../hooks/useHashtags';
 import { useTweets } from '../../hooks/useTweets';
 import { supabase } from '../../lib/supabase';
+import { storageService } from '../../lib/storage';
 import { User as UserType } from '../../types';
 import { TWEET_CATEGORIES, FILTER_COUNTRIES } from '../../types';
 
@@ -488,7 +489,9 @@ export const SearchPage: React.FC = () => {
                       >
                         <div className="flex items-center space-x-3">
                           <Avatar className="w-12 h-12">
-                            <AvatarImage src={(result.data as UserType).avatar} />
+                            <AvatarImage 
+                              src={(result.data as UserType).avatar ? storageService.getOptimizedImageUrl((result.data as UserType).avatar, { width: 80, quality: 80 }) : undefined} 
+                            />
                             <AvatarFallback>{(result.data as UserType).displayName[0]}</AvatarFallback>
                           </Avatar>
                           <div className="flex-1 min-w-0">
@@ -525,7 +528,7 @@ export const SearchPage: React.FC = () => {
                         className="p-4 hover:bg-gray-50 cursor-pointer transition-colors"
                       >
                         <div className="flex items-center space-x-3">
-                          <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
+                          <div className="w-12  h-12 bg-blue-100 rounded-full flex items-center justify-center">
                             <Hash className="w-6 h-6 text-blue-500" />
                           </div>
                           <div>

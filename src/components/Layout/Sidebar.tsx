@@ -9,6 +9,7 @@ import {
   LogOut
 } from 'lucide-react';
 import { Button } from '../ui/button';
+import { Avatar, AvatarImage, AvatarFallback } from '../ui/avatar';
 import { 
   DropdownMenu,
   DropdownMenuContent,
@@ -17,6 +18,7 @@ import {
 } from '../ui/dropdown-menu';
 import { useAuth } from '../../hooks/useAuth';
 import { useNotifications } from '../../hooks/useNotifications';
+import { storageService } from '../../lib/storage';
 
 const sidebarItems = [
   { icon: Home, label: 'Home', path: '/' },
@@ -48,6 +50,10 @@ export const Sidebar: React.FC = () => {
   const handleNavClick = (path: string) => {
     navigate(path);
   };
+
+  const userAvatarUrl = user?.user_metadata?.avatar_url;
+  const userDisplayName = user?.user_metadata?.display_name || 'User';
+  const userUsername = user?.user_metadata?.username || 'user';
 
   return (
     <div className="w-64 h-screen fixed left-0 top-0 border-r border-gray-200 bg-white p-4 flex flex-col z-40">
@@ -130,10 +136,15 @@ export const Sidebar: React.FC = () => {
 
         {/* User Profile */}
         <div className="flex items-center p-3">
-          <div className="w-10 h-10 bg-gray-300 rounded-full mr-3"></div>
+          <Avatar className="w-10 h-10 mr-3">
+            <AvatarImage 
+              src={userAvatarUrl ? storageService.getOptimizedImageUrl(userAvatarUrl, { width: 80, quality: 80 }) : undefined} 
+            />
+            <AvatarFallback>{userDisplayName[0]?.toUpperCase()}</AvatarFallback>
+          </Avatar>
           <div className="flex-1">
-            <div className="font-bold text-sm">{user?.user_metadata?.display_name || 'User'}</div>
-            <div className="text-gray-500 text-sm">@{user?.user_metadata?.username || 'user'}</div>
+            <div className="font-bold text-sm">{userDisplayName}</div>
+            <div className="text-gray-500 text-sm">@{userUsername}</div>
           </div>
         </div>
       </div>

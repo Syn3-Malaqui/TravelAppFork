@@ -119,6 +119,9 @@ export const ReplyComposer: React.FC<ReplyComposerProps> = ({
   const maxCharacters = 200;
   const isOverLimit = characterCount > maxCharacters;
 
+  const userAvatarUrl = user?.user_metadata?.avatar_url;
+  const userDisplayName = user?.user_metadata?.display_name || 'User';
+
   return (
     <div className="border-t border-gray-200 bg-gray-50 p-4">
       {/* Replying to indicator */}
@@ -150,8 +153,10 @@ export const ReplyComposer: React.FC<ReplyComposerProps> = ({
       <div className="flex space-x-3">
         {/* User Avatar */}
         <Avatar className="w-10 h-10 flex-shrink-0">
-          <AvatarImage src={user?.user_metadata?.avatar_url} />
-          <AvatarFallback>{user?.user_metadata?.display_name?.[0] || 'U'}</AvatarFallback>
+          <AvatarImage 
+            src={userAvatarUrl ? storageService.getOptimizedImageUrl(userAvatarUrl, { width: 80, quality: 80 }) : undefined} 
+          />
+          <AvatarFallback>{userDisplayName[0]?.toUpperCase()}</AvatarFallback>
         </Avatar>
 
         {/* Text Area and Actions */}

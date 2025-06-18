@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { X, Image, Smile, Calendar, MapPin, ArrowLeft, Tag, Globe, Upload, Trash2 } from 'lucide-react';
 import { Button } from '../ui/button';
+import { Avatar, AvatarImage, AvatarFallback } from '../ui/avatar';
 import { TWEET_CATEGORIES, TweetCategory, FILTER_COUNTRIES } from '../../types';
 import { useTweets } from '../../hooks/useTweets';
 import { useAuth } from '../../hooks/useAuth';
@@ -180,6 +181,9 @@ export const ComposePage: React.FC = () => {
 
   const hasUploadProgress = Object.keys(uploadProgress).length > 0;
 
+  const userAvatarUrl = user?.user_metadata?.avatar_url;
+  const userDisplayName = user?.user_metadata?.display_name || 'User';
+
   return (
     <div className="min-h-screen bg-white flex flex-col">
       {/* Header */}
@@ -266,7 +270,12 @@ export const ComposePage: React.FC = () => {
           {/* Compose Area */}
           <div className="flex space-x-4">
             {/* Avatar */}
-            <div className="w-12 h-12 bg-gray-300 rounded-full flex-shrink-0"></div>
+            <Avatar className="w-12 h-12 flex-shrink-0">
+              <AvatarImage 
+                src={userAvatarUrl ? storageService.getOptimizedImageUrl(userAvatarUrl, { width: 80, quality: 80 }) : undefined} 
+              />
+              <AvatarFallback>{userDisplayName[0]?.toUpperCase()}</AvatarFallback>
+            </Avatar>
 
             {/* Text Area */}
             <div className="flex-1 min-w-0">

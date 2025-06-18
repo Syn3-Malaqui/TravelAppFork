@@ -22,6 +22,7 @@ import {
 import { useNotifications } from '../../hooks/useNotifications';
 import { Notification } from '../../types';
 import { useNavigate } from 'react-router-dom';
+import { storageService } from '../../lib/storage';
 
 export const NotificationsPage: React.FC = () => {
   const navigate = useNavigate();
@@ -248,7 +249,9 @@ export const NotificationsPage: React.FC = () => {
 
                   {/* Actor Avatar */}
                   <Avatar className="w-10 h-10 flex-shrink-0">
-                    <AvatarImage src={notification.actor.avatar} />
+                    <AvatarImage 
+                      src={notification.actor.avatar ? storageService.getOptimizedImageUrl(notification.actor.avatar, { width: 80, quality: 80 }) : undefined} 
+                    />
                     <AvatarFallback>{notification.actor.displayName[0]}</AvatarFallback>
                   </Avatar>
 
