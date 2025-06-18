@@ -219,7 +219,25 @@ export const useTweets = () => {
         return;
       }
 
-      // Optimized query using a single join instead of multiple queries
+      // First, get the list of users that the current user is following
+      const { data: followsData, error: followsError } = await supabase
+        .from('follows')
+        .select('following_id')
+        .eq('follower_id', user.id);
+
+      if (followsError) throw followsError;
+
+      // If user is not following anyone, return empty array
+      if (!followsData || followsData.length === 0) {
+        setFollowingTweets([]);
+        setLoading(false);
+        return;
+      }
+
+      // Extract the following IDs into an array
+      const followingIds = followsData.map(follow => follow.following_id);
+
+      // Now fetch tweets from the users being followed
       const { data, error } = await supabase
         .from('tweets')
         .select(`
@@ -275,12 +293,7 @@ export const useTweets = () => {
             )
           )
         `)
-        .in('author_id', 
-          supabase
-            .from('follows')
-            .select('following_id')
-            .eq('follower_id', user.id)
-        )
+        .in('author_id', followingIds)
         .is('reply_to', null) // Only fetch top-level tweets, not replies
         .order('created_at', { ascending: false })
         .limit(30); // Reduced limit for faster loading
