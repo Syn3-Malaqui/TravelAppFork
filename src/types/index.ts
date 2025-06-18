@@ -72,7 +72,6 @@ export interface Profile {
   followers_count: number;
   following_count: number;
   country: string;
-  cover_image?: string | null;
   created_at: string;
   updated_at: string;
 }
