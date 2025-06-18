@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { TweetCard } from '../Tweet/TweetCard';
 import { MobileTweetCard } from '../Tweet/MobileTweetCard';
@@ -9,8 +9,11 @@ import { CategoriesFilter } from '../Layout/CategoriesFilter';
 import { MobileCountryFilter } from '../Layout/MobileCountryFilter';
 import { TrendingSidebar } from '../Layout/TrendingSidebar.tsx';
 import { Button } from '../ui/button';
+import { Avatar, AvatarImage, AvatarFallback } from '../ui/avatar';
 import { useTweets } from '../../hooks/useTweets';
 import { useAuth } from '../../hooks/useAuth';
+import { storageService } from '../../lib/storage';
+import { supabase } from '../../lib/supabase';
 import { FILTER_COUNTRIES } from '../../types';
 
 export const Timeline: React.FC = () => {
@@ -20,6 +23,44 @@ export const Timeline: React.FC = () => {
   const [countryFilter, setCountryFilter] = useState<string>('ALL');
   const { user } = useAuth();
   const { tweets, followingTweets, loading, error, likeTweet, unlikeTweet } = useTweets();
+  const [userProfile, setUserProfile] = useState<{
+    displayName: string;
+    username: string;
+    avatar: string;
+  } | null>(null);
+
+  // Fetch user profile data for the composer
+  useEffect(() => {
+    const fetchUserProfile = async () => {
+      if (!user) return;
+
+      try {
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('display_name, username, avatar_url')
+          .eq('id', user.id)
+          .single();
+
+        if (error) throw error;
+
+        setUserProfile({
+          displayName: data.display_name,
+          username: data.username,
+          avatar: data.avatar_url || '',
+        });
+      } catch (error) {
+        console.error('Error fetching user profile:', error);
+        // Fallback to auth metadata
+        setUserProfile({
+          displayName: user.user_metadata?.display_name || 'User',
+          username: user.user_metadata?.username || 'user',
+          avatar: user.user_metadata?.avatar_url || '',
+        });
+      }
+    };
+
+    fetchUserProfile();
+  }, [user]);
 
   const handleComposeClick = () => {
     navigate('/compose');
@@ -306,7 +347,12 @@ export const Timeline: React.FC = () => {
           {/* Desktop Tweet Composer */}
           <div className="border-b border-gray-200 p-4 flex-shrink-0">
             <div className="flex space-x-4">
-              <div className="w-12 h-12 bg-gray-300 rounded-full"></div>
+              <Avatar className="w-12 h-12 flex-shrink-0">
+                <AvatarImage 
+                  src={userProfile?.avatar ? storageService.getOptimizedImageUrl(userProfile.avatar, { width: 80, quality: 80 }) : undefined} 
+                />
+                <AvatarFallback>{userProfile?.displayName[0]?.toUpperCase() || 'U'}</AvatarFallback>
+              </Avatar>
               <div className="flex-1">
                 <div 
                   className="text-xl text-gray-500 py-3 cursor-pointer hover:bg-gray-50 rounded-lg px-4"
