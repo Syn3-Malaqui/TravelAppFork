@@ -103,29 +103,30 @@ export const useHashtags = () => {
       setLoading(true);
       setError(null);
 
-      // Get hashtag statistics using a more complex query
+      // Use the updated RPC function for 48-hour trending hashtags
       const { data, error } = await supabase.rpc('get_trending_hashtags', {
-        limit_count: 20
+        limit_count: 25
       });
 
       if (error) {
-        // Fallback to simpler query if RPC function doesn't exist
+        // Enhanced fallback query focusing on past 48 hours
         const { data: fallbackData, error: fallbackError } = await supabase
           .from('tweets')
-          .select('hashtags, created_at, likes_count, retweets_count')
+          .select('hashtags, created_at, likes_count, retweets_count, replies_count')
           .not('hashtags', 'eq', '{}')
-          .gte('created_at', new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString())
+          .gte('created_at', new Date(Date.now() - 48 * 60 * 60 * 1000).toISOString()) // 48 hours
+          .is('reply_to', null) // Only original tweets
           .order('created_at', { ascending: false })
-          .limit(1000);
+          .limit(2000);
 
         if (fallbackError) throw fallbackError;
 
-        // Process hashtags manually
+        // Process hashtags manually with improved algorithm
         const hashtagCounts: { [key: string]: { count: number; recent: number; engagement: number } } = {};
         
         fallbackData?.forEach(tweet => {
           const isRecent = new Date(tweet.created_at) > new Date(Date.now() - 24 * 60 * 60 * 1000);
-          const engagement = tweet.likes_count + tweet.retweets_count;
+          const engagement = tweet.likes_count + tweet.retweets_count * 2 + tweet.replies_count;
           
           tweet.hashtags.forEach((hashtag: string) => {
             const tag = hashtag.toLowerCase();
@@ -140,16 +141,17 @@ export const useHashtags = () => {
           });
         });
 
-        // Convert to array and sort by trending score
+        // Convert to array and sort by enhanced trending score
         const trending = Object.entries(hashtagCounts)
+          .filter(([_, stats]) => stats.count >= 1) // Include all hashtags
           .map(([hashtag, stats]) => ({
             hashtag: `#${hashtag}`,
             count: stats.count,
             recent_tweets: stats.recent,
-            trending_score: stats.recent * 2 + stats.engagement * 0.1
+            trending_score: stats.recent * 5 + stats.count * 2 + stats.engagement * 0.1
           }))
           .sort((a, b) => b.trending_score - a.trending_score)
-          .slice(0, 20)
+          .slice(0, 25)
           .map(({ hashtag, count, recent_tweets }) => ({ hashtag, count, recent_tweets }));
 
         setTrendingHashtags(trending);
@@ -233,7 +235,7 @@ export const useHashtags = () => {
       if (sortBy === 'recent') {
         query = query.order('created_at', { ascending: false });
       } else {
-        // For 'top', we'll sort by engagement (likes + retweets)
+        // For 'top', we'll sort by engagement (likes + retweets * 2 + replies)
         query = query.order('likes_count', { ascending: false });
       }
 
@@ -301,18 +303,229 @@ export const useHashtags = () => {
     }
   };
 
+  const searchTweetsByKeyword = async (keyword: string, sortBy: 'recent' | 'top' = 'recent') => {
+    try {
+      setLoading(true);
+      setError(null);
+
+      if (!keyword.trim()) {
+        setHashtagTweets([]);
+        return;
+      }
+
+      // Try using the RPC function first
+      const { data: rpcData, error: rpcError } = await supabase.rpc('search_tweets_by_keyword', {
+        search_keyword: keyword.trim(),
+        limit_count: 50
+      });
+
+      let searchResults = [];
+
+      if (rpcError) {
+        // Fallback to manual search if RPC function fails
+        let query = supabase
+          .from('tweets')
+          .select(`
+            id,
+            content,
+            author_id,
+            image_urls,
+            hashtags,
+            mentions,
+            tags,
+            likes_count,
+            retweets_count,
+            replies_count,
+            views_count,
+            created_at,
+            is_retweet,
+            original_tweet_id,
+            profiles!tweets_author_id_fkey (
+              id,
+              username,
+              display_name,
+              avatar_url,
+              bio,
+              verified,
+              followers_count,
+              following_count,
+              country,
+              created_at
+            ),
+            original_tweet:original_tweet_id (
+              id,
+              content,
+              image_urls,
+              hashtags,
+              mentions,
+              tags,
+              likes_count,
+              retweets_count,
+              replies_count,
+              views_count,
+              created_at,
+              profiles!tweets_author_id_fkey (
+                id,
+                username,
+                display_name,
+                avatar_url,
+                bio,
+                verified,
+                followers_count,
+                following_count,
+                country,
+                created_at
+              )
+            )
+          `)
+          .ilike('content', `%${keyword}%`)
+          .is('reply_to', null);
+
+        if (sortBy === 'recent') {
+          query = query.order('created_at', { ascending: false });
+        } else {
+          query = query.order('likes_count', { ascending: false });
+        }
+
+        const { data, error } = await query.limit(50);
+        if (error) throw error;
+        searchResults = data || [];
+      } else {
+        // Use RPC results and fetch full tweet data
+        const tweetIds = rpcData?.map((result: any) => result.id) || [];
+        
+        if (tweetIds.length > 0) {
+          const { data, error } = await supabase
+            .from('tweets')
+            .select(`
+              id,
+              content,
+              author_id,
+              image_urls,
+              hashtags,
+              mentions,
+              tags,
+              likes_count,
+              retweets_count,
+              replies_count,
+              views_count,
+              created_at,
+              is_retweet,
+              original_tweet_id,
+              profiles!tweets_author_id_fkey (
+                id,
+                username,
+                display_name,
+                avatar_url,
+                bio,
+                verified,
+                followers_count,
+                following_count,
+                country,
+                created_at
+              ),
+              original_tweet:original_tweet_id (
+                id,
+                content,
+                image_urls,
+                hashtags,
+                mentions,
+                tags,
+                likes_count,
+                retweets_count,
+                replies_count,
+                views_count,
+                created_at,
+                profiles!tweets_author_id_fkey (
+                  id,
+                  username,
+                  display_name,
+                  avatar_url,
+                  bio,
+                  verified,
+                  followers_count,
+                  following_count,
+                  country,
+                  created_at
+                )
+              )
+            `)
+            .in('id', tweetIds);
+
+          if (error) throw error;
+          
+          // Sort results based on RPC relevance scores
+          const sortedResults = data?.sort((a, b) => {
+            const aIndex = tweetIds.indexOf(a.id);
+            const bIndex = tweetIds.indexOf(b.id);
+            return aIndex - bIndex;
+          }) || [];
+          
+          searchResults = sortedResults;
+        }
+      }
+
+      // Get current user to check likes/retweets/bookmarks
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      let userLikes: string[] = [];
+      let userRetweets: string[] = [];
+      let userBookmarks: string[] = [];
+      
+      if (user && searchResults.length > 0) {
+        const tweetIds = searchResults.map((tweet: any) => tweet.id);
+        const originalTweetIds = searchResults.filter((tweet: any) => tweet.original_tweet_id).map((tweet: any) => tweet.original_tweet_id);
+        const allTweetIds = [...tweetIds, ...originalTweetIds];
+
+        const [likesResult, retweetsResult, bookmarksResult] = await Promise.all([
+          supabase
+            .from('likes')
+            .select('tweet_id')
+            .eq('user_id', user.id)
+            .in('tweet_id', allTweetIds),
+          supabase
+            .from('retweets')
+            .select('tweet_id')
+            .eq('user_id', user.id)
+            .in('tweet_id', allTweetIds),
+          supabase
+            .from('bookmarks')
+            .select('tweet_id')
+            .eq('user_id', user.id)
+            .in('tweet_id', allTweetIds)
+        ]);
+        
+        userLikes = likesResult.data?.map(like => like.tweet_id) || [];
+        userRetweets = retweetsResult.data?.map(retweet => retweet.tweet_id) || [];
+        userBookmarks = bookmarksResult.data?.map(bookmark => bookmark.tweet_id) || [];
+      }
+
+      const formattedTweets: HashtagTweet[] = (searchResults as TweetWithProfile[]).map(tweet => 
+        formatTweetData(tweet, userLikes, userRetweets, userBookmarks)
+      );
+
+      setHashtagTweets(formattedTweets);
+    } catch (err: any) {
+      setError(err.message);
+      console.error('Error searching tweets by keyword:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const searchHashtags = async (query: string): Promise<string[]> => {
     try {
       if (!query.trim()) return [];
 
       const cleanQuery = query.replace('#', '').toLowerCase();
 
-      // Search for hashtags that contain the query
+      // Search for hashtags that contain the query from recent tweets
       const { data, error } = await supabase
         .from('tweets')
         .select('hashtags')
         .not('hashtags', 'eq', '{}')
-        .limit(100);
+        .gte('created_at', new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString()) // Last week
+        .limit(200);
 
       if (error) throw error;
 
@@ -335,6 +548,11 @@ export const useHashtags = () => {
 
   useEffect(() => {
     fetchTrendingHashtags();
+    
+    // Refresh trending hashtags every 5 minutes
+    const interval = setInterval(fetchTrendingHashtags, 5 * 60 * 1000);
+    
+    return () => clearInterval(interval);
   }, [fetchTrendingHashtags]);
 
   return {
@@ -344,6 +562,7 @@ export const useHashtags = () => {
     error,
     fetchTrendingHashtags,
     searchHashtagTweets,
+    searchTweetsByKeyword,
     searchHashtags,
   };
 };

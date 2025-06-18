@@ -2,23 +2,26 @@ import React, { useState, useEffect } from 'react';
 import { Search, X, TrendingUp, Hash, User, Filter, ChevronDown, ChevronUp } from 'lucide-react';
 import { Button } from '../ui/button';
 import { Avatar, AvatarImage, AvatarFallback } from '../ui/avatar';
+import { TweetCard } from '../Tweet/TweetCard';
+import { MobileTweetCard } from '../Tweet/MobileTweetCard';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
 import { useHashtags } from '../../hooks/useHashtags';
+import { useTweets } from '../../hooks/useTweets';
 import { supabase } from '../../lib/supabase';
 import { User as UserType } from '../../types';
 import { TWEET_CATEGORIES, FILTER_COUNTRIES } from '../../types';
 
 interface SearchResult {
-  type: 'user' | 'hashtag';
-  data: UserType | string;
+  type: 'user' | 'hashtag' | 'tweet';
+  data: UserType | string | any;
 }
 
 export const SearchPage: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
   const [loading, setLoading] = useState(false);
-  const [activeTab, setActiveTab] = useState<'top' | 'people' | 'hashtags'>('top');
+  const [activeTab, setActiveTab] = useState<'top' | 'people' | 'hashtags' | 'tweets'>('top');
   const [showFilters, setShowFilters] = useState(false);
   
   // Filter states
@@ -26,7 +29,8 @@ export const SearchPage: React.FC = () => {
   const [selectedCountries, setSelectedCountries] = useState<string[]>([]);
   
   const { user } = useAuth();
-  const { trendingHashtags, loading: hashtagsLoading } = useHashtags();
+  const { trendingHashtags, hashtagTweets, loading: hashtagsLoading, searchTweetsByKeyword } = useHashtags();
+  const { likeTweet, unlikeTweet } = useTweets();
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -130,6 +134,20 @@ export const SearchPage: React.FC = () => {
         }
       }
 
+      // Search for tweets by keyword if looking for tweets or top results
+      if (activeTab === 'tweets' || activeTab === 'top') {
+        // Use the hashtag hook's keyword search functionality
+        await searchTweetsByKeyword(searchQuery, 'recent');
+        
+        // Convert hashtag tweets to search results
+        const tweetResults: SearchResult[] = hashtagTweets.slice(0, activeTab === 'tweets' ? 20 : 5).map(tweet => ({
+          type: 'tweet',
+          data: tweet
+        }));
+        
+        results.push(...tweetResults);
+      }
+
       setSearchResults(results);
     } catch (error) {
       console.error('Search error:', error);
@@ -145,6 +163,28 @@ export const SearchPage: React.FC = () => {
   const handleHashtagClick = (hashtag: string) => {
     const cleanHashtag = hashtag.replace('#', '');
     navigate(`/hashtag/${cleanHashtag}`);
+  };
+
+  const handleLike = async (tweetId: string, isCurrentlyLiked: boolean) => {
+    try {
+      if (isCurrentlyLiked) {
+        await unlikeTweet(tweetId);
+      } else {
+        await likeTweet(tweetId);
+      }
+      // Refresh search results
+      performSearch();
+    } catch (error) {
+      console.error('Error toggling like:', error);
+    }
+  };
+
+  const handleRetweet = (tweetId: string) => {
+    console.log('Retweet:', tweetId);
+  };
+
+  const handleBookmark = (tweetId: string) => {
+    console.log('Bookmark:', tweetId);
   };
 
   const clearSearch = () => {
@@ -180,6 +220,7 @@ export const SearchPage: React.FC = () => {
   const filteredResults = searchResults.filter(result => {
     if (activeTab === 'people') return result.type === 'user';
     if (activeTab === 'hashtags') return result.type === 'hashtag';
+    if (activeTab === 'tweets') return result.type === 'tweet';
     return true; // 'top' shows all results
   });
 
@@ -203,7 +244,7 @@ export const SearchPage: React.FC = () => {
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search X"
+              placeholder="Search posts, people, and hashtags"
               className="w-full pl-10 pr-10 py-3 bg-gray-100 rounded-full focus:bg-white focus:ring-2 focus:ring-blue-500 focus:outline-none transition-all"
             />
             {searchQuery && (
@@ -312,6 +353,7 @@ export const SearchPage: React.FC = () => {
           <div className="flex">
             {[
               { id: 'top', label: 'Top' },
+              { id: 'tweets', label: 'Tweets' },
               { id: 'people', label: 'People' },
               { id: 'hashtags', label: 'Hashtags' },
             ].map((tab) => (
@@ -340,6 +382,7 @@ export const SearchPage: React.FC = () => {
             <h2 className="text-xl font-bold mb-4 flex items-center">
               <TrendingUp className="w-5 h-5 mr-2 text-blue-500" />
               Trending hashtags
+              <span className="text-sm font-normal text-gray-500 ml-2">(past 48 hours)</span>
             </h2>
             
             {hashtagsLoading ? (
@@ -349,7 +392,7 @@ export const SearchPage: React.FC = () => {
               </div>
             ) : (
               <div className="space-y-3">
-                {trendingHashtags.slice(0, 15).map((item, index) => (
+                {trendingHashtags.slice(0, 20).map((item, index) => (
                   <div
                     key={item.hashtag}
                     onClick={() => handleHashtagClick(item.hashtag)}
@@ -476,7 +519,7 @@ export const SearchPage: React.FC = () => {
                           </div>
                         </div>
                       </div>
-                    ) : (
+                    ) : result.type === 'hashtag' ? (
                       <div
                         onClick={() => handleHashtagClick(result.data as string)}
                         className="p-4 hover:bg-gray-50 cursor-pointer transition-colors"
@@ -491,6 +534,30 @@ export const SearchPage: React.FC = () => {
                               {getHashtagStats(result.data as string)}
                             </p>
                           </div>
+                        </div>
+                      </div>
+                    ) : (
+                      /* Tweet Result */
+                      <div>
+                        {/* Desktop Tweet Card */}
+                        <div className="hidden md:block">
+                          <TweetCard 
+                            tweet={result.data} 
+                            onLike={() => handleLike(result.data.id, result.data.isLiked)}
+                            onRetweet={() => handleRetweet(result.data.id)}
+                            onBookmark={() => handleBookmark(result.data.id)}
+                            currentUserId={user?.id}
+                          />
+                        </div>
+                        {/* Mobile Tweet Card */}
+                        <div className="md:hidden">
+                          <MobileTweetCard 
+                            tweet={result.data}
+                            onLike={() => handleLike(result.data.id, result.data.isLiked)}
+                            onRetweet={() => handleRetweet(result.data.id)}
+                            onBookmark={() => handleBookmark(result.data.id)}
+                            currentUserId={user?.id}
+                          />
                         </div>
                       </div>
                     )}
