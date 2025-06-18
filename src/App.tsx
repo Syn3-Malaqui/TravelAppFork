@@ -40,7 +40,7 @@ function App() {
             <Sidebar />
           </div>
           
-          {/* Main Content - Takes remaining space */}
+          {/* Main Content - Takes remaining space, accounting for sidebar on desktop */}
           <div className="flex-1 md:ml-64">
             <Routes>
               <Route path="/" element={<Timeline />} />
