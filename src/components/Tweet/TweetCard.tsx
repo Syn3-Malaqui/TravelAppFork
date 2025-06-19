@@ -540,87 +540,83 @@ export const TweetCard: React.FC<TweetCardProps> = ({
                 </div>
               )}
 
-              {/* Images */}
+              {/* Images with consistent timeline styling */}
               {tweet.images && tweet.images.length > 0 && (
-                <div className="mb-3 rounded-2xl overflow-hidden border border-gray-200">
+                <div className="mb-3">
                   {tweet.images.length === 1 ? (
-                    // Single image - uniform aspect ratio (16:9)
-                    <div className="w-full aspect-[16/9] cursor-pointer" onClick={(e) => handleImageClick(0, e)}>
-                      <LazyImage 
-                        src={tweet.images[0]} 
-                        alt="Tweet image" 
-                        className="w-full h-full object-cover hover:opacity-95 transition-opacity"
-                        width={600}
-                        quality={80}
-                      />
-                    </div>
+                    // Single image - consistent 16:9 aspect ratio with timeline styling
+                    <LazyImage 
+                      src={tweet.images[0]} 
+                      alt="Tweet image" 
+                      className="cursor-pointer"
+                      onClick={(e) => handleImageClick(0, e)}
+                      width={800}
+                      height={600}
+                      quality={85}
+                    />
                   ) : tweet.images.length === 2 ? (
-                    // Two images - side by side with uniform aspect ratio (16:9)
-                    <div className="grid grid-cols-2 gap-1">
+                    // Two images - side by side with consistent styling
+                    <div className="grid grid-cols-2 gap-4">
                       {tweet.images.map((image, index) => (
-                        <div 
-                          key={index} 
-                          className="aspect-[16/9] cursor-pointer"
+                        <LazyImage 
+                          key={index}
+                          src={image} 
+                          alt={`Tweet image ${index + 1}`} 
+                          className="cursor-pointer"
                           onClick={(e) => handleImageClick(index, e)}
-                        >
-                          <LazyImage 
-                            src={image} 
-                            alt={`Tweet image ${index + 1}`} 
-                            className="w-full h-full object-cover hover:opacity-95 transition-opacity"
-                            width={400}
-                            quality={80}
-                          />
-                        </div>
+                          width={400}
+                          height={300}
+                          quality={85}
+                        />
                       ))}
                     </div>
                   ) : tweet.images.length === 3 ? (
                     // Three images - first takes full left side, two small on right
-                    <div className="grid grid-cols-2 grid-rows-2 gap-1 h-80">
-                      <div className="row-span-2 cursor-pointer" onClick={(e) => handleImageClick(0, e)}>
-                        <LazyImage 
-                          src={tweet.images[0]} 
-                          alt="Tweet image 1" 
-                          className="w-full h-full object-cover hover:opacity-95 transition-opacity"
-                          width={400}
-                          quality={80}
-                        />
-                      </div>
-                      <div className="cursor-pointer" onClick={(e) => handleImageClick(1, e)}>
+                    <div className="grid grid-cols-2 gap-4">
+                      <LazyImage 
+                        src={tweet.images[0]} 
+                        alt="Tweet image 1" 
+                        className="cursor-pointer row-span-2"
+                        onClick={(e) => handleImageClick(0, e)}
+                        width={400}
+                        height={600}
+                        quality={85}
+                      />
+                      <div className="grid grid-rows-2 gap-4">
                         <LazyImage 
                           src={tweet.images[1]} 
                           alt="Tweet image 2" 
-                          className="w-full h-full object-cover hover:opacity-95 transition-opacity"
-                          width={300}
-                          quality={80}
+                          className="cursor-pointer"
+                          onClick={(e) => handleImageClick(1, e)}
+                          width={400}
+                          height={300}
+                          quality={85}
                         />
-                      </div>
-                      <div className="cursor-pointer" onClick={(e) => handleImageClick(2, e)}>
                         <LazyImage 
                           src={tweet.images[2]} 
                           alt="Tweet image 3" 
-                          className="w-full h-full object-cover hover:opacity-95 transition-opacity"
-                          width={300}
-                          quality={80}
+                          className="cursor-pointer"
+                          onClick={(e) => handleImageClick(2, e)}
+                          width={400}
+                          height={300}
+                          quality={85}
                         />
                       </div>
                     </div>
                   ) : (
-                    // Four images - 2x2 grid with uniform aspect ratio (16:9)
-                    <div className="grid grid-cols-2 gap-1">
+                    // Four images - 2x2 grid with consistent styling
+                    <div className="grid grid-cols-2 gap-4">
                       {tweet.images.map((image, index) => (
-                        <div 
-                          key={index} 
-                          className="aspect-[16/9] cursor-pointer"
+                        <LazyImage 
+                          key={index}
+                          src={image} 
+                          alt={`Tweet image ${index + 1}`} 
+                          className="cursor-pointer"
                           onClick={(e) => handleImageClick(index, e)}
-                        >
-                          <LazyImage 
-                            src={image} 
-                            alt={`Tweet image ${index + 1}`} 
-                            className="w-full h-full object-cover hover:opacity-95 transition-opacity"
-                            width={300}
-                            quality={80}
-                          />
-                        </div>
+                          width={400}
+                          height={300}
+                          quality={85}
+                        />
                       ))}
                     </div>
                   )}
