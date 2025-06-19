@@ -20,7 +20,6 @@ import {
 } from '../ui/dropdown-menu';
 import { useAuth } from '../../hooks/useAuth';
 import { useNotifications } from '../../hooks/useNotifications';
-import { useFollow } from '../../hooks/useFollow';
 import { storageService } from '../../lib/storage';
 import { supabase } from '../../lib/supabase';
 import { User as UserType } from '../../types';
@@ -37,7 +36,6 @@ export const Sidebar: React.FC = () => {
   const location = useLocation();
   const { user, signOut } = useAuth();
   const { unreadCount } = useNotifications();
-  const { followUser, isFollowing, loading: followLoading } = useFollow();
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [userProfile, setUserProfile] = useState<{
     displayName: string;
@@ -157,23 +155,6 @@ export const Sidebar: React.FC = () => {
     navigate(`/profile/${username}`);
   };
 
-  const handleFollowClick = async (userId: string, e: React.MouseEvent) => {
-    e.stopPropagation();
-    
-    try {
-      if (isFollowing(userId)) {
-        // Don't unfollow from recommendations - just let them navigate to profile
-        return;
-      } else {
-        await followUser(userId);
-        // Remove from recommendations after following
-        setRecommendedUsers(prev => prev.filter(user => user.id !== userId));
-      }
-    } catch (error) {
-      console.error('Error following user:', error);
-    }
-  };
-
   const handleViewAllRecommendations = () => {
     navigate('/search');
   };
@@ -262,8 +243,7 @@ export const Sidebar: React.FC = () => {
                       <div className="w-10 h-10 bg-gray-200 rounded-full"></div>
                       <div className="flex-1">
                         <div className="h-4 bg-gray-200 rounded w-3/4 mb-1"></div>
-                        <div className="h-3 bg-gray-200 rounded w-1/2 mb-2"></div>
-                        <div className="h-6 bg-gray-200 rounded w-16"></div>
+                        <div className="h-3 bg-gray-200 rounded w-1/2"></div>
                       </div>
                     </div>
                   </div>
@@ -304,26 +284,10 @@ export const Sidebar: React.FC = () => {
                         </p>
                         
                         {recommendedUser.bio && (
-                          <p className="text-xs text-gray-700 line-clamp-2 mb-2">
+                          <p className="text-xs text-gray-700 line-clamp-2">
                             {recommendedUser.bio}
                           </p>
                         )}
-                        
-                        <div className="flex items-center justify-between">
-                          <p className="text-xs text-gray-500">
-                            {recommendedUser.followers.toLocaleString()} followers
-                          </p>
-                          
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={(e) => handleFollowClick(recommendedUser.id, e)}
-                            disabled={followLoading}
-                            className="text-xs px-3 py-1 h-6 bg-blue-500 text-white border-blue-500 hover:bg-blue-600 hover:border-blue-600 rounded-full"
-                          >
-                            {followLoading ? '...' : 'Follow'}
-                          </Button>
-                        </div>
                       </div>
                     </div>
                   </div>
