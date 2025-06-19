@@ -182,7 +182,113 @@ export const useTweets = () => {
     setFollowingTweets(updateTweetInList);
   }, []);
 
-  // Set up real-time subscriptions for interactions
+  // Handle new tweet insertions
+  const handleNewTweet = useCallback(async (payload: any) => {
+    try {
+      // Don't add if this is a reply (we only want main timeline tweets)
+      if (payload.new.reply_to) return;
+
+      // Fetch the complete tweet data with profile information
+      const { data: tweetData, error } = await supabase
+        .from('tweets')
+        .select(`
+          id,
+          content,
+          author_id,
+          image_urls,
+          hashtags,
+          mentions,
+          tags,
+          likes_count,
+          retweets_count,
+          replies_count,
+          views_count,
+          created_at,
+          is_retweet,
+          original_tweet_id,
+          profiles!tweets_author_id_fkey (
+            id,
+            username,
+            display_name,
+            avatar_url,
+            bio,
+            verified,
+            followers_count,
+            following_count,
+            country,
+            created_at
+          ),
+          original_tweet:original_tweet_id (
+            id,
+            content,
+            image_urls,
+            hashtags,
+            mentions,
+            tags,
+            likes_count,
+            retweets_count,
+            replies_count,
+            views_count,
+            created_at,
+            profiles!tweets_author_id_fkey (
+              id,
+              username,
+              display_name,
+              avatar_url,
+              bio,
+              verified,
+              followers_count,
+              following_count,
+              country,
+              created_at
+            )
+          )
+        `)
+        .eq('id', payload.new.id)
+        .single();
+
+      if (error || !tweetData) return;
+
+      // Get user interactions for the new tweet
+      const { userLikes, userRetweets, userBookmarks } = await fetchUserInteractions([tweetData.id]) || { userLikes: [], userRetweets: [], userBookmarks: [] };
+
+      // Format the new tweet
+      const formattedTweet = formatTweetData(tweetData as TweetWithProfile, userLikes, userRetweets, userBookmarks);
+
+      // Add to the beginning of the tweets list (For You feed)
+      setTweets(prev => {
+        // Check if tweet already exists to avoid duplicates
+        if (prev.some(tweet => tweet.id === formattedTweet.id)) {
+          return prev;
+        }
+        return [formattedTweet, ...prev];
+      });
+
+      // Also add to following tweets if it's from someone the user follows
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        const { data: followingData } = await supabase
+          .from('follows')
+          .select('following_id')
+          .eq('follower_id', user.id)
+          .eq('following_id', payload.new.author_id)
+          .single();
+
+        if (followingData) {
+          setFollowingTweets(prev => {
+            if (prev.some(tweet => tweet.id === formattedTweet.id)) {
+              return prev;
+            }
+            return [formattedTweet, ...prev];
+          });
+        }
+      }
+    } catch (error) {
+      console.error('Error handling new tweet:', error);
+    }
+  }, [fetchUserInteractions, formatTweetData]);
+
+  // Set up real-time subscriptions for interactions and new tweets
   useEffect(() => {
     const setupRealtimeSubscriptions = async () => {
       try {
@@ -195,7 +301,7 @@ export const useTweets = () => {
 
         // Create new subscription channel
         const channel = supabase
-          .channel('tweet_interactions')
+          .channel('tweet_interactions_and_new_tweets')
           .on(
             'postgres_changes',
             {
@@ -213,6 +319,16 @@ export const useTweets = () => {
               table: 'retweets',
             },
             (payload) => handleRealtimeUpdate(payload, 'retweets')
+          )
+          .on(
+            'postgres_changes',
+            {
+              event: 'INSERT',
+              schema: 'public',
+              table: 'tweets',
+              filter: 'reply_to=is.null', // Only listen for main tweets, not replies
+            },
+            handleNewTweet
           );
 
         channelRef.current = channel;
@@ -234,7 +350,7 @@ export const useTweets = () => {
         channelRef.current = null;
       }
     };
-  }, [handleRealtimeUpdate]);
+  }, [handleRealtimeUpdate, handleNewTweet]);
 
   const fetchTweets = useCallback(async () => {
     try {
@@ -615,12 +731,45 @@ export const useTweets = () => {
           mentions,
           tags: categories,
         })
-        .select()
+        .select(`
+          id,
+          content,
+          author_id,
+          image_urls,
+          hashtags,
+          mentions,
+          tags,
+          likes_count,
+          retweets_count,
+          replies_count,
+          views_count,
+          created_at,
+          is_retweet,
+          original_tweet_id,
+          profiles!tweets_author_id_fkey (
+            id,
+            username,
+            display_name,
+            avatar_url,
+            bio,
+            verified,
+            followers_count,
+            following_count,
+            country,
+            created_at
+          )
+        `)
         .single();
 
       if (error) throw error;
 
-      // Don't manually refresh - real-time subscription will handle it
+      // Format the new tweet and add it immediately to the local state
+      const formattedTweet = formatTweetData(data as TweetWithProfile, [], [], []);
+      
+      // Add to both feeds immediately (optimistic update)
+      setTweets(prev => [formattedTweet, ...prev]);
+      setFollowingTweets(prev => [formattedTweet, ...prev]);
+      
       return data;
     } catch (err: any) {
       throw new Error(err.message);
