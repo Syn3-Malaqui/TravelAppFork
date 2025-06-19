@@ -344,7 +344,7 @@ export const ComposePage: React.FC = () => {
 
       {/* Scrollable Content */}
       <div className="flex-1 overflow-y-auto">
-        <div className={`${isMobile ? 'p-3' : 'p-4'}`}>
+        <div className={`${isMobile ? 'p-3 pb-32' : 'p-4'}`}>
           {/* Error Message */}
           {error && (
             <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
@@ -714,8 +714,12 @@ export const ComposePage: React.FC = () => {
         </div>
       </div>
 
-      {/* Bottom Actions */}
-      <div className="bg-white border-t border-gray-200 p-3 flex-shrink-0">
+      {/* Bottom Actions - Fixed position on mobile to avoid navigation overlap */}
+      <div className={`bg-white border-t border-gray-200 flex-shrink-0 ${
+        isMobile 
+          ? 'fixed bottom-0 left-0 right-0 p-4 pb-6 shadow-lg z-50' 
+          : 'p-3'
+      }`}>
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-3">
             {/* Image Upload Button - Enhanced for Mobile */}
@@ -724,7 +728,7 @@ export const ComposePage: React.FC = () => {
               onClick={handleImageButtonClick}
               disabled={images.length >= 4 || uploadingImage}
               className={`flex items-center space-x-2 text-blue-500 hover:text-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
-                isMobile ? 'p-3 rounded-full hover:bg-blue-50' : 'p-2 hover:bg-blue-50 rounded-lg'
+                isMobile ? 'p-3 rounded-full hover:bg-blue-50 bg-blue-50' : 'p-2 hover:bg-blue-50 rounded-lg'
               }`}
             >
               {uploadingImage ? (
