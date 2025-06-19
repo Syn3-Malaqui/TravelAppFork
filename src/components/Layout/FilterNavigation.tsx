@@ -11,6 +11,7 @@ import {
 interface FilterOption {
   id: string;
   label: string;
+  icon?: string;
 }
 
 interface FilterNavigationProps {
@@ -28,20 +29,20 @@ export const FilterNavigation: React.FC<FilterNavigationProps> = ({
 
   // Primary filters shown directly in the strip
   const primaryFilters: FilterOption[] = [
-    { id: 'all', label: 'All' },
-    { id: 'general', label: 'General' },
-    { id: 'hotels', label: 'Hotels' },
-    { id: 'flights', label: 'Flights' },
-    { id: 'restaurants', label: 'Restaurants' },
+    { id: 'all', label: 'All', icon: '🌐' },
+    { id: 'general', label: 'General', icon: '💬' },
+    { id: 'hotels', label: 'Hotels', icon: '🏨' },
+    { id: 'flights', label: 'Flights', icon: '✈️' },
+    { id: 'restaurants', label: 'Restaurants', icon: '🍽️' },
   ];
 
   // Additional filters shown in the "More" dropdown
   const moreFilters: FilterOption[] = [
-    { id: 'visas', label: 'Visas' },
-    { id: 'car-rental', label: 'Car Rental' },
-    { id: 'schedules', label: 'Schedules' },
-    { id: 'images', label: 'Images' },
-    { id: 'real-estate', label: 'Real Estate' },
+    { id: 'visas', label: 'Visas', icon: '📋' },
+    { id: 'car-rental', label: 'Car Rental', icon: '🚗' },
+    { id: 'schedules', label: 'Schedules', icon: '📅' },
+    { id: 'images', label: 'Images', icon: '📸' },
+    { id: 'real-estate', label: 'Real Estate', icon: '🏠' },
   ];
 
   // Check if the filter strip is overflowing
@@ -97,6 +98,7 @@ export const FilterNavigation: React.FC<FilterNavigationProps> = ({
             }`}
             data-filter-id={filter.id}
           >
+            {filter.icon && <span className="mr-1.5">{filter.icon}</span>}
             {filter.label}
           </Button>
         ))}
@@ -135,6 +137,7 @@ export const FilterNavigation: React.FC<FilterNavigationProps> = ({
                     : 'text-gray-700 hover:bg-gray-100'
                 }`}
               >
+                {filter.icon && <span className="mr-2">{filter.icon}</span>}
                 {filter.label}
               </DropdownMenuItem>
             ))}

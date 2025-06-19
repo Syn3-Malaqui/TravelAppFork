@@ -1,9 +1,7 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { InfiniteScrollTweets } from './InfiniteScrollTweets';
 import { MobileTabs } from '../Layout/MobileTabs';
-import { CountryFilter } from '../Layout/CountryFilter';
-import { CategoriesFilter } from '../Layout/CategoriesFilter';
 import { FilterNavigation } from '../Layout/FilterNavigation';
 import { TrendingSidebar } from '../Layout/TrendingSidebar';
 import { Button } from '../ui/button';
@@ -11,6 +9,7 @@ import { LazyAvatar } from '../ui/LazyAvatar';
 import { useAuth } from '../../hooks/useAuth';
 import { supabase } from '../../lib/supabase';
 import { FILTER_COUNTRIES } from '../../types';
+import { X } from 'lucide-react';
 
 export const Timeline: React.FC = () => {
   const navigate = useNavigate();
@@ -80,14 +79,6 @@ export const Timeline: React.FC = () => {
     navigate('/compose');
   };
 
-  const handleCategoryFilter = (category: string | null) => {
-    setCategoryFilter(category);
-  };
-
-  const handleCountryFilter = (countryCode: string) => {
-    setCountryFilter(countryCode);
-  };
-
   const handleTabChange = (tab: 'for-you' | 'following') => {
     setActiveTab(tab);
   };
@@ -130,6 +121,12 @@ export const Timeline: React.FC = () => {
       default:
         setCategoryFilter(null);
     }
+  };
+
+  const clearFilters = () => {
+    setCategoryFilter(null);
+    setCountryFilter('ALL');
+    setSelectedFilter('all');
   };
 
   return (
@@ -204,40 +201,39 @@ export const Timeline: React.FC = () => {
               {/* Filter indicators */}
               {(categoryFilter || countryFilter !== 'ALL') && (
                 <div className="bg-blue-50 border-b border-blue-200 px-4 py-2">
-                  <div className="text-sm text-blue-700 flex items-center space-x-4">
-                    {categoryFilter && (
-                      <span>
-                        Category: <span className="font-semibold">{categoryFilter}</span>
-                        <button 
-                          onClick={() => {
-                            setCategoryFilter(null);
-                            setSelectedFilter('all');
-                          }}
-                          className="ml-2 text-blue-500 hover:text-blue-700 underline"
-                        >
-                          Clear
-                        </button>
-                      </span>
-                    )}
-                    {countryFilter !== 'ALL' && (
-                      <span>
-                        Country: <span className="font-semibold">
-                          {FILTER_COUNTRIES.find(c => c.code === countryFilter)?.name}
+                  <div className="flex items-center justify-between">
+                    <div className="text-sm text-blue-700 flex items-center space-x-4">
+                      {categoryFilter && (
+                        <span className="flex items-center">
+                          <span>Category: <span className="font-semibold">{categoryFilter}</span></span>
                         </span>
-                        <button 
-                          onClick={() => setCountryFilter('ALL')}
-                          className="ml-2 text-blue-500 hover:text-blue-700 underline"
-                        >
-                          Clear
-                        </button>
-                      </span>
-                    )}
+                      )}
+                      {countryFilter !== 'ALL' && (
+                        <span className="flex items-center">
+                          <span>Country: <span className="font-semibold">
+                            {FILTER_COUNTRIES.find(c => c.code === countryFilter)?.name}
+                          </span></span>
+                        </span>
+                      )}
+                    </div>
+                    <button 
+                      onClick={clearFilters}
+                      className="flex items-center text-blue-600 hover:text-blue-800 text-sm font-medium"
+                    >
+                      <X className="h-3 w-3 mr-1" />
+                      Clear filters
+                    </button>
                   </div>
                 </div>
               )}
 
               {/* Infinite Scroll Tweets */}
-              <InfiniteScrollTweets isMobile={false} />
+              <InfiniteScrollTweets 
+                isMobile={false} 
+                feedType={activeTab}
+                categoryFilter={categoryFilter}
+                countryFilter={countryFilter}
+              />
             </div>
           </div>
         </div>
@@ -263,40 +259,39 @@ export const Timeline: React.FC = () => {
             {/* Filter indicators */}
             {(categoryFilter || countryFilter !== 'ALL') && (
               <div className="bg-blue-50 border-b border-blue-200 px-4 py-2">
-                <div className="text-sm text-blue-700 flex items-center space-x-4">
-                  {categoryFilter && (
-                    <span>
-                      Category: <span className="font-semibold">{categoryFilter}</span>
-                      <button 
-                        onClick={() => {
-                          setCategoryFilter(null);
-                          setSelectedFilter('all');
-                        }}
-                        className="ml-2 text-blue-500 hover:text-blue-700 underline"
-                      >
-                        Clear
-                      </button>
-                    </span>
-                  )}
-                  {countryFilter !== 'ALL' && (
-                    <span>
-                      Country: <span className="font-semibold">
-                        {FILTER_COUNTRIES.find(c => c.code === countryFilter)?.name}
+                <div className="flex items-center justify-between">
+                  <div className="text-xs text-blue-700 flex items-center space-x-2">
+                    {categoryFilter && (
+                      <span className="flex items-center">
+                        <span>Category: <span className="font-semibold">{categoryFilter}</span></span>
                       </span>
-                      <button 
-                        onClick={() => setCountryFilter('ALL')}
-                        className="ml-2 text-blue-500 hover:text-blue-700 underline"
-                      >
-                        Clear
-                      </button>
-                    </span>
-                  )}
+                    )}
+                    {countryFilter !== 'ALL' && (
+                      <span className="flex items-center">
+                        <span>Country: <span className="font-semibold">
+                          {FILTER_COUNTRIES.find(c => c.code === countryFilter)?.name}
+                        </span></span>
+                      </span>
+                    )}
+                  </div>
+                  <button 
+                    onClick={clearFilters}
+                    className="flex items-center text-blue-600 hover:text-blue-800 text-xs font-medium"
+                  >
+                    <X className="h-3 w-3 mr-1" />
+                    Clear
+                  </button>
                 </div>
               </div>
             )}
 
             {/* Infinite Scroll Tweets */}
-            <InfiniteScrollTweets isMobile={true} />
+            <InfiniteScrollTweets 
+              isMobile={true} 
+              feedType={activeTab}
+              categoryFilter={categoryFilter}
+              countryFilter={countryFilter}
+            />
           </div>
         </div>
       </div>

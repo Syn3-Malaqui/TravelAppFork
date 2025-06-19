@@ -13,7 +13,7 @@ export const LazyLoadWrapper: React.FC<LazyLoadWrapperProps> = ({
   return (
     <Suspense fallback={fallback || (
       <div className="flex items-center justify-center min-h-screen">
-        <LoadingSpinner size="lg" text="Loading content..." />
+        <LoadingSpinner size="lg" text="Loading..." />
       </div>
     )}>
       {children}

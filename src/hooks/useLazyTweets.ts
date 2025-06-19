@@ -5,10 +5,11 @@ import { Tweet, TweetWithProfile } from '../types';
 interface UseLazyTweetsOptions {
   pageSize?: number;
   initialLoad?: boolean;
+  followingOnly?: boolean;
 }
 
 export const useLazyTweets = (options: UseLazyTweetsOptions = {}) => {
-  const { pageSize = 10, initialLoad = true } = options;
+  const { pageSize = 10, initialLoad = true, followingOnly = false } = options;
   
   const [tweets, setTweets] = useState<Tweet[]>([]);
   const [loading, setLoading] = useState(false);
@@ -16,6 +17,46 @@ export const useLazyTweets = (options: UseLazyTweetsOptions = {}) => {
   const [error, setError] = useState<string | null>(null);
   const offsetRef = useRef(0);
   const loadingRef = useRef(false);
+  const cacheKey = followingOnly ? 'following-feed' : 'for-you-feed';
+  const cacheTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Cache tweets in sessionStorage for better performance
+  const cacheTweets = useCallback((tweetsToCache: Tweet[]) => {
+    try {
+      sessionStorage.setItem(
+        cacheKey, 
+        JSON.stringify({
+          tweets: tweetsToCache,
+          timestamp: Date.now(),
+          offset: offsetRef.current
+        })
+      );
+    } catch (error) {
+      console.warn('Failed to cache tweets:', error);
+    }
+  }, [cacheKey]);
+
+  // Get cached tweets if available
+  const getCachedTweets = useCallback(() => {
+    try {
+      const cached = sessionStorage.getItem(cacheKey);
+      if (!cached) return null;
+      
+      const { tweets: cachedTweets, timestamp, offset } = JSON.parse(cached);
+      
+      // Cache expires after 5 minutes
+      if (Date.now() - timestamp > 5 * 60 * 1000) {
+        sessionStorage.removeItem(cacheKey);
+        return null;
+      }
+      
+      offsetRef.current = offset;
+      return cachedTweets;
+    } catch (error) {
+      console.warn('Failed to get cached tweets:', error);
+      return null;
+    }
+  }, [cacheKey]);
 
   const formatTweetData = useCallback((tweetData: TweetWithProfile, userLikes: string[], userRetweets: string[], userBookmarks: string[]): Tweet => {
     // If this is a retweet, format the original tweet
@@ -127,8 +168,14 @@ export const useLazyTweets = (options: UseLazyTweetsOptions = {}) => {
       setLoading(true);
       setError(null);
 
-      // Fetch tweets with pagination
-      const { data, error } = await supabase
+      // Get current user
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user && followingOnly) {
+        setHasMore(false);
+        return;
+      }
+
+      let query = supabase
         .from('tweets')
         .select(`
           id,
@@ -183,9 +230,36 @@ export const useLazyTweets = (options: UseLazyTweetsOptions = {}) => {
             )
           )
         `)
-        .is('reply_to', null)
+        .is('reply_to', null);
+
+      // For following feed, get tweets only from followed users
+      if (followingOnly && user) {
+        // First, get the list of users the current user is following
+        const { data: followingData, error: followingError } = await supabase
+          .from('follows')
+          .select('following_id')
+          .eq('follower_id', user.id);
+
+        if (followingError) throw followingError;
+
+        // If user is not following anyone, return empty array
+        if (!followingData || followingData.length === 0) {
+          setHasMore(false);
+          setLoading(false);
+          loadingRef.current = false;
+          return;
+        }
+
+        const followingIds = followingData.map(follow => follow.following_id);
+        query = query.in('author_id', followingIds);
+      }
+
+      // Apply pagination
+      query = query
         .order('created_at', { ascending: false })
         .range(offsetRef.current, offsetRef.current + pageSize - 1);
+
+      const { data, error } = await query;
 
       if (error) throw error;
 
@@ -209,7 +283,27 @@ export const useLazyTweets = (options: UseLazyTweetsOptions = {}) => {
           formatTweetData(tweet, userLikes, userRetweets, userBookmarks)
         );
 
-        setTweets(prev => [...prev, ...formattedTweets]);
+        // Sort by engagement score for "For You" feed
+        if (!followingOnly) {
+          formattedTweets.sort((a, b) => {
+            const scoreA = a.likes * 1 + a.retweets * 2 + a.replies * 1.5;
+            const scoreB = b.likes * 1 + b.retweets * 2 + b.replies * 1.5;
+            return scoreB - scoreA;
+          });
+        }
+
+        setTweets(prev => {
+          const newTweets = [...prev, ...formattedTweets];
+          // Cache the tweets
+          if (cacheTimeoutRef.current) {
+            clearTimeout(cacheTimeoutRef.current);
+          }
+          cacheTimeoutRef.current = setTimeout(() => {
+            cacheTweets(newTweets);
+          }, 500);
+          return newTweets;
+        });
+        
         offsetRef.current += tweetsData.length;
       }
     } catch (err: any) {
@@ -219,7 +313,7 @@ export const useLazyTweets = (options: UseLazyTweetsOptions = {}) => {
       setLoading(false);
       loadingRef.current = false;
     }
-  }, [hasMore, pageSize, formatTweetData, fetchUserInteractions]);
+  }, [hasMore, pageSize, followingOnly, formatTweetData, fetchUserInteractions, cacheTweets]);
 
   const reset = useCallback(() => {
     setTweets([]);
@@ -227,14 +321,34 @@ export const useLazyTweets = (options: UseLazyTweetsOptions = {}) => {
     setError(null);
     offsetRef.current = 0;
     loadingRef.current = false;
-  }, []);
+    sessionStorage.removeItem(cacheKey);
+  }, [cacheKey]);
 
   // Initial load
   useEffect(() => {
     if (initialLoad) {
-      loadMoreTweets();
+      // Try to get cached tweets first
+      const cachedTweets = getCachedTweets();
+      if (cachedTweets && cachedTweets.length > 0) {
+        setTweets(cachedTweets);
+        // Still load more in the background to get fresh data
+        setTimeout(() => {
+          loadMoreTweets();
+        }, 1000);
+      } else {
+        loadMoreTweets();
+      }
     }
-  }, [initialLoad, loadMoreTweets]);
+  }, [initialLoad, loadMoreTweets, getCachedTweets]);
+
+  // Cleanup
+  useEffect(() => {
+    return () => {
+      if (cacheTimeoutRef.current) {
+        clearTimeout(cacheTimeoutRef.current);
+      }
+    };
+  }, []);
 
   return {
     tweets,
