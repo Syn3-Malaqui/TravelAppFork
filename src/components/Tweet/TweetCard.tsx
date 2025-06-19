@@ -549,7 +549,7 @@ export const TweetCard: React.FC<TweetCardProps> = ({
                       <LazyImage 
                         src={tweet.images[0]} 
                         alt="Tweet image" 
-                        className="w-full h-full object-cover object-center hover:opacity-95 transition-opacity"
+                        className="w-full h-full hover:opacity-95 transition-opacity"
                         width={600}
                         quality={80}
                       />
@@ -566,7 +566,7 @@ export const TweetCard: React.FC<TweetCardProps> = ({
                           <LazyImage 
                             src={image} 
                             alt={`Tweet image ${index + 1}`} 
-                            className="w-full h-full object-cover object-center hover:opacity-95 transition-opacity"
+                            className="w-full h-full hover:opacity-95 transition-opacity"
                             width={400}
                             quality={80}
                           />
@@ -580,7 +580,7 @@ export const TweetCard: React.FC<TweetCardProps> = ({
                         <LazyImage 
                           src={tweet.images[0]} 
                           alt="Tweet image 1" 
-                          className="w-full h-full object-cover object-center hover:opacity-95 transition-opacity"
+                          className="w-full h-full hover:opacity-95 transition-opacity"
                           width={400}
                           quality={80}
                         />
@@ -589,7 +589,7 @@ export const TweetCard: React.FC<TweetCardProps> = ({
                         <LazyImage 
                           src={tweet.images[1]} 
                           alt="Tweet image 2" 
-                          className="w-full h-full object-cover object-center hover:opacity-95 transition-opacity"
+                          className="w-full h-full hover:opacity-95 transition-opacity"
                           width={300}
                           quality={80}
                         />
@@ -598,7 +598,7 @@ export const TweetCard: React.FC<TweetCardProps> = ({
                         <LazyImage 
                           src={tweet.images[2]} 
                           alt="Tweet image 3" 
-                          className="w-full h-full object-cover object-center hover:opacity-95 transition-opacity"
+                          className="w-full h-full hover:opacity-95 transition-opacity"
                           width={300}
                           quality={80}
                         />
@@ -616,7 +616,7 @@ export const TweetCard: React.FC<TweetCardProps> = ({
                           <LazyImage 
                             src={image} 
                             alt={`Tweet image ${index + 1}`} 
-                            className="w-full h-full object-cover object-center hover:opacity-95 transition-opacity"
+                            className="w-full h-full hover:opacity-95 transition-opacity"
                             width={300}
                             quality={80}
                           />
