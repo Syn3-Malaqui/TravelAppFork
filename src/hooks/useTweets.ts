@@ -217,16 +217,19 @@ export const useTweets = () => {
 
       if (error) throw error;
 
+      // Ensure data is an array before processing
+      const tweetsData = Array.isArray(data) ? data : [];
+
       // Get all tweet IDs for interaction fetching
-      const tweetIds = data?.map(tweet => tweet.id) || [];
-      const originalTweetIds = data?.filter(tweet => tweet.original_tweet_id).map(tweet => tweet.original_tweet_id) || [];
+      const tweetIds = tweetsData.map(tweet => tweet.id);
+      const originalTweetIds = tweetsData.filter(tweet => tweet.original_tweet_id).map(tweet => tweet.original_tweet_id);
       const allTweetIds = [...tweetIds, ...originalTweetIds];
 
       // Fetch user interactions
       const interactions = await fetchUserInteractions(allTweetIds);
       const { userLikes, userRetweets, userBookmarks } = interactions || { userLikes: [], userRetweets: [], userBookmarks: [] };
 
-      const formattedTweets: Tweet[] = (data as TweetWithProfile[]).map(tweet => 
+      const formattedTweets: Tweet[] = (tweetsData as TweetWithProfile[]).map(tweet => 
         formatTweetData(tweet, userLikes, userRetweets, userBookmarks)
       );
 
@@ -319,16 +322,19 @@ export const useTweets = () => {
 
       if (error) throw error;
 
+      // Ensure data is an array before processing
+      const tweetsData = Array.isArray(data) ? data : [];
+
       // Get all tweet IDs for interaction fetching
-      const tweetIds = data?.map(tweet => tweet.id) || [];
-      const originalTweetIds = data?.filter(tweet => tweet.original_tweet_id).map(tweet => tweet.original_tweet_id) || [];
+      const tweetIds = tweetsData.map(tweet => tweet.id);
+      const originalTweetIds = tweetsData.filter(tweet => tweet.original_tweet_id).map(tweet => tweet.original_tweet_id);
       const allTweetIds = [...tweetIds, ...originalTweetIds];
 
       // Fetch user interactions
       const interactions = await fetchUserInteractions(allTweetIds);
       const { userLikes, userRetweets, userBookmarks } = interactions || { userLikes: [], userRetweets: [], userBookmarks: [] };
 
-      const formattedTweets: Tweet[] = (data as TweetWithProfile[]).map(tweet => 
+      const formattedTweets: Tweet[] = (tweetsData as TweetWithProfile[]).map(tweet => 
         formatTweetData(tweet, userLikes, userRetweets, userBookmarks)
       );
 
@@ -376,12 +382,15 @@ export const useTweets = () => {
 
       if (error) throw error;
 
+      // Ensure data is an array before processing
+      const repliesData = Array.isArray(data) ? data : [];
+
       // Get user interactions for replies
-      const tweetIds = data?.map(tweet => tweet.id) || [];
+      const tweetIds = repliesData.map(tweet => tweet.id);
       const interactions = await fetchUserInteractions(tweetIds);
       const { userLikes, userRetweets, userBookmarks } = interactions || { userLikes: [], userRetweets: [], userBookmarks: [] };
 
-      const formattedReplies: Tweet[] = (data as TweetWithProfile[]).map(tweet => 
+      const formattedReplies: Tweet[] = (repliesData as TweetWithProfile[]).map(tweet => 
         formatTweetData(tweet, userLikes, userRetweets, userBookmarks)
       );
 
