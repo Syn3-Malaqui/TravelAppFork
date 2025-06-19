@@ -14,7 +14,8 @@ import {
   Eye
 } from 'lucide-react';
 import { Button } from '../ui/button';
-import { Avatar, AvatarImage, AvatarFallback } from '../ui/avatar';
+import { LazyAvatar } from '../ui/LazyAvatar';
+import { LazyImage } from '../ui/LazyImage';
 import { 
   DropdownMenu,
   DropdownMenuContent,
@@ -26,7 +27,6 @@ import { useNavigate } from 'react-router-dom';
 import { ReplyComposer } from './ReplyComposer';
 import { useTweets } from '../../hooks/useTweets';
 import { useTweetViews } from '../../hooks/useTweetViews';
-import { storageService } from '../../lib/storage';
 import { supabase } from '../../lib/supabase';
 
 interface MobileTweetCardProps {
@@ -414,12 +414,13 @@ export const MobileTweetCard: React.FC<MobileTweetCardProps> = ({
         >
           <div className="flex gap-3">
             {/* Avatar */}
-            <Avatar className="w-10 h-10 flex-shrink-0 cursor-pointer" onClick={handleProfileClick}>
-              <AvatarImage 
-                src={tweet.author.avatar ? storageService.getOptimizedImageUrl(tweet.author.avatar, { width: 80, quality: 80 }) : undefined} 
-              />
-              <AvatarFallback>{tweet.author.displayName[0]}</AvatarFallback>
-            </Avatar>
+            <LazyAvatar
+              src={tweet.author.avatar}
+              fallback={tweet.author.displayName[0]}
+              className="w-10 h-10 flex-shrink-0 cursor-pointer"
+              onClick={handleProfileClick}
+              size={80}
+            />
 
             {/* Content */}
             <div className="flex-1 min-w-0">
@@ -508,12 +509,12 @@ export const MobileTweetCard: React.FC<MobileTweetCardProps> = ({
                        navigate(`/profile/${originalTweet.author.username}`);
                      }}>
                   <div className="flex items-start space-x-2">
-                    <Avatar className="w-6 h-6 flex-shrink-0">
-                      <AvatarImage 
-                        src={originalTweet.author.avatar ? storageService.getOptimizedImageUrl(originalTweet.author.avatar, { width: 48, quality: 80 }) : undefined} 
-                      />
-                      <AvatarFallback className="text-xs">{originalTweet.author.displayName[0]}</AvatarFallback>
-                    </Avatar>
+                    <LazyAvatar
+                      src={originalTweet.author.avatar}
+                      fallback={originalTweet.author.displayName[0]}
+                      className="w-6 h-6 flex-shrink-0"
+                      size={48}
+                    />
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center space-x-1 mb-1">
                         <span className="font-bold text-gray-900 text-xs truncate">
@@ -544,10 +545,12 @@ export const MobileTweetCard: React.FC<MobileTweetCardProps> = ({
                   {tweet.images.length === 1 ? (
                     // Single image - uniform aspect ratio (16:9)
                     <div className="w-full aspect-[16/9] cursor-pointer" onClick={(e) => handleImageClick(0, e)}>
-                      <img 
+                      <LazyImage 
                         src={tweet.images[0]} 
                         alt="Tweet image" 
                         className="w-full h-full object-cover hover:opacity-95 transition-opacity"
+                        width={400}
+                        quality={80}
                       />
                     </div>
                   ) : tweet.images.length === 2 ? (
@@ -559,10 +562,12 @@ export const MobileTweetCard: React.FC<MobileTweetCardProps> = ({
                           className="aspect-[16/9] cursor-pointer"
                           onClick={(e) => handleImageClick(index, e)}
                         >
-                          <img 
+                          <LazyImage 
                             src={image} 
                             alt={`Tweet image ${index + 1}`} 
                             className="w-full h-full object-cover hover:opacity-95 transition-opacity"
+                            width={300}
+                            quality={80}
                           />
                         </div>
                       ))}
@@ -571,24 +576,30 @@ export const MobileTweetCard: React.FC<MobileTweetCardProps> = ({
                     // Three images - first takes full left side, two small on right
                     <div className="grid grid-cols-2 grid-rows-2 gap-1 h-64">
                       <div className="row-span-2 cursor-pointer" onClick={(e) => handleImageClick(0, e)}>
-                        <img 
+                        <LazyImage 
                           src={tweet.images[0]} 
                           alt="Tweet image 1" 
                           className="w-full h-full object-cover hover:opacity-95 transition-opacity"
+                          width={300}
+                          quality={80}
                         />
                       </div>
                       <div className="cursor-pointer" onClick={(e) => handleImageClick(1, e)}>
-                        <img 
+                        <LazyImage 
                           src={tweet.images[1]} 
                           alt="Tweet image 2" 
                           className="w-full h-full object-cover hover:opacity-95 transition-opacity"
+                          width={200}
+                          quality={80}
                         />
                       </div>
                       <div className="cursor-pointer" onClick={(e) => handleImageClick(2, e)}>
-                        <img 
+                        <LazyImage 
                           src={tweet.images[2]} 
                           alt="Tweet image 3" 
                           className="w-full h-full object-cover hover:opacity-95 transition-opacity"
+                          width={200}
+                          quality={80}
                         />
                       </div>
                     </div>
@@ -601,10 +612,12 @@ export const MobileTweetCard: React.FC<MobileTweetCardProps> = ({
                           className="aspect-[16/9] cursor-pointer"
                           onClick={(e) => handleImageClick(index, e)}
                         >
-                          <img 
+                          <LazyImage 
                             src={image} 
                             alt={`Tweet image ${index + 1}`} 
                             className="w-full h-full object-cover hover:opacity-95 transition-opacity"
+                            width={200}
+                            quality={80}
                           />
                         </div>
                       ))}
@@ -754,6 +767,7 @@ export const MobileTweetCard: React.FC<MobileTweetCardProps> = ({
               src={tweet.images[selectedImageIndex]}
               alt={`Tweet image ${selectedImageIndex + 1}`}
               className="max-w-full max-h-full object-contain"
+              loading="eager" // Force immediate loading for modal view
             />
 
             {/* Image counter */}

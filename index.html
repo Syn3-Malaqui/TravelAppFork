@@ -11,6 +11,10 @@
     <link rel="icon" type="image/jpeg" href="https://i.ibb.co/3YPVCWX2/Website-Logo.jpg" />
     <link rel="apple-touch-icon" href="https://i.ibb.co/3YPVCWX2/Website-Logo.jpg" />
     
+    <!-- Preload critical assets -->
+    <link rel="preload" href="tailwind.css" as="style" />
+    <link rel="preload" href="./src/index.tsx" as="script" type="module" />
+    
     <!-- Open Graph meta tags for social sharing -->
     <meta property="og:title" content="travelTwitter" />
     <meta property="og:description" content="Connect with travelers worldwide. Share your journey, discover new destinations, and get travel tips from the community." />
@@ -29,11 +33,9 @@
     <meta name="theme-color" content="#1DA1F2" />
     
     <link href="tailwind.css" rel="stylesheet" />
-    <link href="tailwind.css" rel="stylesheet" />
   </head>
   <body>
     <div id="app"></div>
     <script type="module" src="./src/index.tsx"></script>
   </body>
 </html>
-</link>

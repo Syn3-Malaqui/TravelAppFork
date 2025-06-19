@@ -3,17 +3,22 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { Sidebar } from './components/Layout/Sidebar';
 import { MobileNavigation } from './components/Layout/MobileNavigation';
 import { Timeline } from './components/Feed/Timeline';
-import { ComposePage } from './components/Tweet/ComposePage';
-import { TweetDetailPage } from './components/Tweet/TweetDetailPage';
-import { ProfilePage } from './components/Profile/ProfilePage';
-import { UserProfilePage } from './components/Profile/UserProfilePage';
-import { OptimizedSearchPage } from './components/Search/OptimizedSearchPage';
-import { HashtagPage } from './components/Search/HashtagPage';
-import { NotificationsPage } from './components/Notifications/NotificationsPage';
 import { FloatingActionButton } from './components/ui/FloatingActionButton';
 import { AuthPage } from './components/Auth/AuthPage';
+import { LazyLoadWrapper } from './components/ui/LazyLoadWrapper';
 import { useAuth } from './hooks/useAuth';
 import { usePreloader } from './hooks/usePreloader';
+
+// Lazy load heavy components
+import {
+  LazyTweetDetailPage,
+  LazyComposePage,
+  LazyProfilePage,
+  LazyUserProfilePage,
+  LazyOptimizedSearchPage,
+  LazyHashtagPage,
+  LazyNotificationsPage,
+} from './components/LazyComponents';
 
 function App() {
   const { user, loading } = useAuth();
@@ -49,14 +54,68 @@ function App() {
           <div className="flex-1 md:ml-64 flex flex-col overflow-hidden">
             <Routes>
               <Route path="/" element={<Timeline />} />
-              <Route path="/compose" element={<ComposePage />} />
-              <Route path="/tweet/:tweetId" element={<TweetDetailPage />} />
-              <Route path="/search" element={<OptimizedSearchPage />} />
-              <Route path="/hashtag/:hashtag" element={<HashtagPage />} />
-              <Route path="/notifications" element={<NotificationsPage />} />
-              <Route path="/profile/:username" element={<ProfilePage />} />
-              <Route path="/profile" element={<UserProfilePage />} />
-              <Route path="/explore" element={<div className="p-8 text-center text-gray-500">Explore Page</div>} />
+              <Route 
+                path="/compose" 
+                element={
+                  <LazyLoadWrapper>
+                    <LazyComposePage />
+                  </LazyLoadWrapper>
+                } 
+              />
+              <Route 
+                path="/tweet/:tweetId" 
+                element={
+                  <LazyLoadWrapper>
+                    <LazyTweetDetailPage />
+                  </LazyLoadWrapper>
+                } 
+              />
+              <Route 
+                path="/search" 
+                element={
+                  <LazyLoadWrapper>
+                    <LazyOptimizedSearchPage />
+                  </LazyLoadWrapper>
+                } 
+              />
+              <Route 
+                path="/hashtag/:hashtag" 
+                element={
+                  <LazyLoadWrapper>
+                    <LazyHashtagPage />
+                  </LazyLoadWrapper>
+                } 
+              />
+              <Route 
+                path="/notifications" 
+                element={
+                  <LazyLoadWrapper>
+                    <LazyNotificationsPage />
+                  </LazyLoadWrapper>
+                } 
+              />
+              <Route 
+                path="/profile/:username" 
+                element={
+                  <LazyLoadWrapper>
+                    <LazyProfilePage />
+                  </LazyLoadWrapper>
+                } 
+              />
+              <Route 
+                path="/profile" 
+                element={
+                  <LazyLoadWrapper>
+                    <LazyUserProfilePage />
+                  </LazyLoadWrapper>
+                } 
+              />
+              <Route 
+                path="/explore" 
+                element={
+                  <div className="p-8 text-center text-gray-500">Explore Page</div>
+                } 
+              />
             </Routes>
           </div>
         </div>

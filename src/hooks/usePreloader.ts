@@ -3,6 +3,7 @@ import { useAuth } from './useAuth';
 import { useNotifications } from './useNotifications';
 import { useHashtags } from './useHashtags';
 import { supabase } from '../lib/supabase';
+import { storageService } from '../lib/storage';
 
 interface PreloadedData {
   notifications: boolean;
@@ -53,6 +54,13 @@ export const usePreloader = () => {
           expiry: Date.now() + 5 * 60 * 1000 // 5 minutes
         }));
         preloadedRef.current.userProfile = true;
+        
+        // Preload avatar image
+        if (data.avatar_url) {
+          storageService.preloadImage(
+            storageService.getOptimizedImageUrl(data.avatar_url, { width: 80, quality: 80 })
+          );
+        }
       }
     } catch (error) {
       console.debug('Pre-loading user profile failed:', error);
@@ -111,6 +119,15 @@ export const usePreloader = () => {
           timestamp: Date.now(),
           expiry: Date.now() + 10 * 60 * 1000 // 10 minutes
         }));
+        
+        // Preload avatar images for suggested users
+        data.forEach(user => {
+          if (user.avatar_url) {
+            storageService.preloadImage(
+              storageService.getOptimizedImageUrl(user.avatar_url, { width: 80, quality: 80 })
+            );
+          }
+        });
       }
     } catch (error) {
       console.debug('Pre-loading user suggestions failed:', error);
@@ -160,6 +177,7 @@ export const usePreloader = () => {
       };
       sessionStorage.removeItem('preloaded_user_profile');
       sessionStorage.removeItem('preloaded_user_suggestions');
+      storageService.clearCache();
     }
 
     return () => {

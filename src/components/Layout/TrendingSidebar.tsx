@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { TrendingUp, Hash, MoreHorizontal } from 'lucide-react';
 import { Button } from '../ui/button';
@@ -7,6 +7,22 @@ import { useHashtags } from '../../hooks/useHashtags';
 export const TrendingSidebar: React.FC = () => {
   const navigate = useNavigate();
   const { trendingHashtags, loading } = useHashtags();
+  const [visibleHashtags, setVisibleHashtags] = useState<typeof trendingHashtags>([]);
+
+  // Implement progressive loading for trending hashtags
+  useEffect(() => {
+    if (trendingHashtags.length === 0) return;
+    
+    // Initially show just a few hashtags
+    setVisibleHashtags(trendingHashtags.slice(0, 3));
+    
+    // Then gradually show more
+    const timer = setTimeout(() => {
+      setVisibleHashtags(trendingHashtags.slice(0, 10));
+    }, 500);
+    
+    return () => clearTimeout(timer);
+  }, [trendingHashtags]);
 
   const handleHashtagClick = (hashtag: string) => {
     const cleanHashtag = hashtag.replace('#', '');
@@ -30,79 +46,59 @@ export const TrendingSidebar: React.FC = () => {
       <div className="flex-1 overflow-y-auto">
         <div className="p-4">
           {loading ? (
-            <div className="flex items-center justify-center py-8">
-              <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-500"></div>
-              <span className="ml-3 text-gray-500 text-sm">Loading trends...</span>
+            <div className="space-y-3">
+              {Array.from({ length: 5 }).map((_, index) => (
+                <div key={index} className="p-3 rounded-lg">
+                  <div className="flex items-center space-x-3">
+                    <div className="w-10 h-10 bg-gray-200 rounded-full animate-shimmer"></div>
+                    <div className="flex-1">
+                      <div className="h-4 bg-gray-200 rounded animate-shimmer w-3/4 mb-2"></div>
+                      <div className="h-3 bg-gray-200 rounded animate-shimmer w-1/2"></div>
+                    </div>
+                  </div>
+                </div>
+              ))}
             </div>
           ) : (
-            <div className="space-y-1">
-              {trendingHashtags.slice(0, 10).map((item, index) => (
+            <div className="space-y-3">
+              {visibleHashtags.map((item, index) => (
                 <div
                   key={item.hashtag}
                   onClick={() => handleHashtagClick(item.hashtag)}
-                  className="p-3 hover:bg-gray-50 rounded-xl cursor-pointer transition-colors group"
+                  className="p-3 hover:bg-gray-50 rounded-lg cursor-pointer transition-colors group"
                 >
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center space-x-2 mb-1">
-                        <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0">
-                          <Hash className="w-4 h-4 text-blue-500" />
-                        </div>
-                        <div className="min-w-0 flex-1">
-                          <p className="font-bold text-gray-900 text-sm truncate group-hover:text-blue-600 transition-colors">
-                            {item.hashtag}
-                          </p>
-                        </div>
-                        <div className="flex items-center space-x-1 text-gray-400 flex-shrink-0">
-                          <TrendingUp className="w-3 h-3" />
-                          <span className="text-xs">#{index + 1}</span>
-                        </div>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-3">
+                      <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
+                        <Hash className="w-5 h-5 text-blue-500" />
                       </div>
-                      
-                      <div className="ml-10">
+                      <div>
+                        <p className="font-bold text-gray-900 text-sm truncate group-hover:text-blue-600 transition-colors">
+                          {item.hashtag}
+                        </p>
                         <p className="text-xs text-gray-500">
                           {item.count.toLocaleString()} posts
                           {item.recent_tweets > 0 && (
-                            <span className="ml-2 text-blue-500 font-medium">
+                            <span className="ml-2 text-blue-500">
                               • {item.recent_tweets} recent
                             </span>
                           )}
                         </p>
                       </div>
                     </div>
-
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="opacity-0 group-hover:opacity-100 transition-opacity p-1 h-6 w-6 flex-shrink-0"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        // Handle more options
-                      }}
-                    >
-                      <MoreHorizontal className="h-3 w-3" />
-                    </Button>
+                    <div className="flex items-center space-x-1 text-gray-400">
+                      <TrendingUp className="w-3 h-3" />
+                      <span className="text-xs">#{index + 1}</span>
+                    </div>
                   </div>
                 </div>
               ))}
 
-              {trendingHashtags.length === 0 && !loading && (
+              {visibleHashtags.length === 0 && !loading && (
                 <div className="text-center py-8 text-gray-500">
                   <Hash className="w-8 h-8 mx-auto mb-2 text-gray-300" />
                   <p className="text-sm">No trending hashtags yet</p>
                   <p className="text-xs text-gray-400 mt-1">Check back later!</p>
-                </div>
-              )}
-
-              {trendingHashtags.length > 10 && (
-                <div className="pt-3">
-                  <Button
-                    variant="ghost"
-                    onClick={() => navigate('/search')}
-                    className="w-full text-blue-500 hover:text-blue-600 hover:bg-blue-50 text-sm py-2"
-                  >
-                    Show more trends
-                  </Button>
                 </div>
               )}
             </div>
