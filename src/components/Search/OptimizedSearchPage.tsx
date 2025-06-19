@@ -244,9 +244,9 @@ export const OptimizedSearchPage: React.FC = () => {
   const selectableCountries = FILTER_COUNTRIES.filter(country => country.code !== 'ALL');
 
   return (
-    <div className="min-h-screen bg-white">
-      {/* Header */}
-      <div className="sticky top-0 bg-white/80 backdrop-blur-md border-b border-gray-200 z-10">
+    <div className="min-h-screen bg-white flex flex-col h-screen overflow-hidden">
+      {/* Header - Fixed */}
+      <div className="bg-white/80 backdrop-blur-md border-b border-gray-200 z-10 flex-shrink-0">
         <div className="px-4 py-3">
           <div className="relative">
             <Search className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
@@ -302,7 +302,7 @@ export const OptimizedSearchPage: React.FC = () => {
 
         {/* Expandable Filters */}
         {showFilters && (
-          <div className="border-t border-gray-200 bg-gray-50 p-4 space-y-4">
+          <div className="border-t border-gray-200 bg-gray-50 p-4 space-y-4 flex-shrink-0">
             {/* Tags Filter */}
             <div>
               <h3 className="text-sm font-medium text-gray-700 mb-2 flex items-center">
@@ -357,9 +357,9 @@ export const OptimizedSearchPage: React.FC = () => {
         )}
       </div>
 
-      {/* Search Tabs */}
+      {/* Search Tabs - Fixed */}
       {searchQuery && (
-        <div className="border-b border-gray-200">
+        <div className="border-b border-gray-200 flex-shrink-0">
           <div className="flex">
             {[
               { id: 'top', label: 'Top' },
@@ -384,182 +384,88 @@ export const OptimizedSearchPage: React.FC = () => {
         </div>
       )}
 
-      {/* Content */}
-      <div className="pb-20 md:pb-0">
-        {!searchQuery ? (
-          /* Trending Section */
-          <div className="p-4">
-            <h2 className="text-xl font-bold mb-4 flex items-center">
-              <TrendingUp className="w-5 h-5 mr-2 text-blue-500" />
-              Trending hashtags
-              <span className="text-sm font-normal text-gray-500 ml-2">(past 48 hours)</span>
-            </h2>
-            
-            {hashtagsLoading ? (
-              <div className="space-y-3">
-                {Array.from({ length: 10 }).map((_, index) => (
-                  <div key={index} className="p-3 rounded-lg">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center space-x-3">
-                        <div className="w-10 h-10 bg-gray-200 rounded-full animate-shimmer"></div>
-                        <div>
-                          <div className="h-4 bg-gray-200 rounded animate-shimmer w-24 mb-2"></div>
-                          <div className="h-3 bg-gray-200 rounded animate-shimmer w-16"></div>
-                        </div>
-                      </div>
-                      <div className="flex items-center space-x-1">
-                        <div className="w-4 h-4 bg-gray-200 rounded animate-shimmer"></div>
-                        <div className="w-6 h-3 bg-gray-200 rounded animate-shimmer"></div>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <div className="space-y-3">
-                {trendingHashtags.slice(0, 20).map((item, index) => (
-                  <div
-                    key={item.hashtag}
-                    onClick={() => handleHashtagClick(item.hashtag)}
-                    className="p-3 hover:bg-gray-50 rounded-lg cursor-pointer transition-colors group"
-                  >
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center space-x-3">
-                        <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
-                          <Hash className="w-5 h-5 text-blue-500" />
-                        </div>
-                        <div>
-                          <p className="font-bold text-gray-900 text-sm truncate group-hover:text-blue-600 transition-colors">
-                            {item.hashtag}
-                          </p>
-                          <p className="text-xs text-gray-500">
-                            {item.count.toLocaleString()} posts
-                            {item.recent_tweets > 0 && (
-                              <span className="ml-2 text-blue-500">
-                                • {item.recent_tweets} recent
-                              </span>
-                            )}
-                          </p>
-                        </div>
-                      </div>
-                      <div className="flex items-center space-x-1 text-gray-400">
-                        <TrendingUp className="w-3 h-3" />
-                        <span className="text-xs">#{index + 1}</span>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-
-            {/* Show preloaded user suggestions */}
-            {searchResults.length > 0 && (
-              <div className="mt-8">
-                <h2 className="text-xl font-bold mb-4 flex items-center">
-                  <User className="w-5 h-5 mr-2 text-green-500" />
-                  Suggested for you
-                </h2>
+      {/* Content - Scrollable */}
+      <div className="flex-1 overflow-y-auto">
+        <div className="pb-20 md:pb-0">
+          {!searchQuery ? (
+            /* Trending Section */
+            <div className="p-4">
+              <h2 className="text-xl font-bold mb-4 flex items-center">
+                <TrendingUp className="w-5 h-5 mr-2 text-blue-500" />
+                Trending hashtags
+                <span className="text-sm font-normal text-gray-500 ml-2">(past 48 hours)</span>
+              </h2>
+              
+              {hashtagsLoading ? (
                 <div className="space-y-3">
-                  {searchResults.slice(0, 5).map((result, index) => (
-                    <div
-                      key={index}
-                      onClick={() => handleUserClick(result.data as UserType)}
-                      className="p-4 hover:bg-gray-50 cursor-pointer transition-colors rounded-lg"
-                    >
-                      <div className="flex items-center space-x-3">
-                        <Avatar className="w-12 h-12">
-                          <AvatarImage 
-                            src={(result.data as UserType).avatar ? storageService.getOptimizedImageUrl((result.data as UserType).avatar, { width: 80, quality: 80 }) : undefined} 
-                          />
-                          <AvatarFallback>{(result.data as UserType).displayName[0]}</AvatarFallback>
-                        </Avatar>
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center space-x-2">
-                            <p className="font-bold text-gray-900 truncate">
-                              {(result.data as UserType).displayName}
-                            </p>
-                            {(result.data as UserType).verified && (
-                              <div className="w-4 h-4 bg-blue-500 rounded-full flex items-center justify-center">
-                                <span className="text-white text-xs">✓</span>
-                              </div>
-                            )}
+                  {Array.from({ length: 10 }).map((_, index) => (
+                    <div key={index} className="p-3 rounded-lg">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center space-x-3">
+                          <div className="w-10 h-10 bg-gray-200 rounded-full animate-shimmer"></div>
+                          <div>
+                            <div className="h-4 bg-gray-200 rounded animate-shimmer w-24 mb-2"></div>
+                            <div className="h-3 bg-gray-200 rounded animate-shimmer w-16"></div>
                           </div>
-                          <p className="text-gray-500 text-sm">@{(result.data as UserType).username}</p>
-                          {(result.data as UserType).bio && (
-                            <p className="text-gray-700 text-sm mt-1 line-clamp-2">
-                              {(result.data as UserType).bio}
-                            </p>
-                          )}
-                          <p className="text-gray-500 text-xs mt-1">
-                            {(result.data as UserType).followers.toLocaleString()} followers
-                          </p>
+                        </div>
+                        <div className="flex items-center space-x-1">
+                          <div className="w-4 h-4 bg-gray-200 rounded animate-shimmer"></div>
+                          <div className="w-6 h-3 bg-gray-200 rounded animate-shimmer"></div>
                         </div>
                       </div>
                     </div>
                   ))}
                 </div>
-              </div>
-            )}
-          </div>
-        ) : (
-          /* Search Results */
-          <div>
-            {/* Active Filters Display */}
-            {hasActiveFilters && (
-              <div className="bg-blue-50 border-b border-blue-200 px-4 py-3">
-                <div className="flex items-center justify-between">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <span className="text-sm text-blue-700 font-medium">Active filters:</span>
-                    {selectedTags.map(tag => (
-                      <span key={tag} className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-blue-100 text-blue-700">
-                        <Hash className="w-3 h-3 mr-1" />
-                        {tag}
-                      </span>
-                    ))}
-                    {selectedCountries.map(countryCode => {
-                      const country = selectableCountries.find(c => c.code === countryCode);
-                      return (
-                        <span key={countryCode} className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-green-100 text-green-700">
-                          <span className="mr-1">{country?.flag}</span>
-                          {country?.name}
-                        </span>
-                      );
-                    })}
-                  </div>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={clearAllFilters}
-                    className="text-blue-600 hover:text-blue-700 text-xs"
-                  >
-                    Clear
-                  </Button>
+              ) : (
+                <div className="space-y-3">
+                  {trendingHashtags.slice(0, 20).map((item, index) => (
+                    <div
+                      key={item.hashtag}
+                      onClick={() => handleHashtagClick(item.hashtag)}
+                      className="p-3 hover:bg-gray-50 rounded-lg cursor-pointer transition-colors group"
+                    >
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center space-x-3">
+                          <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
+                            <Hash className="w-5 h-5 text-blue-500" />
+                          </div>
+                          <div>
+                            <p className="font-bold text-gray-900 text-sm truncate group-hover:text-blue-600 transition-colors">
+                              {item.hashtag}
+                            </p>
+                            <p className="text-xs text-gray-500">
+                              {item.count.toLocaleString()} posts
+                              {item.recent_tweets > 0 && (
+                                <span className="ml-2 text-blue-500">
+                                  • {item.recent_tweets} recent
+                                </span>
+                              )}
+                            </p>
+                          </div>
+                        </div>
+                        <div className="flex items-center space-x-1 text-gray-400">
+                          <TrendingUp className="w-3 h-3" />
+                          <span className="text-xs">#{index + 1}</span>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
                 </div>
-              </div>
-            )}
+              )}
 
-            {loading ? (
-              <div className="p-4">
-                <TweetSkeletonList count={5} isMobile={window.innerWidth < 768} />
-              </div>
-            ) : filteredResults.length === 0 ? (
-              <div className="text-center py-12 text-gray-500">
-                <p className="text-lg">No results found</p>
-                <p className="text-sm mt-2">
-                  {hasActiveFilters 
-                    ? 'Try adjusting your filters or search terms'
-                    : 'Try searching for something else'
-                  }
-                </p>
-              </div>
-            ) : (
-              <div className="divide-y divide-gray-100">
-                {filteredResults.map((result, index) => (
-                  <div key={index}>
-                    {result.type === 'user' ? (
+              {/* Show preloaded user suggestions */}
+              {searchResults.length > 0 && (
+                <div className="mt-8">
+                  <h2 className="text-xl font-bold mb-4 flex items-center">
+                    <User className="w-5 h-5 mr-2 text-green-500" />
+                    Suggested for you
+                  </h2>
+                  <div className="space-y-3">
+                    {searchResults.slice(0, 5).map((result, index) => (
                       <div
+                        key={index}
                         onClick={() => handleUserClick(result.data as UserType)}
-                        className="p-4 hover:bg-gray-50 cursor-pointer transition-colors"
+                        className="p-4 hover:bg-gray-50 cursor-pointer transition-colors rounded-lg"
                       >
                         <div className="flex items-center space-x-3">
                           <Avatar className="w-12 h-12">
@@ -578,11 +484,6 @@ export const OptimizedSearchPage: React.FC = () => {
                                   <span className="text-white text-xs">✓</span>
                                 </div>
                               )}
-                              {(result.data as UserType).country && (
-                                <span className="text-sm">
-                                  {selectableCountries.find(c => c.code === (result.data as UserType).country)?.flag}
-                                </span>
-                              )}
                             </div>
                             <p className="text-gray-500 text-sm">@{(result.data as UserType).username}</p>
                             {(result.data as UserType).bio && (
@@ -596,54 +497,155 @@ export const OptimizedSearchPage: React.FC = () => {
                           </div>
                         </div>
                       </div>
-                    ) : result.type === 'hashtag' ? (
-                      <div
-                        onClick={() => handleHashtagClick(result.data as string)}
-                        className="p-4 hover:bg-gray-50 cursor-pointer transition-colors"
-                      >
-                        <div className="flex items-center space-x-3">
-                          <div className="w-12  h-12 bg-blue-100 rounded-full flex items-center justify-center">
-                            <Hash className="w-6 h-6 text-blue-500" />
-                          </div>
-                          <div>
-                            <p className="font-bold text-gray-900">{result.data as string}</p>
-                            <p className="text-gray-500 text-sm">
-                              {getHashtagStats(result.data as string)}
-                            </p>
-                          </div>
-                        </div>
-                      </div>
-                    ) : (
-                      /* Tweet Result */
-                      <div>
-                        {/* Desktop Tweet Card */}
-                        <div className="hidden md:block">
-                          <TweetCard 
-                            tweet={result.data} 
-                            onLike={() => handleLike(result.data.id, result.data.isLiked)}
-                            onRetweet={() => handleRetweet(result.data.id)}
-                            onBookmark={() => handleBookmark(result.data.id)}
-                            currentUserId={user?.id}
-                          />
-                        </div>
-                        {/* Mobile Tweet Card */}
-                        <div className="md:hidden">
-                          <MobileTweetCard 
-                            tweet={result.data}
-                            onLike={() => handleLike(result.data.id, result.data.isLiked)}
-                            onRetweet={() => handleRetweet(result.data.id)}
-                            onBookmark={() => handleBookmark(result.data.id)}
-                            currentUserId={user?.id}
-                          />
-                        </div>
-                      </div>
-                    )}
+                    ))}
                   </div>
-                ))}
-              </div>
-            )}
-          </div>
-        )}
+                </div>
+              )}
+            </div>
+          ) : (
+            /* Search Results */
+            <div>
+              {/* Active Filters Display */}
+              {hasActiveFilters && (
+                <div className="bg-blue-50 border-b border-blue-200 px-4 py-3">
+                  <div className="flex items-center justify-between">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className="text-sm text-blue-700 font-medium">Active filters:</span>
+                      {selectedTags.map(tag => (
+                        <span key={tag} className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-blue-100 text-blue-700">
+                          <Hash className="w-3 h-3 mr-1" />
+                          {tag}
+                        </span>
+                      ))}
+                      {selectedCountries.map(countryCode => {
+                        const country = selectableCountries.find(c => c.code === countryCode);
+                        return (
+                          <span key={countryCode} className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-green-100 text-green-700">
+                            <span className="mr-1">{country?.flag}</span>
+                            {country?.name}
+                          </span>
+                        );
+                      })}
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={clearAllFilters}
+                      className="text-blue-600 hover:text-blue-700 text-xs"
+                    >
+                      Clear
+                    </Button>
+                  </div>
+                </div>
+              )}
+
+              {loading ? (
+                <div className="p-4">
+                  <TweetSkeletonList count={5} isMobile={window.innerWidth < 768} />
+                </div>
+              ) : filteredResults.length === 0 ? (
+                <div className="text-center py-12 text-gray-500">
+                  <p className="text-lg">No results found</p>
+                  <p className="text-sm mt-2">
+                    {hasActiveFilters 
+                      ? 'Try adjusting your filters or search terms'
+                      : 'Try searching for something else'
+                    }
+                  </p>
+                </div>
+              ) : (
+                <div className="divide-y divide-gray-100">
+                  {filteredResults.map((result, index) => (
+                    <div key={index}>
+                      {result.type === 'user' ? (
+                        <div
+                          onClick={() => handleUserClick(result.data as UserType)}
+                          className="p-4 hover:bg-gray-50 cursor-pointer transition-colors"
+                        >
+                          <div className="flex items-center space-x-3">
+                            <Avatar className="w-12 h-12">
+                              <AvatarImage 
+                                src={(result.data as UserType).avatar ? storageService.getOptimizedImageUrl((result.data as UserType).avatar, { width: 80, quality: 80 }) : undefined} 
+                              />
+                              <AvatarFallback>{(result.data as UserType).displayName[0]}</AvatarFallback>
+                            </Avatar>
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center space-x-2">
+                                <p className="font-bold text-gray-900 truncate">
+                                  {(result.data as UserType).displayName}
+                                </p>
+                                {(result.data as UserType).verified && (
+                                  <div className="w-4 h-4 bg-blue-500 rounded-full flex items-center justify-center">
+                                    <span className="text-white text-xs">✓</span>
+                                  </div>
+                                )}
+                                {(result.data as UserType).country && (
+                                  <span className="text-sm">
+                                    {selectableCountries.find(c => c.code === (result.data as UserType).country)?.flag}
+                                  </span>
+                                )}
+                              </div>
+                              <p className="text-gray-500 text-sm">@{(result.data as UserType).username}</p>
+                              {(result.data as UserType).bio && (
+                                <p className="text-gray-700 text-sm mt-1 line-clamp-2">
+                                  {(result.data as UserType).bio}
+                                </p>
+                              )}
+                              <p className="text-gray-500 text-xs mt-1">
+                                {(result.data as UserType).followers.toLocaleString()} followers
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                      ) : result.type === 'hashtag' ? (
+                        <div
+                          onClick={() => handleHashtagClick(result.data as string)}
+                          className="p-4 hover:bg-gray-50 cursor-pointer transition-colors"
+                        >
+                          <div className="flex items-center space-x-3">
+                            <div className="w-12  h-12 bg-blue-100 rounded-full flex items-center justify-center">
+                              <Hash className="w-6 h-6 text-blue-500" />
+                            </div>
+                            <div>
+                              <p className="font-bold text-gray-900">{result.data as string}</p>
+                              <p className="text-gray-500 text-sm">
+                                {getHashtagStats(result.data as string)}
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                      ) : (
+                        /* Tweet Result */
+                        <div>
+                          {/* Desktop Tweet Card */}
+                          <div className="hidden md:block">
+                            <TweetCard 
+                              tweet={result.data} 
+                              onLike={() => handleLike(result.data.id, result.data.isLiked)}
+                              onRetweet={() => handleRetweet(result.data.id)}
+                              onBookmark={() => handleBookmark(result.data.id)}
+                              currentUserId={user?.id}
+                            />
+                          </div>
+                          {/* Mobile Tweet Card */}
+                          <div className="md:hidden">
+                            <MobileTweetCard 
+                              tweet={result.data}
+                              onLike={() => handleLike(result.data.id, result.data.isLiked)}
+                              onRetweet={() => handleRetweet(result.data.id)}
+                              onBookmark={() => handleBookmark(result.data.id)}
+                              currentUserId={user?.id}
+                            />
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
