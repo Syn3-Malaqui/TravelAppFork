@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { X, Image, Smile, Calendar, MapPin, ArrowLeft, Tag, Globe, Upload, Trash2 } from 'lucide-react';
+import { X, Image, Smile, Calendar, MapPin, ArrowLeft, Tag, Globe, Upload, Trash2, Camera } from 'lucide-react';
 import { Button } from '../ui/button';
 import { Avatar, AvatarImage, AvatarFallback } from '../ui/avatar';
 import { TWEET_CATEGORIES, TweetCategory, FILTER_COUNTRIES } from '../../types';
@@ -26,7 +26,20 @@ export const ComposePage: React.FC = () => {
     avatar: string;
   } | null>(null);
   const [profileLoading, setProfileLoading] = useState(true);
+  const [isMobile, setIsMobile] = useState(false);
   const { createTweet } = useTweets();
+
+  // Detect mobile device
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
 
   // Fetch user profile data
   useEffect(() => {
@@ -241,23 +254,29 @@ export const ComposePage: React.FC = () => {
           >
             <ArrowLeft className="h-5 w-5" />
           </Button>
-          <h1 className="text-lg font-semibold">Compose Tweet</h1>
+          <h1 className={`font-semibold ${isMobile ? 'text-lg' : 'text-lg'}`}>
+            {isMobile ? 'New Tweet' : 'Compose Tweet'}
+          </h1>
         </div>
         
-        {/* Character Count in Header */}
-        <div className="flex items-center space-x-4">
-          <div className={`text-sm font-bold ${
-            isOverLimit ? 'text-red-500' : 
-            isNearLimit ? 'text-yellow-600' :
-            'text-gray-500'
-          }`}>
-            {characterCount}/{maxCharacters}
-          </div>
+        {/* Character Count and Tweet Button */}
+        <div className="flex items-center space-x-3">
+          {!isMobile && (
+            <div className={`text-sm font-bold ${
+              isOverLimit ? 'text-red-500' : 
+              isNearLimit ? 'text-yellow-600' :
+              'text-gray-500'
+            }`}>
+              {characterCount}/{maxCharacters}
+            </div>
+          )}
           
           <Button
             onClick={handleSubmit}
             disabled={!content.trim() || isOverLimit || loading || uploadingImage}
-            className="bg-blue-500 hover:bg-blue-600 text-white font-bold px-6 py-2 rounded-full disabled:opacity-50"
+            className={`bg-blue-500 hover:bg-blue-600 text-white font-bold rounded-full disabled:opacity-50 ${
+              isMobile ? 'px-4 py-2 text-sm' : 'px-6 py-2'
+            }`}
           >
             {loading ? 'Posting...' : 'Tweet'}
           </Button>
@@ -266,10 +285,10 @@ export const ComposePage: React.FC = () => {
 
       {/* Scrollable Content */}
       <div className="flex-1 overflow-y-auto">
-        <div className="p-4">
+        <div className={`${isMobile ? 'p-3' : 'p-4'}`}>
           {/* Error Message */}
           {error && (
-            <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg">
+            <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
               <p className="text-red-700 text-sm">{error}</p>
             </div>
           )}
@@ -312,15 +331,15 @@ export const ComposePage: React.FC = () => {
           )}
 
           {/* Compose Area */}
-          <div className="flex space-x-4">
+          <div className={`flex space-x-3 ${isMobile ? 'space-x-2' : 'space-x-4'}`}>
             {/* Avatar */}
             <div className="flex-shrink-0">
               {profileLoading ? (
-                <div className="w-12 h-12 bg-gray-200 rounded-full animate-shimmer"></div>
+                <div className={`bg-gray-200 rounded-full animate-shimmer ${isMobile ? 'w-10 h-10' : 'w-12 h-12'}`}></div>
               ) : (
-                <Avatar className="w-12 h-12">
+                <Avatar className={isMobile ? 'w-10 h-10' : 'w-12 h-12'}>
                   <AvatarImage 
-                    src={userProfile?.avatar ? storageService.getOptimizedImageUrl(userProfile.avatar, { width: 96, quality: 80 }) : undefined} 
+                    src={userProfile?.avatar ? storageService.getOptimizedImageUrl(userProfile.avatar, { width: isMobile ? 80 : 96, quality: 80 }) : undefined} 
                   />
                   <AvatarFallback className="bg-blue-500 text-white font-bold">
                     {userProfile?.displayName?.[0]?.toUpperCase() || 'U'}
@@ -333,7 +352,7 @@ export const ComposePage: React.FC = () => {
             <div className="flex-1 min-w-0">
               {/* User Info Display */}
               {userProfile && !profileLoading && (
-                <div className="mb-3 text-sm text-gray-600">
+                <div className={`mb-2 text-gray-600 ${isMobile ? 'text-xs' : 'text-sm'}`}>
                   Posting as <span className="font-medium text-gray-900">{userProfile.displayName}</span>
                   <span className="text-gray-500 ml-1">@{userProfile.username}</span>
                 </div>
@@ -343,51 +362,91 @@ export const ComposePage: React.FC = () => {
                 value={content}
                 onChange={(e) => setContent(e.target.value)}
                 placeholder="What's happening?"
-                className={`w-full text-xl placeholder-gray-500 border-none outline-none resize-none min-h-[200px] bg-transparent focus:ring-0 focus:border-none focus:outline-none ${
+                className={`w-full placeholder-gray-500 border-none outline-none resize-none bg-transparent focus:ring-0 focus:border-none focus:outline-none ${
                   isOverLimit ? 'text-red-600' : ''
-                }`}
+                } ${isMobile ? 'text-lg min-h-[120px]' : 'text-xl min-h-[200px]'}`}
                 autoFocus
               />
 
-              {/* Real-time Character Count Display */}
-              <div className="mt-4 flex items-center justify-between">
-                <div className="text-sm text-gray-500">
-                  {content.length === 0 ? (
-                    'Start typing your tweet...'
-                  ) : (
-                    `${content.split(' ').length} words`
-                  )}
-                </div>
-                
-                <div className="flex items-center space-x-3">
-                  {/* Character Progress Bar */}
-                  <div className="w-20 h-2 bg-gray-200 rounded-full overflow-hidden">
-                    <div 
-                      className={`h-full transition-all duration-300 ${
-                        isOverLimit ? 'bg-red-500' : 
-                        isNearLimit ? 'bg-yellow-500' :
-                        'bg-blue-500'
-                      }`}
-                      style={{ 
-                        width: `${Math.min((characterCount / maxCharacters) * 100, 100)}%` 
-                      }}
-                    />
+              {/* Mobile Character Count Display */}
+              {isMobile && (
+                <div className="mt-2 flex items-center justify-between">
+                  <div className="text-xs text-gray-500">
+                    {content.length === 0 ? (
+                      'Start typing your tweet...'
+                    ) : (
+                      `${content.split(' ').length} words`
+                    )}
                   </div>
                   
-                  {/* Numeric Count */}
-                  <div className={`text-sm font-bold min-w-[60px] text-right ${
-                    isOverLimit ? 'text-red-500' : 
-                    isNearLimit ? 'text-yellow-600' :
-                    'text-gray-500'
-                  }`}>
-                    {characterCount}/{maxCharacters}
+                  <div className="flex items-center space-x-2">
+                    {/* Character Progress Bar */}
+                    <div className="w-16 h-1.5 bg-gray-200 rounded-full overflow-hidden">
+                      <div 
+                        className={`h-full transition-all duration-300 ${
+                          isOverLimit ? 'bg-red-500' : 
+                          isNearLimit ? 'bg-yellow-500' :
+                          'bg-blue-500'
+                        }`}
+                        style={{ 
+                          width: `${Math.min((characterCount / maxCharacters) * 100, 100)}%` 
+                        }}
+                      />
+                    </div>
+                    
+                    {/* Numeric Count */}
+                    <div className={`text-xs font-bold min-w-[50px] text-right ${
+                      isOverLimit ? 'text-red-500' : 
+                      isNearLimit ? 'text-yellow-600' :
+                      'text-gray-500'
+                    }`}>
+                      {characterCount}/{maxCharacters}
+                    </div>
                   </div>
                 </div>
-              </div>
+              )}
+
+              {/* Desktop Character Count Display */}
+              {!isMobile && (
+                <div className="mt-4 flex items-center justify-between">
+                  <div className="text-sm text-gray-500">
+                    {content.length === 0 ? (
+                      'Start typing your tweet...'
+                    ) : (
+                      `${content.split(' ').length} words`
+                    )}
+                  </div>
+                  
+                  <div className="flex items-center space-x-3">
+                    {/* Character Progress Bar */}
+                    <div className="w-20 h-2 bg-gray-200 rounded-full overflow-hidden">
+                      <div 
+                        className={`h-full transition-all duration-300 ${
+                          isOverLimit ? 'bg-red-500' : 
+                          isNearLimit ? 'bg-yellow-500' :
+                          'bg-blue-500'
+                        }`}
+                        style={{ 
+                          width: `${Math.min((characterCount / maxCharacters) * 100, 100)}%` 
+                        }}
+                      />
+                    </div>
+                    
+                    {/* Numeric Count */}
+                    <div className={`text-sm font-bold min-w-[60px] text-right ${
+                      isOverLimit ? 'text-red-500' : 
+                      isNearLimit ? 'text-yellow-600' :
+                      'text-gray-500'
+                    }`}>
+                      {characterCount}/{maxCharacters}
+                    </div>
+                  </div>
+                </div>
+              )}
 
               {/* Image Preview */}
               {images.length > 0 && (
-                <div className="mt-4">
+                <div className="mt-3">
                   <div className={`grid gap-2 ${
                     images.length === 1 ? 'grid-cols-1' :
                     images.length === 2 ? 'grid-cols-2' :
@@ -404,23 +463,25 @@ export const ComposePage: React.FC = () => {
                         <img 
                           src={storageService.getOptimizedImageUrl(image, { width: 400, quality: 80 })}
                           alt={`Upload ${index + 1}`}
-                          className="w-full h-32 object-cover rounded-lg border border-gray-200"
+                          className={`w-full object-cover rounded-lg border border-gray-200 ${
+                            isMobile ? 'h-24' : 'h-32'
+                          }`}
                         />
                         <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors rounded-lg" />
                         <Button
                           variant="ghost"
                           size="sm"
-                          className="absolute top-2 right-2 bg-black/70 text-white hover:bg-black/90 p-2 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                          className="absolute top-1 right-1 bg-black/70 text-white hover:bg-black/90 p-1.5 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
                           onClick={() => removeImage(index)}
                         >
-                          <Trash2 className="h-4 w-4" />
+                          <Trash2 className="h-3 w-3" />
                         </Button>
                       </div>
                     ))}
                   </div>
                   
                   {/* Image count indicator */}
-                  <div className="mt-2 text-sm text-gray-500 flex items-center justify-between">
+                  <div className={`mt-2 text-gray-500 flex items-center justify-between ${isMobile ? 'text-xs' : 'text-sm'}`}>
                     <span>{images.length}/4 images</span>
                     {images.length < 4 && (
                       <span className="text-blue-500">You can add {4 - images.length} more image{4 - images.length !== 1 ? 's' : ''}</span>
@@ -430,10 +491,10 @@ export const ComposePage: React.FC = () => {
               )}
 
               {/* Categories Selection */}
-              <div className="mt-6">
-                <div className="flex items-center space-x-2 mb-3">
-                  <Tag className="h-5 w-5 text-gray-500" />
-                  <span className="text-sm font-medium text-gray-700">Add categories:</span>
+              <div className={`${isMobile ? 'mt-4' : 'mt-6'}`}>
+                <div className={`flex items-center space-x-2 mb-2 ${isMobile ? 'mb-2' : 'mb-3'}`}>
+                  <Tag className={`text-gray-500 ${isMobile ? 'h-4 w-4' : 'h-5 w-5'}`} />
+                  <span className={`font-medium text-gray-700 ${isMobile ? 'text-sm' : 'text-sm'}`}>Add categories:</span>
                 </div>
                 <div className="flex flex-wrap gap-2">
                   {TWEET_CATEGORIES.map((category) => (
@@ -442,7 +503,9 @@ export const ComposePage: React.FC = () => {
                       variant="outline"
                       size="sm"
                       onClick={() => toggleCategory(category)}
-                      className={`rounded-full px-3 py-1 text-sm transition-colors ${
+                      className={`rounded-full px-3 py-1 transition-colors ${
+                        isMobile ? 'text-xs' : 'text-sm'
+                      } ${
                         selectedCategories.includes(category)
                           ? 'bg-blue-500 text-white border-blue-500 hover:bg-blue-600'
                           : 'border-gray-300 text-gray-700 hover:bg-gray-50'
@@ -455,19 +518,21 @@ export const ComposePage: React.FC = () => {
               </div>
 
               {/* Countries Selection */}
-              <div className="mt-4">
-                <div className="flex items-center space-x-2 mb-3">
-                  <Globe className="h-5 w-5 text-gray-500" />
-                  <span className="text-sm font-medium text-gray-700">Add countries:</span>
+              <div className="mt-3">
+                <div className={`flex items-center space-x-2 mb-2 ${isMobile ? 'mb-2' : 'mb-3'}`}>
+                  <Globe className={`text-gray-500 ${isMobile ? 'h-4 w-4' : 'h-5 w-5'}`} />
+                  <span className={`font-medium text-gray-700 ${isMobile ? 'text-sm' : 'text-sm'}`}>Add countries:</span>
                 </div>
-                <div className="flex flex-wrap gap-2 max-h-32 overflow-y-auto">
+                <div className={`flex flex-wrap gap-2 overflow-y-auto ${isMobile ? 'max-h-24' : 'max-h-32'}`}>
                   {selectableCountries.map((country) => (
                     <Button
                       key={country.code}
                       variant="outline"
                       size="sm"
                       onClick={() => toggleCountry(country.code)}
-                      className={`rounded-full px-3 py-1 text-sm transition-colors flex items-center space-x-1 ${
+                      className={`rounded-full px-3 py-1 transition-colors flex items-center space-x-1 ${
+                        isMobile ? 'text-xs' : 'text-sm'
+                      } ${
                         selectedCountries.includes(country.code)
                           ? 'bg-green-500 text-white border-green-500 hover:bg-green-600'
                           : 'border-gray-300 text-gray-700 hover:bg-gray-50'
@@ -482,24 +547,26 @@ export const ComposePage: React.FC = () => {
 
               {/* Selected Tags Display */}
               {(selectedCategories.length > 0 || selectedCountries.length > 0) && (
-                <div className="mt-4">
-                  <div className="text-sm font-medium text-gray-700 mb-2">Selected tags:</div>
+                <div className="mt-3">
+                  <div className={`font-medium text-gray-700 mb-2 ${isMobile ? 'text-sm' : 'text-sm'}`}>Selected tags:</div>
                   <div className="flex flex-wrap gap-2">
                     {/* Category Tags */}
                     {selectedCategories.map((category) => (
                       <span
                         key={category}
-                        className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-50 text-blue-700 border border-blue-200"
+                        className={`inline-flex items-center px-2 py-1 rounded-full font-medium bg-blue-50 text-blue-700 border border-blue-200 ${
+                          isMobile ? 'text-xs' : 'text-sm'
+                        }`}
                       >
-                        <Tag className="w-3 h-3 mr-1" />
+                        <Tag className={`mr-1 ${isMobile ? 'w-2 h-2' : 'w-3 h-3'}`} />
                         {category}
                         <Button
                           variant="ghost"
                           size="sm"
                           onClick={() => toggleCategory(category)}
-                          className="ml-1 h-4 w-4 p-0 hover:bg-blue-100 rounded-full"
+                          className={`ml-1 hover:bg-blue-100 rounded-full ${isMobile ? 'h-3 w-3 p-0' : 'h-4 w-4 p-0'}`}
                         >
-                          <X className="h-3 w-3" />
+                          <X className={isMobile ? 'h-2 w-2' : 'h-3 w-3'} />
                         </Button>
                       </span>
                     ))}
@@ -510,18 +577,20 @@ export const ComposePage: React.FC = () => {
                       return (
                         <span
                           key={countryCode}
-                          className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-50 text-green-700 border border-green-200"
+                          className={`inline-flex items-center px-2 py-1 rounded-full font-medium bg-green-50 text-green-700 border border-green-200 ${
+                            isMobile ? 'text-xs' : 'text-sm'
+                          }`}
                         >
-                          <Globe className="w-3 h-3 mr-1" />
+                          <Globe className={`mr-1 ${isMobile ? 'w-2 h-2' : 'w-3 h-3'}`} />
                           <span className="mr-1">{country?.flag}</span>
                           {country?.name}
                           <Button
                             variant="ghost"
                             size="sm"
                             onClick={() => toggleCountry(countryCode)}
-                            className="ml-1 h-4 w-4 p-0 hover:bg-green-100 rounded-full"
+                            className={`ml-1 hover:bg-green-100 rounded-full ${isMobile ? 'h-3 w-3 p-0' : 'h-4 w-4 p-0'}`}
                           >
-                            <X className="h-3 w-3" />
+                            <X className={isMobile ? 'h-2 w-2' : 'h-3 w-3'} />
                           </Button>
                         </span>
                       );
@@ -535,9 +604,9 @@ export const ComposePage: React.FC = () => {
       </div>
 
       {/* Bottom Actions */}
-      <div className="bg-white border-t border-gray-200 p-4 flex-shrink-0">
+      <div className="bg-white border-t border-gray-200 p-3 flex-shrink-0">
         <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-4">
+          <div className="flex items-center space-x-3">
             {/* Image Upload */}
             <label className={`cursor-pointer ${images.length >= 4 || uploadingImage ? 'opacity-50 cursor-not-allowed' : ''}`}>
               <input
@@ -548,83 +617,135 @@ export const ComposePage: React.FC = () => {
                 onChange={handleImageUpload}
                 disabled={images.length >= 4 || uploadingImage}
               />
-              <div className="flex items-center space-x-2 text-blue-500 hover:text-blue-600 transition-colors">
+              <div className={`flex items-center space-x-2 text-blue-500 hover:text-blue-600 transition-colors ${
+                isMobile ? 'p-2' : 'p-1'
+              }`}>
                 {uploadingImage ? (
-                  <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-500"></div>
+                  <div className={`animate-spin rounded-full border-b-2 border-blue-500 ${isMobile ? 'h-5 w-5' : 'h-6 w-6'}`}></div>
                 ) : (
-                  <Image className="h-6 w-6" />
+                  <Image className={isMobile ? 'h-5 w-5' : 'h-6 w-6'} />
                 )}
-                <span className="text-sm font-medium hidden md:block">
-                  {uploadingImage ? 'Uploading...' : 'Add photos'}
-                </span>
+                {!isMobile && (
+                  <span className="text-sm font-medium">
+                    {uploadingImage ? 'Uploading...' : 'Add photos'}
+                  </span>
+                )}
               </div>
             </label>
 
-            <Button variant="ghost" size="sm" className="p-1 hidden md:block">
-              <Smile className="h-6 w-6 text-blue-500" />
-            </Button>
-            <Button variant="ghost" size="sm" className="p-1 hidden md:block">
-              <Calendar className="h-6 w-6 text-blue-500" />
-            </Button>
-            <Button variant="ghost" size="sm" className="p-1 hidden md:block">
-              <MapPin className="h-6 w-6 text-blue-500" />
-            </Button>
+            {/* Additional action buttons for desktop */}
+            {!isMobile && (
+              <>
+                <Button variant="ghost" size="sm" className="p-1">
+                  <Smile className="h-6 w-6 text-blue-500" />
+                </Button>
+                <Button variant="ghost" size="sm" className="p-1">
+                  <Calendar className="h-6 w-6 text-blue-500" />
+                </Button>
+                <Button variant="ghost" size="sm" className="p-1">
+                  <MapPin className="h-6 w-6 text-blue-500" />
+                </Button>
+              </>
+            )}
           </div>
 
-          {/* Enhanced Character Count Display */}
-          <div className="flex items-center space-x-4">
-            {/* Progress Circle */}
-            <div className="relative w-10 h-10">
-              <svg className="w-10 h-10 transform -rotate-90" viewBox="0 0 36 36">
-                <path
-                  d="M18 2.0845
-                    a 15.9155 15.9155 0 0 1 0 31.831
-                    a 15.9155 15.9155 0 0 1 0 -31.831"
-                  fill="none"
-                  stroke="#e5e7eb"
-                  strokeWidth="2"
-                />
-                <path
-                  d="M18 2.0845
-                    a 15.9155 15.9155 0 0 1 0 31.831
-                    a 15.9155 15.9155 0 0 1 0 -31.831"
-                  fill="none"
-                  stroke={
-                    isOverLimit ? "#ef4444" : 
-                    isNearLimit ? "#eab308" :
-                    "#3b82f6"
-                  }
-                  strokeWidth="2"
-                  strokeDasharray={`${Math.min((characterCount / maxCharacters) * 100, 100)}, 100`}
-                />
-              </svg>
-              <div className="absolute inset-0 flex items-center justify-center">
-                <span className={`text-xs font-bold ${
+          {/* Mobile Character Count Display in Bottom Bar */}
+          {isMobile && (
+            <div className="flex items-center space-x-3">
+              {/* Progress Circle */}
+              <div className="relative w-8 h-8">
+                <svg className="w-8 h-8 transform -rotate-90" viewBox="0 0 36 36">
+                  <path
+                    d="M18 2.0845
+                      a 15.9155 15.9155 0 0 1 0 31.831
+                      a 15.9155 15.9155 0 0 1 0 -31.831"
+                    fill="none"
+                    stroke="#e5e7eb"
+                    strokeWidth="2"
+                  />
+                  <path
+                    d="M18 2.0845
+                      a 15.9155 15.9155 0 0 1 0 31.831
+                      a 15.9155 15.9155 0 0 1 0 -31.831"
+                    fill="none"
+                    stroke={
+                      isOverLimit ? "#ef4444" : 
+                      isNearLimit ? "#eab308" :
+                      "#3b82f6"
+                    }
+                    strokeWidth="2"
+                    strokeDasharray={`${Math.min((characterCount / maxCharacters) * 100, 100)}, 100`}
+                  />
+                </svg>
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <span className={`text-xs font-bold ${
+                    isOverLimit ? 'text-red-500' : 
+                    isNearLimit ? 'text-yellow-600' :
+                    'text-gray-500'
+                  }`}>
+                    {isOverLimit ? `-${Math.abs(remainingChars)}` : remainingChars}
+                  </span>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Desktop Character Count Display */}
+          {!isMobile && (
+            <div className="flex items-center space-x-4">
+              {/* Progress Circle */}
+              <div className="relative w-10 h-10">
+                <svg className="w-10 h-10 transform -rotate-90" viewBox="0 0 36 36">
+                  <path
+                    d="M18 2.0845
+                      a 15.9155 15.9155 0 0 1 0 31.831
+                      a 15.9155 15.9155 0 0 1 0 -31.831"
+                    fill="none"
+                    stroke="#e5e7eb"
+                    strokeWidth="2"
+                  />
+                  <path
+                    d="M18 2.0845
+                      a 15.9155 15.9155 0 0 1 0 31.831
+                      a 15.9155 15.9155 0 0 1 0 -31.831"
+                    fill="none"
+                    stroke={
+                      isOverLimit ? "#ef4444" : 
+                      isNearLimit ? "#eab308" :
+                      "#3b82f6"
+                    }
+                    strokeWidth="2"
+                    strokeDasharray={`${Math.min((characterCount / maxCharacters) * 100, 100)}, 100`}
+                  />
+                </svg>
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <span className={`text-xs font-bold ${
+                    isOverLimit ? 'text-red-500' : 
+                    isNearLimit ? 'text-yellow-600' :
+                    'text-gray-500'
+                  }`}>
+                    {isOverLimit ? `-${Math.abs(remainingChars)}` : remainingChars}
+                  </span>
+                </div>
+              </div>
+
+              {/* Character Count Text */}
+              <div className="text-right">
+                <div className={`text-lg font-bold ${
                   isOverLimit ? 'text-red-500' : 
                   isNearLimit ? 'text-yellow-600' :
-                  'text-gray-500'
+                  'text-gray-700'
                 }`}>
-                  {isOverLimit ? `-${Math.abs(remainingChars)}` : remainingChars}
-                </span>
+                  {characterCount}/{maxCharacters}
+                </div>
+                <div className="text-xs text-gray-500">
+                  {isOverLimit ? 'Over limit' : 
+                   isNearLimit ? 'Almost there' :
+                   'Characters'}
+                </div>
               </div>
             </div>
-
-            {/* Character Count Text */}
-            <div className="text-right">
-              <div className={`text-lg font-bold ${
-                isOverLimit ? 'text-red-500' : 
-                isNearLimit ? 'text-yellow-600' :
-                'text-gray-700'
-              }`}>
-                {characterCount}/{maxCharacters}
-              </div>
-              <div className="text-xs text-gray-500">
-                {isOverLimit ? 'Over limit' : 
-                 isNearLimit ? 'Almost there' :
-                 'Characters'}
-              </div>
-            </div>
-          </div>
+          )}
         </div>
       </div>
     </div>
