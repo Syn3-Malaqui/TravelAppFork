@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '../lib/supabase';
 import { Tweet, TweetWithProfile, TweetCategory } from '../types';
+import type { RealtimeChannel } from '@supabase/supabase-js';
 
 export const useTweets = () => {
   const [tweets, setTweets] = useState<Tweet[]>([]);
@@ -8,6 +9,7 @@ export const useTweets = () => {
   const [replies, setReplies] = useState<{ [tweetId: string]: Tweet[] }>({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const channelRef = useRef<RealtimeChannel | null>(null);
   
   // Cache for user interactions to reduce database queries
   const [userInteractions, setUserInteractions] = useState<{
@@ -149,6 +151,90 @@ export const useTweets = () => {
       };
     }
   }, []);
+
+  // Handle real-time updates for likes, retweets, and other interactions
+  const handleRealtimeUpdate = useCallback((payload: any, table: string) => {
+    const updateTweetInList = (tweetList: Tweet[]) => 
+      tweetList.map(tweet => {
+        if (tweet.id === payload.new?.tweet_id || tweet.id === payload.old?.tweet_id) {
+          const updates: Partial<Tweet> = {};
+          
+          if (table === 'likes') {
+            if (payload.eventType === 'INSERT') {
+              updates.likes = tweet.likes + 1;
+            } else if (payload.eventType === 'DELETE') {
+              updates.likes = Math.max(0, tweet.likes - 1);
+            }
+          } else if (table === 'retweets') {
+            if (payload.eventType === 'INSERT') {
+              updates.retweets = tweet.retweets + 1;
+            } else if (payload.eventType === 'DELETE') {
+              updates.retweets = Math.max(0, tweet.retweets - 1);
+            }
+          }
+          
+          return { ...tweet, ...updates };
+        }
+        return tweet;
+      });
+
+    setTweets(updateTweetInList);
+    setFollowingTweets(updateTweetInList);
+  }, []);
+
+  // Set up real-time subscriptions for interactions
+  useEffect(() => {
+    const setupRealtimeSubscriptions = async () => {
+      try {
+        // Clean up existing subscriptions
+        if (channelRef.current) {
+          await channelRef.current.unsubscribe();
+          supabase.removeChannel(channelRef.current);
+          channelRef.current = null;
+        }
+
+        // Create new subscription channel
+        const channel = supabase
+          .channel('tweet_interactions')
+          .on(
+            'postgres_changes',
+            {
+              event: '*',
+              schema: 'public',
+              table: 'likes',
+            },
+            (payload) => handleRealtimeUpdate(payload, 'likes')
+          )
+          .on(
+            'postgres_changes',
+            {
+              event: '*',
+              schema: 'public',
+              table: 'retweets',
+            },
+            (payload) => handleRealtimeUpdate(payload, 'retweets')
+          );
+
+        channelRef.current = channel;
+        
+        if (channel.state !== 'joined' && channel.state !== 'joining') {
+          await channel.subscribe();
+        }
+      } catch (error) {
+        console.error('Error setting up real-time subscriptions:', error);
+      }
+    };
+
+    setupRealtimeSubscriptions();
+
+    return () => {
+      if (channelRef.current) {
+        channelRef.current.unsubscribe();
+        supabase.removeChannel(channelRef.current);
+        channelRef.current = null;
+      }
+    };
+  }, [handleRealtimeUpdate]);
 
   const fetchTweets = useCallback(async () => {
     try {
@@ -534,10 +620,7 @@ export const useTweets = () => {
 
       if (error) throw error;
 
-      // Only refresh if we're on the first page to avoid unnecessary queries
-      await fetchTweets();
-      await fetchFollowingTweets();
-      
+      // Don't manually refresh - real-time subscription will handle it
       return data;
     } catch (err: any) {
       throw new Error(err.message);
@@ -752,6 +835,10 @@ export const useTweets = () => {
     return () => {
       if (updateTimeoutRef.current) {
         clearTimeout(updateTimeoutRef.current);
+      }
+      if (channelRef.current) {
+        channelRef.current.unsubscribe();
+        supabase.removeChannel(channelRef.current);
       }
     };
   }, []);

@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '../lib/supabase';
 import { Tweet, TweetWithProfile } from '../types';
+import type { RealtimeChannel } from '@supabase/supabase-js';
 
 interface UseLazyTweetsOptions {
   pageSize?: number;
@@ -19,6 +20,8 @@ export const useLazyTweets = (options: UseLazyTweetsOptions = {}) => {
   const loadingRef = useRef(false);
   const cacheKey = followingOnly ? 'following-feed' : 'for-you-feed';
   const cacheTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const channelRef = useRef<RealtimeChannel | null>(null);
+  const followingIdsRef = useRef<string[]>([]);
 
   // Cache tweets in sessionStorage for better performance
   const cacheTweets = useCallback((tweetsToCache: Tweet[]) => {
@@ -160,6 +163,183 @@ export const useLazyTweets = (options: UseLazyTweetsOptions = {}) => {
     }
   }, []);
 
+  // Fetch following users for real-time filtering
+  const fetchFollowingUsers = useCallback(async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return [];
+
+      const { data: followingData, error } = await supabase
+        .from('follows')
+        .select('following_id')
+        .eq('follower_id', user.id);
+
+      if (error) throw error;
+
+      const followingIds = followingData?.map(follow => follow.following_id) || [];
+      followingIdsRef.current = followingIds;
+      return followingIds;
+    } catch (error) {
+      console.error('Error fetching following users:', error);
+      return [];
+    }
+  }, []);
+
+  // Handle real-time tweet insertions
+  const handleNewTweet = useCallback(async (payload: any) => {
+    try {
+      // Don't add if this is a reply (we only want main timeline tweets)
+      if (payload.new.reply_to) return;
+
+      // For following feed, check if the author is in the following list
+      if (followingOnly && !followingIdsRef.current.includes(payload.new.author_id)) {
+        return;
+      }
+
+      // Fetch the complete tweet data with profile information
+      const { data: tweetData, error } = await supabase
+        .from('tweets')
+        .select(`
+          id,
+          content,
+          author_id,
+          image_urls,
+          hashtags,
+          mentions,
+          tags,
+          likes_count,
+          retweets_count,
+          replies_count,
+          views_count,
+          created_at,
+          is_retweet,
+          original_tweet_id,
+          profiles!tweets_author_id_fkey (
+            id,
+            username,
+            display_name,
+            avatar_url,
+            bio,
+            verified,
+            followers_count,
+            following_count,
+            country,
+            created_at
+          ),
+          original_tweet:original_tweet_id (
+            id,
+            content,
+            image_urls,
+            hashtags,
+            mentions,
+            tags,
+            likes_count,
+            retweets_count,
+            replies_count,
+            views_count,
+            created_at,
+            profiles!tweets_author_id_fkey (
+              id,
+              username,
+              display_name,
+              avatar_url,
+              bio,
+              verified,
+              followers_count,
+              following_count,
+              country,
+              created_at
+            )
+          )
+        `)
+        .eq('id', payload.new.id)
+        .single();
+
+      if (error || !tweetData) return;
+
+      // Get user interactions for the new tweet
+      const { userLikes, userRetweets, userBookmarks } = await fetchUserInteractions([tweetData.id]);
+
+      // Format the new tweet
+      const formattedTweet = formatTweetData(tweetData as TweetWithProfile, userLikes, userRetweets, userBookmarks);
+
+      // Add to the beginning of the tweets list
+      setTweets(prev => {
+        // Check if tweet already exists to avoid duplicates
+        if (prev.some(tweet => tweet.id === formattedTweet.id)) {
+          return prev;
+        }
+        
+        const newTweets = [formattedTweet, ...prev];
+        
+        // Cache the updated tweets
+        if (cacheTimeoutRef.current) {
+          clearTimeout(cacheTimeoutRef.current);
+        }
+        cacheTimeoutRef.current = setTimeout(() => {
+          cacheTweets(newTweets);
+        }, 500);
+        
+        return newTweets;
+      });
+    } catch (error) {
+      console.error('Error handling new tweet:', error);
+    }
+  }, [followingOnly, fetchUserInteractions, formatTweetData, cacheTweets]);
+
+  // Set up real-time subscription
+  useEffect(() => {
+    const setupRealtimeSubscription = async () => {
+      try {
+        // Clean up existing subscription
+        if (channelRef.current) {
+          await channelRef.current.unsubscribe();
+          supabase.removeChannel(channelRef.current);
+          channelRef.current = null;
+        }
+
+        // For following feed, we need to fetch following users first
+        if (followingOnly) {
+          await fetchFollowingUsers();
+        }
+
+        // Create new subscription
+        const channelName = `tweets_realtime_${followingOnly ? 'following' : 'for_you'}`;
+        
+        const channel = supabase
+          .channel(channelName)
+          .on(
+            'postgres_changes',
+            {
+              event: 'INSERT',
+              schema: 'public',
+              table: 'tweets',
+              filter: 'reply_to=is.null', // Only listen for main tweets, not replies
+            },
+            handleNewTweet
+          );
+
+        channelRef.current = channel;
+        
+        if (channel.state !== 'joined' && channel.state !== 'joining') {
+          await channel.subscribe();
+        }
+      } catch (error) {
+        console.error('Error setting up real-time subscription:', error);
+      }
+    };
+
+    setupRealtimeSubscription();
+
+    return () => {
+      if (channelRef.current) {
+        channelRef.current.unsubscribe();
+        supabase.removeChannel(channelRef.current);
+        channelRef.current = null;
+      }
+    };
+  }, [followingOnly, handleNewTweet, fetchFollowingUsers]);
+
   const loadMoreTweets = useCallback(async () => {
     if (loadingRef.current || !hasMore) return;
 
@@ -251,6 +431,7 @@ export const useLazyTweets = (options: UseLazyTweetsOptions = {}) => {
         }
 
         const followingIds = followingData.map(follow => follow.following_id);
+        followingIdsRef.current = followingIds; // Update the ref for real-time filtering
         query = query.in('author_id', followingIds);
       }
 
@@ -346,6 +527,10 @@ export const useLazyTweets = (options: UseLazyTweetsOptions = {}) => {
     return () => {
       if (cacheTimeoutRef.current) {
         clearTimeout(cacheTimeoutRef.current);
+      }
+      if (channelRef.current) {
+        channelRef.current.unsubscribe();
+        supabase.removeChannel(channelRef.current);
       }
     };
   }, []);
