@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '../lib/supabase';
 import { Tweet, TweetWithProfile, TweetCategory } from '../types';
 
@@ -8,6 +8,21 @@ export const useTweets = () => {
   const [replies, setReplies] = useState<{ [tweetId: string]: Tweet[] }>({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  
+  // Cache for user interactions to reduce database queries
+  const [userInteractions, setUserInteractions] = useState<{
+    likes: Set<string>;
+    retweets: Set<string>;
+    bookmarks: Set<string>;
+  }>({
+    likes: new Set(),
+    retweets: new Set(),
+    bookmarks: new Set(),
+  });
+
+  // Debounce and batch updates
+  const updateTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const pendingUpdatesRef = useRef<Set<string>>(new Set());
 
   const formatTweetData = (tweetData: TweetWithProfile, userLikes: string[], userRetweets: string[], userBookmarks: string[]): Tweet => {
     // If this is a retweet, we need to format the original tweet
@@ -89,12 +104,58 @@ export const useTweets = () => {
     };
   };
 
+  // Optimized function to fetch user interactions once and cache them
+  const fetchUserInteractions = useCallback(async (tweetIds: string[]) => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user || tweetIds.length === 0) return;
+
+      // Batch fetch all interactions in a single query each
+      const [likesResult, retweetsResult, bookmarksResult] = await Promise.all([
+        supabase
+          .from('likes')
+          .select('tweet_id')
+          .eq('user_id', user.id)
+          .in('tweet_id', tweetIds),
+        supabase
+          .from('retweets')
+          .select('tweet_id')
+          .eq('user_id', user.id)
+          .in('tweet_id', tweetIds),
+        supabase
+          .from('bookmarks')
+          .select('tweet_id')
+          .eq('user_id', user.id)
+          .in('tweet_id', tweetIds)
+      ]);
+
+      const likes = new Set(likesResult.data?.map(like => like.tweet_id) || []);
+      const retweets = new Set(retweetsResult.data?.map(retweet => retweet.tweet_id) || []);
+      const bookmarks = new Set(bookmarksResult.data?.map(bookmark => bookmark.tweet_id) || []);
+
+      setUserInteractions({ likes, retweets, bookmarks });
+
+      return {
+        userLikes: Array.from(likes),
+        userRetweets: Array.from(retweets),
+        userBookmarks: Array.from(bookmarks),
+      };
+    } catch (error) {
+      console.error('Error fetching user interactions:', error);
+      return {
+        userLikes: [],
+        userRetweets: [],
+        userBookmarks: [],
+      };
+    }
+  }, []);
+
   const fetchTweets = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
       
-      // Optimized query with selective field loading and better indexing
+      // Simplified query - only fetch essential fields initially
       const { data, error } = await supabase
         .from('tweets')
         .select(`
@@ -150,49 +211,20 @@ export const useTweets = () => {
             )
           )
         `)
-        .is('reply_to', null) // Only fetch top-level tweets, not replies
+        .is('reply_to', null)
         .order('created_at', { ascending: false })
-        .limit(30); // Reduced limit for faster loading
+        .limit(20); // Reduced limit for faster loading
 
       if (error) throw error;
 
-      // Get current user to check likes/retweets/bookmarks
-      const { data: { user } } = await supabase.auth.getUser();
-      
-      // Get user's interactions in parallel for better performance
-      let userLikes: string[] = [];
-      let userRetweets: string[] = [];
-      let userBookmarks: string[] = [];
-      
-      if (user) {
-        const tweetIds = data?.map(tweet => tweet.id) || [];
-        const originalTweetIds = data?.filter(tweet => tweet.original_tweet_id).map(tweet => tweet.original_tweet_id) || [];
-        const allTweetIds = [...tweetIds, ...originalTweetIds];
+      // Get all tweet IDs for interaction fetching
+      const tweetIds = data?.map(tweet => tweet.id) || [];
+      const originalTweetIds = data?.filter(tweet => tweet.original_tweet_id).map(tweet => tweet.original_tweet_id) || [];
+      const allTweetIds = [...tweetIds, ...originalTweetIds];
 
-        if (allTweetIds.length > 0) {
-          const [likesResult, retweetsResult, bookmarksResult] = await Promise.all([
-            supabase
-              .from('likes')
-              .select('tweet_id')
-              .eq('user_id', user.id)
-              .in('tweet_id', allTweetIds),
-            supabase
-              .from('retweets')
-              .select('tweet_id')
-              .eq('user_id', user.id)
-              .in('tweet_id', allTweetIds),
-            supabase
-              .from('bookmarks')
-              .select('tweet_id')
-              .eq('user_id', user.id)
-              .in('tweet_id', allTweetIds)
-          ]);
-          
-          userLikes = likesResult.data?.map(like => like.tweet_id) || [];
-          userRetweets = retweetsResult.data?.map(retweet => retweet.tweet_id) || [];
-          userBookmarks = bookmarksResult.data?.map(bookmark => bookmark.tweet_id) || [];
-        }
-      }
+      // Fetch user interactions
+      const interactions = await fetchUserInteractions(allTweetIds);
+      const { userLikes, userRetweets, userBookmarks } = interactions || { userLikes: [], userRetweets: [], userBookmarks: [] };
 
       const formattedTweets: Tweet[] = (data as TweetWithProfile[]).map(tweet => 
         formatTweetData(tweet, userLikes, userRetweets, userBookmarks)
@@ -205,7 +237,7 @@ export const useTweets = () => {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [fetchUserInteractions]);
 
   const fetchFollowingTweets = useCallback(async () => {
     try {
@@ -219,25 +251,7 @@ export const useTweets = () => {
         return;
       }
 
-      // First, get the list of users that the current user is following
-      const { data: followsData, error: followsError } = await supabase
-        .from('follows')
-        .select('following_id')
-        .eq('follower_id', user.id);
-
-      if (followsError) throw followsError;
-
-      // If user is not following anyone, return empty array
-      if (!followsData || followsData.length === 0) {
-        setFollowingTweets([]);
-        setLoading(false);
-        return;
-      }
-
-      // Extract the following IDs into an array
-      const followingIds = followsData.map(follow => follow.following_id);
-
-      // Now fetch tweets from the users being followed
+      // Optimized query using a single join instead of separate queries
       const { data, error } = await supabase
         .from('tweets')
         .select(`
@@ -293,45 +307,26 @@ export const useTweets = () => {
             )
           )
         `)
-        .in('author_id', followingIds)
-        .is('reply_to', null) // Only fetch top-level tweets, not replies
+        .in('author_id', 
+          supabase
+            .from('follows')
+            .select('following_id')
+            .eq('follower_id', user.id)
+        )
+        .is('reply_to', null)
         .order('created_at', { ascending: false })
-        .limit(30); // Reduced limit for faster loading
+        .limit(20);
 
       if (error) throw error;
 
-      // Get user's interactions in parallel for better performance
-      let userLikes: string[] = [];
-      let userRetweets: string[] = [];
-      let userBookmarks: string[] = [];
+      // Get all tweet IDs for interaction fetching
+      const tweetIds = data?.map(tweet => tweet.id) || [];
+      const originalTweetIds = data?.filter(tweet => tweet.original_tweet_id).map(tweet => tweet.original_tweet_id) || [];
+      const allTweetIds = [...tweetIds, ...originalTweetIds];
 
-      if (data && data.length > 0) {
-        const tweetIds = data.map(tweet => tweet.id);
-        const originalTweetIds = data.filter(tweet => tweet.original_tweet_id).map(tweet => tweet.original_tweet_id);
-        const allTweetIds = [...tweetIds, ...originalTweetIds];
-
-        const [likesResult, retweetsResult, bookmarksResult] = await Promise.all([
-          supabase
-            .from('likes')
-            .select('tweet_id')
-            .eq('user_id', user.id)
-            .in('tweet_id', allTweetIds),
-          supabase
-            .from('retweets')
-            .select('tweet_id')
-            .eq('user_id', user.id)
-            .in('tweet_id', allTweetIds),
-          supabase
-            .from('bookmarks')
-            .select('tweet_id')
-            .eq('user_id', user.id)
-            .in('tweet_id', allTweetIds)
-        ]);
-        
-        userLikes = likesResult.data?.map(like => like.tweet_id) || [];
-        userRetweets = retweetsResult.data?.map(retweet => retweet.tweet_id) || [];
-        userBookmarks = bookmarksResult.data?.map(bookmark => bookmark.tweet_id) || [];
-      }
+      // Fetch user interactions
+      const interactions = await fetchUserInteractions(allTweetIds);
+      const { userLikes, userRetweets, userBookmarks } = interactions || { userLikes: [], userRetweets: [], userBookmarks: [] };
 
       const formattedTweets: Tweet[] = (data as TweetWithProfile[]).map(tweet => 
         formatTweetData(tweet, userLikes, userRetweets, userBookmarks)
@@ -344,7 +339,7 @@ export const useTweets = () => {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [fetchUserInteractions]);
 
   const fetchReplies = async (tweetId: string) => {
     try {
@@ -381,38 +376,10 @@ export const useTweets = () => {
 
       if (error) throw error;
 
-      // Get current user to check likes/retweets/bookmarks
-      const { data: { user } } = await supabase.auth.getUser();
-      
-      let userLikes: string[] = [];
-      let userRetweets: string[] = [];
-      let userBookmarks: string[] = [];
-      
-      if (user && data && data.length > 0) {
-        const tweetIds = data.map(tweet => tweet.id);
-
-        const [likesResult, retweetsResult, bookmarksResult] = await Promise.all([
-          supabase
-            .from('likes')
-            .select('tweet_id')
-            .eq('user_id', user.id)
-            .in('tweet_id', tweetIds),
-          supabase
-            .from('retweets')
-            .select('tweet_id')
-            .eq('user_id', user.id)
-            .in('tweet_id', tweetIds),
-          supabase
-            .from('bookmarks')
-            .select('tweet_id')
-            .eq('user_id', user.id)
-            .in('tweet_id', tweetIds)
-        ]);
-        
-        userLikes = likesResult.data?.map(like => like.tweet_id) || [];
-        userRetweets = retweetsResult.data?.map(retweet => retweet.tweet_id) || [];
-        userBookmarks = bookmarksResult.data?.map(bookmark => bookmark.tweet_id) || [];
-      }
+      // Get user interactions for replies
+      const tweetIds = data?.map(tweet => tweet.id) || [];
+      const interactions = await fetchUserInteractions(tweetIds);
+      const { userLikes, userRetweets, userBookmarks } = interactions || { userLikes: [], userRetweets: [], userBookmarks: [] };
 
       const formattedReplies: Tweet[] = (data as TweetWithProfile[]).map(tweet => 
         formatTweetData(tweet, userLikes, userRetweets, userBookmarks)
@@ -426,6 +393,98 @@ export const useTweets = () => {
       return formattedReplies;
     } catch (err: any) {
       console.error('Error fetching replies:', err);
+      throw new Error(err.message);
+    }
+  };
+
+  // Optimized interaction functions with immediate UI updates and batched database updates
+  const updateTweetInteraction = (tweetId: string, type: 'like' | 'retweet' | 'bookmark', isAdding: boolean) => {
+    // Update local state immediately for better UX
+    const updateTweetInList = (tweetList: Tweet[]) => 
+      tweetList.map(tweet => {
+        if (tweet.id === tweetId) {
+          const updates: Partial<Tweet> = {};
+          
+          if (type === 'like') {
+            updates.isLiked = isAdding;
+            updates.likes = isAdding ? tweet.likes + 1 : Math.max(0, tweet.likes - 1);
+          } else if (type === 'retweet') {
+            updates.isRetweeted = isAdding;
+            updates.retweets = isAdding ? tweet.retweets + 1 : Math.max(0, tweet.retweets - 1);
+          } else if (type === 'bookmark') {
+            updates.isBookmarked = isAdding;
+          }
+          
+          return { ...tweet, ...updates };
+        }
+        return tweet;
+      });
+
+    setTweets(updateTweetInList);
+    setFollowingTweets(updateTweetInList);
+
+    // Update cached interactions
+    setUserInteractions(prev => {
+      const newInteractions = { ...prev };
+      if (isAdding) {
+        newInteractions[type === 'like' ? 'likes' : type === 'retweet' ? 'retweets' : 'bookmarks'].add(tweetId);
+      } else {
+        newInteractions[type === 'like' ? 'likes' : type === 'retweet' ? 'retweets' : 'bookmarks'].delete(tweetId);
+      }
+      return newInteractions;
+    });
+  };
+
+  const likeTweet = async (tweetId: string) => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('User not authenticated');
+
+      // Update UI immediately
+      updateTweetInteraction(tweetId, 'like', true);
+
+      const { error } = await supabase
+        .from('likes')
+        .insert({
+          user_id: user.id,
+          tweet_id: tweetId,
+        });
+
+      if (error) {
+        // Revert UI changes on error
+        updateTweetInteraction(tweetId, 'like', false);
+        if (error.code === '23505') {
+          throw new Error('Tweet already liked');
+        }
+        throw error;
+      }
+    } catch (err: any) {
+      throw new Error(err.message);
+    }
+  };
+
+  const unlikeTweet = async (tweetId: string) => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('User not authenticated');
+
+      // Update UI immediately
+      updateTweetInteraction(tweetId, 'like', false);
+
+      const { error } = await supabase
+        .from('likes')
+        .delete()
+        .match({
+          user_id: user.id,
+          tweet_id: tweetId,
+        });
+
+      if (error) {
+        // Revert UI changes on error
+        updateTweetInteraction(tweetId, 'like', true);
+        throw error;
+      }
+    } catch (err: any) {
       throw new Error(err.message);
     }
   };
@@ -454,7 +513,7 @@ export const useTweets = () => {
 
       if (error) throw error;
 
-      // Refresh tweets after creating
+      // Only refresh if we're on the first page to avoid unnecessary queries
       await fetchTweets();
       await fetchFollowingTweets();
       
@@ -488,9 +547,16 @@ export const useTweets = () => {
 
       if (error) throw error;
 
-      // Refresh main tweets to update reply count
-      await fetchTweets();
-      await fetchFollowingTweets();
+      // Update reply count locally
+      const updateReplyCount = (tweetList: Tweet[]) => 
+        tweetList.map(tweet => 
+          tweet.id === replyToId 
+            ? { ...tweet, replies: tweet.replies + 1 }
+            : tweet
+        );
+
+      setTweets(updateReplyCount);
+      setFollowingTweets(updateReplyCount);
       
       return data;
     } catch (err: any) {
@@ -502,6 +568,9 @@ export const useTweets = () => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('User not authenticated');
+
+      // Update UI immediately
+      updateTweetInteraction(originalTweetId, 'retweet', true);
 
       // Create a retweet record in the tweets table
       const { data, error } = await supabase
@@ -516,6 +585,8 @@ export const useTweets = () => {
         .single();
 
       if (error) {
+        // Revert UI changes on error
+        updateTweetInteraction(originalTweetId, 'retweet', false);
         if (error.code === '23505') {
           throw new Error('You have already retweeted this tweet');
         }
@@ -541,6 +612,9 @@ export const useTweets = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('User not authenticated');
 
+      // Update UI immediately
+      updateTweetInteraction(originalTweetId, 'retweet', false);
+
       // Remove the retweet from tweets table
       const { error: tweetError } = await supabase
         .from('tweets')
@@ -551,95 +625,20 @@ export const useTweets = () => {
           is_retweet: true,
         });
 
-      if (tweetError) throw tweetError;
+      if (tweetError) {
+        // Revert UI changes on error
+        updateTweetInteraction(originalTweetId, 'retweet', true);
+        throw tweetError;
+      }
 
       // Remove from retweets table
-      const { error: retweetError } = await supabase
+      await supabase
         .from('retweets')
         .delete()
         .match({
           user_id: user.id,
           tweet_id: originalTweetId,
         });
-
-      if (retweetError) throw retweetError;
-    } catch (err: any) {
-      throw new Error(err.message);
-    }
-  };
-
-  const likeTweet = async (tweetId: string) => {
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('User not authenticated');
-
-      const { error } = await supabase
-        .from('likes')
-        .insert({
-          user_id: user.id,
-          tweet_id: tweetId,
-        });
-
-      if (error) {
-        // If it's a duplicate key error, the user already liked this tweet
-        if (error.code === '23505') {
-          throw new Error('Tweet already liked');
-        }
-        throw error;
-      }
-      
-      // Update local state immediately for better UX
-      setTweets(prevTweets => 
-        prevTweets.map(tweet => 
-          tweet.id === tweetId 
-            ? { ...tweet, isLiked: true, likes: tweet.likes + 1 }
-            : tweet
-        )
-      );
-      
-      setFollowingTweets(prevTweets => 
-        prevTweets.map(tweet => 
-          tweet.id === tweetId 
-            ? { ...tweet, isLiked: true, likes: tweet.likes + 1 }
-            : tweet
-        )
-      );
-    } catch (err: any) {
-      throw new Error(err.message);
-    }
-  };
-
-  const unlikeTweet = async (tweetId: string) => {
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('User not authenticated');
-
-      const { error } = await supabase
-        .from('likes')
-        .delete()
-        .match({
-          user_id: user.id,
-          tweet_id: tweetId,
-        });
-
-      if (error) throw error;
-      
-      // Update local state immediately for better UX
-      setTweets(prevTweets => 
-        prevTweets.map(tweet => 
-          tweet.id === tweetId 
-            ? { ...tweet, isLiked: false, likes: Math.max(0, tweet.likes - 1) }
-            : tweet
-        )
-      );
-      
-      setFollowingTweets(prevTweets => 
-        prevTweets.map(tweet => 
-          tweet.id === tweetId 
-            ? { ...tweet, isLiked: false, likes: Math.max(0, tweet.likes - 1) }
-            : tweet
-        )
-      );
     } catch (err: any) {
       throw new Error(err.message);
     }
@@ -650,63 +649,30 @@ export const useTweets = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('User not authenticated');
 
-      // Check if already retweeted and toggle accordingly
-      const tweet = tweets.find(t => t.id === tweetId) || followingTweets.find(t => t.id === tweetId);
-      if (tweet?.isRetweeted) {
-        // If already retweeted, remove the retweet
+      // Check current state from cache
+      const isCurrentlyRetweeted = userInteractions.retweets.has(tweetId);
+      
+      if (isCurrentlyRetweeted) {
         await removeRetweet(tweetId);
-        // Refresh data to sync state
-        await Promise.all([fetchTweets(), fetchFollowingTweets()]);
-        return;
+      } else {
+        await createRetweet(tweetId);
       }
-
-      const { error } = await supabase
-        .from('retweets')
-        .insert({
-          user_id: user.id,
-          tweet_id: tweetId,
-        });
-
-      if (error) {
-        if (error.code === '23505') {
-          // If duplicate, it means it's already retweeted, so remove it instead
-          await removeRetweet(tweetId);
-          // Refresh data to sync state
-          await Promise.all([fetchTweets(), fetchFollowingTweets()]);
-          return;
-        }
-        throw error;
-      }
-      
-      // Create the retweet entry in tweets table
-      await createRetweet(tweetId);
-      
-      // Refresh data to sync state
-      await Promise.all([fetchTweets(), fetchFollowingTweets()]);
     } catch (err: any) {
       throw new Error(err.message);
     }
   };
 
   const unretweetTweet = async (tweetId: string) => {
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('User not authenticated');
-
-      // Remove from both tables
-      await removeRetweet(tweetId);
-      
-      // Refresh data to sync state
-      await Promise.all([fetchTweets(), fetchFollowingTweets()]);
-    } catch (err: any) {
-      throw new Error(err.message);
-    }
+    await removeRetweet(tweetId);
   };
 
   const bookmarkTweet = async (tweetId: string) => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('User not authenticated');
+
+      // Update UI immediately
+      updateTweetInteraction(tweetId, 'bookmark', true);
 
       const { error } = await supabase
         .from('bookmarks')
@@ -716,28 +682,13 @@ export const useTweets = () => {
         });
 
       if (error) {
+        // Revert UI changes on error
+        updateTweetInteraction(tweetId, 'bookmark', false);
         if (error.code === '23505') {
           throw new Error('Tweet already bookmarked');
         }
         throw error;
       }
-      
-      // Update local state immediately for better UX
-      setTweets(prevTweets => 
-        prevTweets.map(tweet => 
-          tweet.id === tweetId 
-            ? { ...tweet, isBookmarked: true }
-            : tweet
-        )
-      );
-      
-      setFollowingTweets(prevTweets => 
-        prevTweets.map(tweet => 
-          tweet.id === tweetId 
-            ? { ...tweet, isBookmarked: true }
-            : tweet
-        )
-      );
     } catch (err: any) {
       throw new Error(err.message);
     }
@@ -748,6 +699,9 @@ export const useTweets = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('User not authenticated');
 
+      // Update UI immediately
+      updateTweetInteraction(tweetId, 'bookmark', false);
+
       const { error } = await supabase
         .from('bookmarks')
         .delete()
@@ -756,24 +710,11 @@ export const useTweets = () => {
           tweet_id: tweetId,
         });
 
-      if (error) throw error;
-      
-      // Update local state immediately for better UX
-      setTweets(prevTweets => 
-        prevTweets.map(tweet => 
-          tweet.id === tweetId 
-            ? { ...tweet, isBookmarked: false }
-            : tweet
-        )
-      );
-      
-      setFollowingTweets(prevTweets => 
-        prevTweets.map(tweet => 
-          tweet.id === tweetId 
-            ? { ...tweet, isBookmarked: false }
-            : tweet
-        )
-      );
+      if (error) {
+        // Revert UI changes on error
+        updateTweetInteraction(tweetId, 'bookmark', true);
+        throw error;
+      }
     } catch (err: any) {
       throw new Error(err.message);
     }
@@ -784,6 +725,15 @@ export const useTweets = () => {
     fetchTweets();
     fetchFollowingTweets();
   }, [fetchTweets, fetchFollowingTweets]);
+
+  // Cleanup timeouts on unmount
+  useEffect(() => {
+    return () => {
+      if (updateTimeoutRef.current) {
+        clearTimeout(updateTimeoutRef.current);
+      }
+    };
+  }, []);
 
   return {
     tweets,

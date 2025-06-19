@@ -7,8 +7,10 @@ export const useTweetViews = () => {
   const [initialized, setInitialized] = useState(false);
   const observerRef = useRef<IntersectionObserver | null>(null);
   const viewTimeoutsRef = useRef<Map<string, NodeJS.Timeout>>(new Map());
+  const pendingViewsRef = useRef<Set<string>>(new Set());
+  const batchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Fetch existing tweet views on initialization
+  // Fetch existing tweet views on initialization with reduced data
   useEffect(() => {
     const fetchExistingViews = async () => {
       try {
@@ -18,10 +20,13 @@ export const useTweetViews = () => {
           return;
         }
 
+        // Only fetch recent views to reduce query size
         const { data: existingViews, error } = await supabase
           .from('tweet_views')
           .select('tweet_id')
-          .eq('user_id', user.id);
+          .eq('user_id', user.id)
+          .gte('created_at', new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()) // Last 24 hours only
+          .limit(100); // Limit to recent views
 
         if (error) {
           console.error('Error fetching existing tweet views:', error);
@@ -39,7 +44,46 @@ export const useTweetViews = () => {
     fetchExistingViews();
   }, []);
 
-  // Initialize intersection observer for automatic view tracking
+  // Batch process views to reduce database calls
+  const processPendingViews = async () => {
+    if (pendingViewsRef.current.size === 0) return;
+
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const viewsToProcess = Array.from(pendingViewsRef.current);
+      pendingViewsRef.current.clear();
+
+      // Batch insert views
+      const viewRecords = viewsToProcess.map(tweetId => ({
+        tweet_id: tweetId,
+        user_id: user.id,
+      }));
+
+      const { error } = await supabase
+        .from('tweet_views')
+        .upsert(viewRecords, { 
+          onConflict: 'tweet_id,user_id',
+          ignoreDuplicates: true 
+        });
+
+      if (error && error.code !== '23505') {
+        console.error('Error batch recording tweet views:', error);
+      } else {
+        // Mark as viewed locally
+        setViewedTweets(prev => {
+          const newSet = new Set(prev);
+          viewsToProcess.forEach(id => newSet.add(id));
+          return newSet;
+        });
+      }
+    } catch (error) {
+      console.error('Error processing pending views:', error);
+    }
+  };
+
+  // Initialize intersection observer with optimized settings
   useEffect(() => {
     const observer = new IntersectionObserver(
       (entries) => {
@@ -48,10 +92,10 @@ export const useTweetViews = () => {
           if (!tweetId) return;
 
           if (entry.isIntersecting) {
-            // Start a timer to record view after 2 seconds of visibility
+            // Start a timer to record view after 3 seconds of visibility (increased from 2s)
             const timeout = setTimeout(() => {
               recordView(tweetId);
-            }, 2000);
+            }, 3000);
             
             viewTimeoutsRef.current.set(tweetId, timeout);
           } else {
@@ -65,8 +109,8 @@ export const useTweetViews = () => {
         });
       },
       {
-        threshold: 0.5, // Tweet must be 50% visible
-        rootMargin: '0px 0px -100px 0px' // Only count if tweet is well within viewport
+        threshold: 0.6, // Increased threshold - tweet must be 60% visible
+        rootMargin: '0px 0px -150px 0px' // Increased margin - only count if tweet is well within viewport
       }
     );
 
@@ -77,43 +121,39 @@ export const useTweetViews = () => {
       // Clear all pending timeouts
       viewTimeoutsRef.current.forEach(timeout => clearTimeout(timeout));
       viewTimeoutsRef.current.clear();
+      if (batchTimeoutRef.current) {
+        clearTimeout(batchTimeoutRef.current);
+      }
     };
   }, []);
 
   const recordView = async (tweetId: string) => {
     try {
-      // Don't record if not initialized yet or already viewed
+      // Don't record if not initialized, already viewed, or user not authenticated
       if (!initialized || viewedTweets.has(tweetId)) return;
 
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
-      setLoading(true);
+      // Add to pending views for batch processing
+      pendingViewsRef.current.add(tweetId);
 
-      // Insert view record (will be ignored if already exists due to unique constraint)
-      const { error } = await supabase
-        .from('tweet_views')
-        .insert({
-          tweet_id: tweetId,
-          user_id: user.id,
-        });
-
-      if (error && error.code !== '23505') { // Ignore duplicate key errors
-        throw error;
+      // Debounce batch processing
+      if (batchTimeoutRef.current) {
+        clearTimeout(batchTimeoutRef.current);
       }
 
-      // Mark as viewed locally
-      setViewedTweets(prev => new Set([...prev, tweetId]));
+      batchTimeoutRef.current = setTimeout(() => {
+        processPendingViews();
+      }, 2000); // Process batch every 2 seconds
 
     } catch (error) {
       console.error('Error recording tweet view:', error);
-    } finally {
-      setLoading(false);
     }
   };
 
   const observeTweet = (element: HTMLElement, tweetId: string) => {
-    if (observerRef.current && element) {
+    if (observerRef.current && element && !viewedTweets.has(tweetId)) {
       element.setAttribute('data-tweet-id', tweetId);
       observerRef.current.observe(element);
     }

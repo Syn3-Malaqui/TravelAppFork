@@ -11,6 +11,7 @@ export const useNotifications = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const channelRef = useRef<RealtimeChannel | null>(null);
+  const fetchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const formatNotificationData = (notificationData: NotificationWithProfile): Notification => {
     const notification: Notification = {
@@ -67,37 +68,33 @@ export const useNotifications = () => {
     return notification;
   };
 
-  const fetchNotifications = useCallback(async () => {
-    try {
-      setLoading(true);
-      setError(null);
+  // Debounced fetch function to reduce database calls
+  const debouncedFetchNotifications = useCallback(() => {
+    if (fetchTimeoutRef.current) {
+      clearTimeout(fetchTimeoutRef.current);
+    }
+    
+    fetchTimeoutRef.current = setTimeout(async () => {
+      try {
+        setLoading(true);
+        setError(null);
 
-      if (!user) {
-        setNotifications([]);
-        setUnreadCount(0);
-        setLoading(false);
-        return;
-      }
+        if (!user) {
+          setNotifications([]);
+          setUnreadCount(0);
+          setLoading(false);
+          return;
+        }
 
-      const { data, error } = await supabase
-        .from('notifications')
-        .select(`
-          *,
-          actor_profile:actor_id (
+        // Optimized query with reduced data fetching
+        const { data, error } = await supabase
+          .from('notifications')
+          .select(`
             id,
-            username,
-            display_name,
-            avatar_url,
-            bio,
-            verified,
-            followers_count,
-            following_count,
-            country,
-            created_at
-          ),
-          tweet:tweet_id (
-            *,
-            profiles (
+            type,
+            read,
+            created_at,
+            actor_profile:actor_id (
               id,
               username,
               display_name,
@@ -108,39 +105,61 @@ export const useNotifications = () => {
               following_count,
               country,
               created_at
+            ),
+            tweet:tweet_id (
+              id,
+              content,
+              likes_count,
+              retweets_count,
+              replies_count,
+              views_count,
+              image_urls,
+              hashtags,
+              mentions,
+              tags,
+              created_at,
+              profiles (
+                id,
+                username,
+                display_name,
+                avatar_url,
+                bio,
+                verified,
+                followers_count,
+                following_count,
+                country,
+                created_at
+              )
             )
-          )
-        `)
-        .eq('recipient_id', user.id)
-        .order('created_at', { ascending: false })
-        .limit(50);
+          `)
+          .eq('recipient_id', user.id)
+          .order('created_at', { ascending: false })
+          .limit(30); // Reduced limit
 
-      if (error) throw error;
+        if (error) throw error;
 
-      const formattedNotifications: Notification[] = (data as NotificationWithProfile[]).map(
-        formatNotificationData
-      );
+        const formattedNotifications: Notification[] = (data as NotificationWithProfile[]).map(
+          formatNotificationData
+        );
 
-      setNotifications(formattedNotifications);
-      setUnreadCount(formattedNotifications.filter(n => !n.read).length);
-    } catch (err: any) {
-      setError(err.message);
-      console.error('Error fetching notifications:', err);
-    } finally {
-      setLoading(false);
-    }
+        setNotifications(formattedNotifications);
+        setUnreadCount(formattedNotifications.filter(n => !n.read).length);
+      } catch (err: any) {
+        setError(err.message);
+        console.error('Error fetching notifications:', err);
+      } finally {
+        setLoading(false);
+      }
+    }, 300); // 300ms debounce
   }, [user]);
+
+  const fetchNotifications = useCallback(() => {
+    debouncedFetchNotifications();
+  }, [debouncedFetchNotifications]);
 
   const markAsRead = async (notificationId: string) => {
     try {
-      const { error } = await supabase
-        .from('notifications')
-        .update({ read: true })
-        .eq('id', notificationId);
-
-      if (error) throw error;
-
-      // Update local state
+      // Update local state immediately
       setNotifications(prev =>
         prev.map(notification =>
           notification.id === notificationId
@@ -148,8 +167,26 @@ export const useNotifications = () => {
             : notification
         )
       );
-
       setUnreadCount(prev => Math.max(0, prev - 1));
+
+      // Then update database
+      const { error } = await supabase
+        .from('notifications')
+        .update({ read: true })
+        .eq('id', notificationId);
+
+      if (error) {
+        // Revert on error
+        setNotifications(prev =>
+          prev.map(notification =>
+            notification.id === notificationId
+              ? { ...notification, read: false }
+              : notification
+          )
+        );
+        setUnreadCount(prev => prev + 1);
+        throw error;
+      }
     } catch (err: any) {
       console.error('Error marking notification as read:', err);
       throw new Error(err.message);
@@ -160,20 +197,32 @@ export const useNotifications = () => {
     try {
       if (!user) return;
 
+      const unreadNotifications = notifications.filter(n => !n.read);
+      
+      // Update local state immediately
+      setNotifications(prev =>
+        prev.map(notification => ({ ...notification, read: true }))
+      );
+      setUnreadCount(0);
+
+      // Then update database
       const { error } = await supabase
         .from('notifications')
         .update({ read: true })
         .eq('recipient_id', user.id)
         .eq('read', false);
 
-      if (error) throw error;
-
-      // Update local state
-      setNotifications(prev =>
-        prev.map(notification => ({ ...notification, read: true }))
-      );
-
-      setUnreadCount(0);
+      if (error) {
+        // Revert on error
+        setNotifications(prev =>
+          prev.map(notification => {
+            const wasUnread = unreadNotifications.some(n => n.id === notification.id);
+            return wasUnread ? { ...notification, read: false } : notification;
+          })
+        );
+        setUnreadCount(unreadNotifications.length);
+        throw error;
+      }
     } catch (err: any) {
       console.error('Error marking all notifications as read:', err);
       throw new Error(err.message);
@@ -182,19 +231,31 @@ export const useNotifications = () => {
 
   const deleteNotification = async (notificationId: string) => {
     try {
+      const notification = notifications.find(n => n.id === notificationId);
+      
+      // Update local state immediately
+      setNotifications(prev => prev.filter(n => n.id !== notificationId));
+      if (notification && !notification.read) {
+        setUnreadCount(prev => Math.max(0, prev - 1));
+      }
+
+      // Then update database
       const { error } = await supabase
         .from('notifications')
         .delete()
         .eq('id', notificationId);
 
-      if (error) throw error;
-
-      // Update local state
-      const notification = notifications.find(n => n.id === notificationId);
-      setNotifications(prev => prev.filter(n => n.id !== notificationId));
-      
-      if (notification && !notification.read) {
-        setUnreadCount(prev => Math.max(0, prev - 1));
+      if (error) {
+        // Revert on error
+        if (notification) {
+          setNotifications(prev => [...prev, notification].sort((a, b) => 
+            new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+          ));
+          if (!notification.read) {
+            setUnreadCount(prev => prev + 1);
+          }
+        }
+        throw error;
       }
     } catch (err: any) {
       console.error('Error deleting notification:', err);
@@ -202,7 +263,7 @@ export const useNotifications = () => {
     }
   };
 
-  // Set up real-time subscription for notifications
+  // Optimized real-time subscription with reduced frequency
   useEffect(() => {
     const setupSubscription = async () => {
       try {
@@ -229,15 +290,14 @@ export const useNotifications = () => {
               filter: `recipient_id=eq.${user.id}`,
             },
             () => {
-              // Refresh notifications when new ones arrive
-              fetchNotifications();
+              // Debounced refresh to avoid excessive calls
+              debouncedFetchNotifications();
             }
           );
 
-        // Store the channel reference and subscribe only if not already subscribed
+        // Store the channel reference and subscribe
         channelRef.current = channel;
         
-        // Check if the channel is not already in a subscribed state
         if (channel.state !== 'joined' && channel.state !== 'joining') {
           await channel.subscribe();
         }
@@ -254,8 +314,11 @@ export const useNotifications = () => {
         supabase.removeChannel(channelRef.current);
         channelRef.current = null;
       }
+      if (fetchTimeoutRef.current) {
+        clearTimeout(fetchTimeoutRef.current);
+      }
     };
-  }, [user, fetchNotifications]);
+  }, [user, debouncedFetchNotifications]);
 
   useEffect(() => {
     fetchNotifications();
