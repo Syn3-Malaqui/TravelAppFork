@@ -1,8 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { X, Image, Smile, Calendar, MapPin, ArrowLeft, Tag, Globe, Upload, Trash2, Camera } from 'lucide-react';
+import { X, Image, Smile, Calendar, MapPin, ArrowLeft, Tag, Globe, Upload, Trash2, Camera, ChevronDown, Check } from 'lucide-react';
 import { Button } from '../ui/button';
 import { Avatar, AvatarImage, AvatarFallback } from '../ui/avatar';
+import { 
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '../ui/dropdown-menu';
 import { TWEET_CATEGORIES, TweetCategory, FILTER_COUNTRIES } from '../../types';
 import { useTweets } from '../../hooks/useTweets';
 import { useAuth } from '../../hooks/useAuth';
@@ -27,6 +33,8 @@ export const ComposePage: React.FC = () => {
   } | null>(null);
   const [profileLoading, setProfileLoading] = useState(true);
   const [isMobile, setIsMobile] = useState(false);
+  const [categoriesDropdownOpen, setCategoriesDropdownOpen] = useState(false);
+  const [countriesDropdownOpen, setCountriesDropdownOpen] = useState(false);
   const { createTweet } = useTweets();
 
   // Detect mobile device
@@ -240,6 +248,19 @@ export const ComposePage: React.FC = () => {
   const selectableCountries = FILTER_COUNTRIES.filter(country => country.code !== 'ALL');
 
   const hasUploadProgress = Object.keys(uploadProgress).length > 0;
+
+  // Category icons for better UX
+  const categoryIcons: { [key: string]: string } = {
+    'General Discussions': '💬',
+    'Visas': '📋',
+    'Hotels': '🏨',
+    'Car Rental': '🚗',
+    'Tourist Schedules': '📅',
+    'Flights': '✈️',
+    'Restaurants and Coffees': '🍽️',
+    'Images and Creators': '📸',
+    'Real Estate': '🏠'
+  };
 
   return (
     <div className="min-h-screen bg-white flex flex-col">
@@ -490,64 +511,115 @@ export const ComposePage: React.FC = () => {
                 </div>
               )}
 
-              {/* Categories Selection */}
+              {/* Categories Dropdown */}
               <div className={`${isMobile ? 'mt-4' : 'mt-6'}`}>
                 <div className={`flex items-center space-x-2 mb-2 ${isMobile ? 'mb-2' : 'mb-3'}`}>
                   <Tag className={`text-gray-500 ${isMobile ? 'h-4 w-4' : 'h-5 w-5'}`} />
                   <span className={`font-medium text-gray-700 ${isMobile ? 'text-sm' : 'text-sm'}`}>Add categories:</span>
                 </div>
-                <div className="flex flex-wrap gap-2">
-                  {TWEET_CATEGORIES.map((category) => (
-                    <Button
-                      key={category}
-                      variant="outline"
-                      size="sm"
-                      onClick={() => toggleCategory(category)}
-                      className={`rounded-full px-3 py-1 transition-colors ${
-                        isMobile ? 'text-xs' : 'text-sm'
-                      } ${
-                        selectedCategories.includes(category)
-                          ? 'bg-blue-500 text-white border-blue-500 hover:bg-blue-600'
-                          : 'border-gray-300 text-gray-700 hover:bg-gray-50'
+                
+                <DropdownMenu open={categoriesDropdownOpen} onOpenChange={setCategoriesDropdownOpen}>
+                  <DropdownMenuTrigger asChild>
+                    <Button 
+                      variant="outline" 
+                      className={`flex items-center justify-between w-full border-gray-300 hover:bg-gray-50 rounded-lg ${
+                        isMobile ? 'text-sm py-2 px-3' : 'text-sm py-3 px-4'
                       }`}
                     >
-                      {category}
+                      <div className="flex items-center space-x-2">
+                        <Tag className="h-4 w-4 text-gray-500" />
+                        <span>
+                          {selectedCategories.length === 0 
+                            ? 'Select categories...' 
+                            : `${selectedCategories.length} selected`
+                          }
+                        </span>
+                      </div>
+                      <ChevronDown className="h-4 w-4 text-gray-500" />
                     </Button>
-                  ))}
-                </div>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent 
+                    className={`w-80 max-h-64 overflow-y-auto rounded-xl ${isMobile ? 'w-72' : 'w-80'}`}
+                    align="start"
+                    sideOffset={4}
+                  >
+                    {TWEET_CATEGORIES.map((category) => (
+                      <DropdownMenuItem
+                        key={category}
+                        onClick={() => toggleCategory(category)}
+                        className="flex items-center space-x-3 px-3 py-2 hover:bg-gray-50 cursor-pointer rounded-lg mx-1"
+                      >
+                        <div className="relative flex-shrink-0">
+                          <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center border border-gray-200">
+                            <span className="text-lg">{categoryIcons[category] || '📝'}</span>
+                          </div>
+                        </div>
+                        <span className="flex-1 text-sm font-medium truncate">{category}</span>
+                        {selectedCategories.includes(category) && (
+                          <Check className="h-4 w-4 text-blue-600 flex-shrink-0" />
+                        )}
+                      </DropdownMenuItem>
+                    ))}
+                  </DropdownMenuContent>
+                </DropdownMenu>
               </div>
 
-              {/* Countries Selection */}
+              {/* Countries Dropdown */}
               <div className="mt-3">
                 <div className={`flex items-center space-x-2 mb-2 ${isMobile ? 'mb-2' : 'mb-3'}`}>
                   <Globe className={`text-gray-500 ${isMobile ? 'h-4 w-4' : 'h-5 w-5'}`} />
                   <span className={`font-medium text-gray-700 ${isMobile ? 'text-sm' : 'text-sm'}`}>Add countries:</span>
                 </div>
-                <div className={`flex flex-wrap gap-2 overflow-y-auto ${isMobile ? 'max-h-24' : 'max-h-32'}`}>
-                  {selectableCountries.map((country) => (
-                    <Button
-                      key={country.code}
-                      variant="outline"
-                      size="sm"
-                      onClick={() => toggleCountry(country.code)}
-                      className={`rounded-full px-3 py-1 transition-colors flex items-center space-x-1 ${
-                        isMobile ? 'text-xs' : 'text-sm'
-                      } ${
-                        selectedCountries.includes(country.code)
-                          ? 'bg-green-500 text-white border-green-500 hover:bg-green-600'
-                          : 'border-gray-300 text-gray-700 hover:bg-gray-50'
+                
+                <DropdownMenu open={countriesDropdownOpen} onOpenChange={setCountriesDropdownOpen}>
+                  <DropdownMenuTrigger asChild>
+                    <Button 
+                      variant="outline" 
+                      className={`flex items-center justify-between w-full border-gray-300 hover:bg-gray-50 rounded-lg ${
+                        isMobile ? 'text-sm py-2 px-3' : 'text-sm py-3 px-4'
                       }`}
                     >
-                      <span>{country.flag}</span>
-                      <span>{country.name}</span>
+                      <div className="flex items-center space-x-2">
+                        <Globe className="h-4 w-4 text-gray-500" />
+                        <span>
+                          {selectedCountries.length === 0 
+                            ? 'Select countries...' 
+                            : `${selectedCountries.length} selected`
+                          }
+                        </span>
+                      </div>
+                      <ChevronDown className="h-4 w-4 text-gray-500" />
                     </Button>
-                  ))}
-                </div>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent 
+                    className={`w-80 max-h-64 overflow-y-auto rounded-xl ${isMobile ? 'w-72' : 'w-80'}`}
+                    align="start"
+                    sideOffset={4}
+                  >
+                    {selectableCountries.map((country) => (
+                      <DropdownMenuItem
+                        key={country.code}
+                        onClick={() => toggleCountry(country.code)}
+                        className="flex items-center space-x-3 px-3 py-2 hover:bg-gray-50 cursor-pointer rounded-lg mx-1"
+                      >
+                        <div className="relative flex-shrink-0">
+                          <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center border border-gray-200">
+                            <span className="text-lg">{country.flag}</span>
+                          </div>
+                        </div>
+                        <span className="flex-1 text-sm font-medium truncate">{country.name}</span>
+                        {selectedCountries.includes(country.code) && (
+                          <Check className="h-4 w-4 text-green-600 flex-shrink-0" />
+                        )}
+                      </DropdownMenuItem>
+                    ))}
+                  </DropdownMenuContent>
+                </DropdownMenu>
               </div>
 
               {/* Selected Tags Display */}
               {(selectedCategories.length > 0 || selectedCountries.length > 0) && (
-                <div className="mt-3">
+                <div className="mt-4">
                   <div className={`font-medium text-gray-700 mb-2 ${isMobile ? 'text-sm' : 'text-sm'}`}>Selected tags:</div>
                   <div className="flex flex-wrap gap-2">
                     {/* Category Tags */}
@@ -559,6 +631,7 @@ export const ComposePage: React.FC = () => {
                         }`}
                       >
                         <Tag className={`mr-1 ${isMobile ? 'w-2 h-2' : 'w-3 h-3'}`} />
+                        <span className="mr-1">{categoryIcons[category]}</span>
                         {category}
                         <Button
                           variant="ghost"
