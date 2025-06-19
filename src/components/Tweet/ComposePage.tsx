@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { X, Image, Smile, Calendar, MapPin, ArrowLeft, Tag, Globe, Upload, Trash2, Camera, ChevronDown, Check } from 'lucide-react';
 import { Button } from '../ui/button';
@@ -36,6 +36,10 @@ export const ComposePage: React.FC = () => {
   const [categoriesDropdownOpen, setCategoriesDropdownOpen] = useState(false);
   const [countriesDropdownOpen, setCountriesDropdownOpen] = useState(false);
   const { createTweet } = useTweets();
+
+  // Refs for file inputs
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const mobileFileInputRef = useRef<HTMLInputElement>(null);
 
   // Detect mobile device
   useEffect(() => {
@@ -238,6 +242,17 @@ export const ComposePage: React.FC = () => {
     );
   };
 
+  // Handle image upload button click
+  const handleImageButtonClick = () => {
+    if (images.length >= 4 || uploadingImage) return;
+    
+    if (isMobile && mobileFileInputRef.current) {
+      mobileFileInputRef.current.click();
+    } else if (fileInputRef.current) {
+      fileInputRef.current.click();
+    }
+  };
+
   const characterCount = content.length;
   const maxCharacters = 200;
   const isOverLimit = characterCount > maxCharacters;
@@ -264,6 +279,29 @@ export const ComposePage: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-white flex flex-col">
+      {/* Hidden File Inputs */}
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="image/*"
+        multiple
+        className="hidden"
+        onChange={handleImageUpload}
+        disabled={images.length >= 4 || uploadingImage}
+      />
+      
+      {/* Separate mobile file input for better mobile compatibility */}
+      <input
+        ref={mobileFileInputRef}
+        type="file"
+        accept="image/*"
+        multiple
+        className="hidden"
+        onChange={handleImageUpload}
+        disabled={images.length >= 4 || uploadingImage}
+        capture="environment" // Prefer camera on mobile
+      />
+
       {/* Header */}
       <div className="bg-white border-b border-gray-200 px-4 py-3 flex items-center justify-between z-10 flex-shrink-0">
         <div className="flex items-center space-x-4">
@@ -680,31 +718,26 @@ export const ComposePage: React.FC = () => {
       <div className="bg-white border-t border-gray-200 p-3 flex-shrink-0">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-3">
-            {/* Image Upload */}
-            <label className={`cursor-pointer ${images.length >= 4 || uploadingImage ? 'opacity-50 cursor-not-allowed' : ''}`}>
-              <input
-                type="file"
-                accept="image/*"
-                multiple
-                className="hidden"
-                onChange={handleImageUpload}
-                disabled={images.length >= 4 || uploadingImage}
-              />
-              <div className={`flex items-center space-x-2 text-blue-500 hover:text-blue-600 transition-colors ${
-                isMobile ? 'p-2' : 'p-1'
-              }`}>
-                {uploadingImage ? (
-                  <div className={`animate-spin rounded-full border-b-2 border-blue-500 ${isMobile ? 'h-5 w-5' : 'h-6 w-6'}`}></div>
-                ) : (
-                  <Image className={isMobile ? 'h-5 w-5' : 'h-6 w-6'} />
-                )}
-                {!isMobile && (
-                  <span className="text-sm font-medium">
-                    {uploadingImage ? 'Uploading...' : 'Add photos'}
-                  </span>
-                )}
-              </div>
-            </label>
+            {/* Image Upload Button - Enhanced for Mobile */}
+            <Button
+              variant="ghost"
+              onClick={handleImageButtonClick}
+              disabled={images.length >= 4 || uploadingImage}
+              className={`flex items-center space-x-2 text-blue-500 hover:text-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
+                isMobile ? 'p-3 rounded-full hover:bg-blue-50' : 'p-2 hover:bg-blue-50 rounded-lg'
+              }`}
+            >
+              {uploadingImage ? (
+                <div className={`animate-spin rounded-full border-b-2 border-blue-500 ${isMobile ? 'h-5 w-5' : 'h-6 w-6'}`}></div>
+              ) : (
+                <Image className={isMobile ? 'h-5 w-5' : 'h-6 w-6'} />
+              )}
+              {!isMobile && (
+                <span className="text-sm font-medium">
+                  {uploadingImage ? 'Uploading...' : 'Add photos'}
+                </span>
+              )}
+            </Button>
 
             {/* Additional action buttons for desktop */}
             {!isMobile && (
