@@ -539,12 +539,12 @@ export const MobileTweetCard: React.FC<MobileTweetCardProps> = ({
                 </div>
               )}
 
-              {/* Images */}
+              {/* Images - Twitter Style Mobile */}
               {tweet.images && tweet.images.length > 0 && (
                 <div className="mb-3 rounded-xl overflow-hidden">
                   {tweet.images.length === 1 ? (
-                    // Single image - uniform aspect ratio (16:9)
-                    <div className="w-full aspect-[16/9] cursor-pointer" onClick={(e) => handleImageClick(0, e)}>
+                    // Single image - max height with proper aspect ratio
+                    <div className="w-full max-h-[280px] cursor-pointer" onClick={(e) => handleImageClick(0, e)}>
                       <LazyImage 
                         src={tweet.images[0]} 
                         alt="Tweet image" 
@@ -554,12 +554,12 @@ export const MobileTweetCard: React.FC<MobileTweetCardProps> = ({
                       />
                     </div>
                   ) : tweet.images.length === 2 ? (
-                    // Two images - side by side with uniform aspect ratio (16:9)
-                    <div className="grid grid-cols-2 gap-1">
+                    // Two images - side by side with minimal gap
+                    <div className="grid grid-cols-2 gap-0.5 max-h-[200px]">
                       {tweet.images.map((image, index) => (
                         <div 
                           key={index} 
-                          className="aspect-[16/9] cursor-pointer"
+                          className="h-full cursor-pointer"
                           onClick={(e) => handleImageClick(index, e)}
                         >
                           <LazyImage 
@@ -573,8 +573,8 @@ export const MobileTweetCard: React.FC<MobileTweetCardProps> = ({
                       ))}
                     </div>
                   ) : tweet.images.length === 3 ? (
-                    // Three images - first takes full left side, two small on right
-                    <div className="grid grid-cols-2 grid-rows-2 gap-1 h-64">
+                    // Three images - first takes left half, two small on right
+                    <div className="grid grid-cols-2 gap-0.5 max-h-[200px]">
                       <div className="row-span-2 cursor-pointer" onClick={(e) => handleImageClick(0, e)}>
                         <LazyImage 
                           src={tweet.images[0]} 
@@ -604,12 +604,12 @@ export const MobileTweetCard: React.FC<MobileTweetCardProps> = ({
                       </div>
                     </div>
                   ) : (
-                    // Four images - 2x2 grid with uniform aspect ratio (16:9)
-                    <div className="grid grid-cols-2 gap-1">
+                    // Four images - 2x2 grid with minimal gap
+                    <div className="grid grid-cols-2 gap-0.5 max-h-[200px]">
                       {tweet.images.map((image, index) => (
                         <div 
                           key={index} 
-                          className="aspect-[16/9] cursor-pointer"
+                          className="cursor-pointer"
                           onClick={(e) => handleImageClick(index, e)}
                         >
                           <LazyImage 
