@@ -103,25 +103,25 @@ export const useHashtags = () => {
       setLoading(true);
       setError(null);
 
-      // Enhanced fallback query focusing on past 48 hours
+      // Enhanced query to include both original tweets AND replies in hashtag counting
       const { data: fallbackData, error: fallbackError } = await supabase
         .from('tweets')
-        .select('hashtags, created_at, likes_count, retweets_count, replies_count')
+        .select('hashtags, created_at, likes_count, retweets_count, replies_count, reply_to')
         .not('hashtags', 'eq', '{}')
         .gte('created_at', new Date(Date.now() - 48 * 60 * 60 * 1000).toISOString()) // 48 hours
-        .is('reply_to', null) // Only original tweets
         .order('created_at', { ascending: false })
-        .limit(2000);
+        .limit(3000); // Increased limit to capture more data including replies
 
       if (fallbackError) throw fallbackError;
 
-      // Process hashtags manually with improved algorithm
+      // Process hashtags manually with improved algorithm that includes replies
       const hashtagCounts: { [key: string]: { count: number; recent: number; engagement: number } } = {};
       
       fallbackData?.forEach(tweet => {
         const isRecent = new Date(tweet.created_at) > new Date(Date.now() - 24 * 60 * 60 * 1000);
         const engagement = tweet.likes_count + tweet.retweets_count * 2 + tweet.replies_count;
         
+        // Include both original tweets and replies in hashtag counting
         tweet.hashtags.forEach((hashtag: string) => {
           const tag = hashtag.toLowerCase();
           if (!hashtagCounts[tag]) {
@@ -137,7 +137,7 @@ export const useHashtags = () => {
 
       // Convert to array and sort by enhanced trending score
       const trending = Object.entries(hashtagCounts)
-        .filter(([_, stats]) => stats.count >= 1) // Include all hashtags
+        .filter(([_, stats]) => stats.count >= 1) // Include all hashtags with at least 1 occurrence
         .map(([hashtag, stats]) => ({
           hashtag: `#${hashtag}`,
           count: stats.count,
@@ -167,6 +167,7 @@ export const useHashtags = () => {
 
       console.log('Searching for hashtag:', cleanHashtag);
 
+      // Updated query to include both original tweets AND replies
       let query = supabase
         .from('tweets')
         .select(`
@@ -184,6 +185,7 @@ export const useHashtags = () => {
           created_at,
           is_retweet,
           original_tweet_id,
+          reply_to,
           profiles!tweets_author_id_fkey (
             id,
             username,
@@ -222,8 +224,8 @@ export const useHashtags = () => {
             )
           )
         `)
-        .contains('hashtags', [cleanHashtag])
-        .is('reply_to', null);
+        .contains('hashtags', [cleanHashtag]);
+        // Removed the filter for reply_to IS NULL to include replies
 
       if (sortBy === 'recent') {
         query = query.order('created_at', { ascending: false });
@@ -314,7 +316,7 @@ export const useHashtags = () => {
 
       console.log('Searching tweets by keyword:', keyword);
 
-      // Manual search using ilike for content matching
+      // Updated query to include both original tweets AND replies
       let query = supabase
         .from('tweets')
         .select(`
@@ -332,6 +334,7 @@ export const useHashtags = () => {
           created_at,
           is_retweet,
           original_tweet_id,
+          reply_to,
           profiles!tweets_author_id_fkey (
             id,
             username,
@@ -370,8 +373,8 @@ export const useHashtags = () => {
             )
           )
         `)
-        .ilike('content', `%${keyword}%`)
-        .is('reply_to', null);
+        .ilike('content', `%${keyword}%`);
+        // Removed the filter for reply_to IS NULL to include replies
 
       if (sortBy === 'recent') {
         query = query.order('created_at', { ascending: false });
@@ -437,7 +440,7 @@ export const useHashtags = () => {
 
       const cleanQuery = query.replace('#', '').toLowerCase();
 
-      // Search for hashtags that contain the query from recent tweets
+      // Search for hashtags that contain the query from recent tweets (including replies)
       const { data, error } = await supabase
         .from('tweets')
         .select('hashtags')
@@ -447,7 +450,7 @@ export const useHashtags = () => {
 
       if (error) throw error;
 
-      // Extract and filter hashtags
+      // Extract and filter hashtags (including from replies)
       const allHashtags = new Set<string>();
       data?.forEach(tweet => {
         tweet.hashtags.forEach((hashtag: string) => {
