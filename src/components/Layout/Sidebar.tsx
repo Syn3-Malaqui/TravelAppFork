@@ -7,8 +7,7 @@ import {
   User, 
   Settings,
   LogOut,
-  UserPlus,
-  ChevronRight
+  UserPlus
 } from 'lucide-react';
 import { Button } from '../ui/button';
 import { Avatar, AvatarImage, AvatarFallback } from '../ui/avatar';
@@ -102,7 +101,7 @@ export const Sidebar: React.FC = () => {
           .select('id, username, display_name, avatar_url, bio, verified, followers_count, country')
           .not('id', 'in', `(${excludeIds.join(',')})`)
           .order('followers_count', { ascending: false })
-          .limit(6);
+          .limit(5); // Reduced limit since we're not showing "Show more"
 
         if (error) throw error;
 
@@ -153,10 +152,6 @@ export const Sidebar: React.FC = () => {
 
   const handleUserClick = (username: string) => {
     navigate(`/profile/${username}`);
-  };
-
-  const handleViewAllRecommendations = () => {
-    navigate('/search');
   };
 
   return (
@@ -216,21 +211,11 @@ export const Sidebar: React.FC = () => {
       <div className="flex-1 overflow-hidden">
         <div className="bg-gray-50 rounded-2xl p-4 h-full flex flex-col">
           {/* Header */}
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center space-x-2">
-              <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
-                <UserPlus className="w-4 h-4 text-green-500" />
-              </div>
-              <h3 className="font-bold text-gray-900 text-lg">Who to follow</h3>
+          <div className="flex items-center space-x-2 mb-4">
+            <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
+              <UserPlus className="w-4 h-4 text-green-500" />
             </div>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={handleViewAllRecommendations}
-              className="text-blue-500 hover:text-blue-600 p-1"
-            >
-              <ChevronRight className="w-4 h-4" />
-            </Button>
+            <h3 className="font-bold text-gray-900 text-lg">Who to follow</h3>
           </div>
 
           {/* Users List */}
@@ -251,7 +236,7 @@ export const Sidebar: React.FC = () => {
               </div>
             ) : (
               <div className="space-y-3">
-                {recommendedUsers.slice(0, 5).map((recommendedUser) => (
+                {recommendedUsers.map((recommendedUser) => (
                   <div
                     key={recommendedUser.id}
                     className="p-3 hover:bg-white rounded-xl cursor-pointer transition-colors group"
@@ -298,19 +283,6 @@ export const Sidebar: React.FC = () => {
                     <UserPlus className="w-8 h-8 mx-auto mb-2 text-gray-300" />
                     <p className="text-sm">No recommendations</p>
                     <p className="text-xs text-gray-400 mt-1">Check back later!</p>
-                  </div>
-                )}
-
-                {/* View More Button */}
-                {recommendedUsers.length > 0 && (
-                  <div className="pt-2">
-                    <Button
-                      variant="ghost"
-                      onClick={handleViewAllRecommendations}
-                      className="w-full text-blue-500 hover:text-blue-600 hover:bg-blue-50 text-sm py-2 rounded-xl"
-                    >
-                      Show more
-                    </Button>
                   </div>
                 )}
               </div>
