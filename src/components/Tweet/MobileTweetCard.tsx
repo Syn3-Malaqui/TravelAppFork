@@ -539,11 +539,11 @@ export const MobileTweetCard: React.FC<MobileTweetCardProps> = ({
                 </div>
               )}
 
-              {/* Images - Twitter Style Mobile */}
+              {/* Images - No Borders, No Gaps */}
               {tweet.images && tweet.images.length > 0 && (
                 <div className="mb-3 rounded-xl overflow-hidden">
                   {tweet.images.length === 1 ? (
-                    // Single image - max height with proper aspect ratio
+                    // Single image
                     <div className="w-full max-h-[280px] cursor-pointer" onClick={(e) => handleImageClick(0, e)}>
                       <LazyImage 
                         src={tweet.images[0]} 
@@ -554,8 +554,8 @@ export const MobileTweetCard: React.FC<MobileTweetCardProps> = ({
                       />
                     </div>
                   ) : tweet.images.length === 2 ? (
-                    // Two images - side by side with minimal gap
-                    <div className="grid grid-cols-2 gap-0.5 max-h-[200px]">
+                    // Two images - side by side, no gap
+                    <div className="grid grid-cols-2 max-h-[200px]">
                       {tweet.images.map((image, index) => (
                         <div 
                           key={index} 
@@ -573,8 +573,8 @@ export const MobileTweetCard: React.FC<MobileTweetCardProps> = ({
                       ))}
                     </div>
                   ) : tweet.images.length === 3 ? (
-                    // Three images - first takes left half, two small on right
-                    <div className="grid grid-cols-2 gap-0.5 max-h-[200px]">
+                    // Three images - first takes left half, two small on right, no gaps
+                    <div className="grid grid-cols-2 max-h-[200px]">
                       <div className="row-span-2 cursor-pointer" onClick={(e) => handleImageClick(0, e)}>
                         <LazyImage 
                           src={tweet.images[0]} 
@@ -604,8 +604,8 @@ export const MobileTweetCard: React.FC<MobileTweetCardProps> = ({
                       </div>
                     </div>
                   ) : (
-                    // Four images - 2x2 grid with minimal gap
-                    <div className="grid grid-cols-2 gap-0.5 max-h-[200px]">
+                    // Four images - 2x2 grid, no gaps
+                    <div className="grid grid-cols-2 max-h-[200px]">
                       {tweet.images.map((image, index) => (
                         <div 
                           key={index} 
