@@ -33,17 +33,11 @@ export const ProfilePage: React.FC = () => {
   // Handle window resize to show/hide sidebar
   useEffect(() => {
     const handleResize = () => {
-      // Hide sidebar when window width is less than 1280px (xl breakpoint)
       setShowSidebar(window.innerWidth >= 1280);
     };
 
-    // Set initial state
     handleResize();
-
-    // Add event listener
     window.addEventListener('resize', handleResize);
-
-    // Cleanup
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
@@ -58,128 +52,160 @@ export const ProfilePage: React.FC = () => {
       setLoading(true);
       setError(null);
 
-      // Fetch profile data
+      // Optimized profile query - minimal data first
       const { data: profileData, error: profileError } = await supabase
         .from('profiles')
-        .select('*')
+        .select(`
+          id,
+          username,
+          display_name,
+          avatar_url,
+          bio,
+          verified,
+          followers_count,
+          following_count,
+          created_at,
+          cover_image,
+          country
+        `)
         .eq('username', username)
         .single();
 
       if (profileError) throw profileError;
 
-      // Fetch user's tweets (excluding replies)
-      const { data: tweetsData, error: tweetsError } = await supabase
-        .from('tweets')
-        .select(`
-          *,
-          profiles (
+      // Format profile data immediately
+      const formattedProfile: User = {
+        id: profileData.id,
+        username: profileData.username,
+        displayName: profileData.display_name,
+        avatar: profileData.avatar_url || '',
+        bio: profileData.bio || '',
+        verified: profileData.verified || false,
+        followers: profileData.followers_count || 0,
+        following: profileData.following_count || 0,
+        joinedDate: new Date(profileData.created_at),
+        coverImage: profileData.cover_image,
+        country: profileData.country,
+      };
+
+      setProfile(formattedProfile);
+
+      // Fetch tweets in parallel with reduced data
+      const [tweetsResult, repliesResult, likesResult] = await Promise.all([
+        // User's tweets (excluding replies) - minimal data
+        supabase
+          .from('tweets')
+          .select(`
             id,
-            username,
-            display_name,
-            avatar_url,
-            bio,
-            verified,
-            followers_count,
-            following_count,
-            created_at
-          )
-        `)
-        .eq('author_id', profileData.id)
-        .is('reply_to', null)
-        .order('created_at', { ascending: false });
-
-      if (tweetsError) throw tweetsError;
-
-      // Fetch user's replies
-      const { data: repliesData, error: repliesError } = await supabase
-        .from('tweets')
-        .select(`
-          *,
-          profiles (
-            id,
-            username,
-            display_name,
-            avatar_url,
-            bio,
-            verified,
-            followers_count,
-            following_count,
-            created_at
-          )
-        `)
-        .eq('author_id', profileData.id)
-        .not('reply_to', 'is', null)
-        .order('created_at', { ascending: false });
-
-      if (repliesError) throw repliesError;
-
-      // Fetch user's liked tweets
-      const { data: likesData, error: likesError } = await supabase
-        .from('likes')
-        .select(`
-          tweet_id,
-          created_at,
-          tweets (
-            *,
-            profiles (
+            content,
+            image_urls,
+            hashtags,
+            mentions,
+            tags,
+            likes_count,
+            retweets_count,
+            replies_count,
+            views_count,
+            created_at,
+            profiles!tweets_author_id_fkey (
               id,
               username,
               display_name,
               avatar_url,
-              bio,
-              verified,
-              followers_count,
-              following_count,
-              created_at
+              verified
             )
-          )
-        `)
-        .eq('user_id', profileData.id)
-        .order('created_at', { ascending: false });
+          `)
+          .eq('author_id', profileData.id)
+          .is('reply_to', null)
+          .order('created_at', { ascending: false })
+          .limit(10), // Reduced limit
 
-      if (likesError) throw likesError;
+        // User's replies - minimal data
+        supabase
+          .from('tweets')
+          .select(`
+            id,
+            content,
+            image_urls,
+            hashtags,
+            mentions,
+            tags,
+            likes_count,
+            retweets_count,
+            replies_count,
+            views_count,
+            created_at,
+            profiles!tweets_author_id_fkey (
+              id,
+              username,
+              display_name,
+              avatar_url,
+              verified
+            )
+          `)
+          .eq('author_id', profileData.id)
+          .not('reply_to', 'is', null)
+          .order('created_at', { ascending: false })
+          .limit(10), // Reduced limit
 
-      // Get current user's interactions if authenticated
+        // User's liked tweets - minimal data
+        supabase
+          .from('likes')
+          .select(`
+            tweet_id,
+            created_at,
+            tweets (
+              id,
+              content,
+              image_urls,
+              hashtags,
+              mentions,
+              tags,
+              likes_count,
+              retweets_count,
+              replies_count,
+              views_count,
+              created_at,
+              profiles!tweets_author_id_fkey (
+                id,
+                username,
+                display_name,
+                avatar_url,
+                verified
+              )
+            )
+          `)
+          .eq('user_id', profileData.id)
+          .order('created_at', { ascending: false })
+          .limit(10) // Reduced limit
+      ]);
+
+      // Get current user's interactions only if authenticated
       let userLikes: string[] = [];
       let userRetweets: string[] = [];
       let userBookmarks: string[] = [];
       
       if (currentUser) {
         const allTweetIds = [
-          ...tweetsData.map(t => t.id),
-          ...repliesData.map(t => t.id),
-          ...likesData.map(l => l.tweets.id)
+          ...(tweetsResult.data?.map(t => t.id) || []),
+          ...(repliesResult.data?.map(t => t.id) || []),
+          ...(likesResult.data?.map(l => l.tweets.id) || [])
         ];
 
         if (allTweetIds.length > 0) {
-          const [likesResult, retweetsResult, bookmarksResult] = await Promise.all([
+          const [likesRes, retweetsRes, bookmarksRes] = await Promise.all([
             supabase.from('likes').select('tweet_id').eq('user_id', currentUser.id).in('tweet_id', allTweetIds),
             supabase.from('retweets').select('tweet_id').eq('user_id', currentUser.id).in('tweet_id', allTweetIds),
             supabase.from('bookmarks').select('tweet_id').eq('user_id', currentUser.id).in('tweet_id', allTweetIds)
           ]);
           
-          userLikes = likesResult.data?.map(like => like.tweet_id) || [];
-          userRetweets = retweetsResult.data?.map(retweet => retweet.tweet_id) || [];
-          userBookmarks = bookmarksResult.data?.map(bookmark => bookmark.tweet_id) || [];
+          userLikes = likesRes.data?.map(like => like.tweet_id) || [];
+          userRetweets = retweetsRes.data?.map(retweet => retweet.tweet_id) || [];
+          userBookmarks = bookmarksRes.data?.map(bookmark => bookmark.tweet_id) || [];
         }
       }
 
-      // Format profile data
-      const formattedProfile: User = {
-        id: profileData.id,
-        username: profileData.username,
-        displayName: profileData.display_name,
-        avatar: profileData.avatar_url || '',
-        bio: profileData.bio,
-        verified: profileData.verified,
-        followers: profileData.followers_count,
-        following: profileData.following_count,
-        joinedDate: new Date(profileData.created_at),
-        coverImage: profileData.cover_image,
-        country: profileData.country,
-      };
-
-      // Format tweets data
+      // Format tweet data with minimal processing
       const formatTweetData = (tweetData: any): Tweet => ({
         id: tweetData.id,
         content: tweetData.content,
@@ -188,32 +214,32 @@ export const ProfilePage: React.FC = () => {
           username: tweetData.profiles.username,
           displayName: tweetData.profiles.display_name,
           avatar: tweetData.profiles.avatar_url || '',
-          bio: tweetData.profiles.bio,
-          verified: tweetData.profiles.verified,
-          followers: tweetData.profiles.followers_count,
-          following: tweetData.profiles.following_count,
-          joinedDate: new Date(tweetData.profiles.created_at),
+          bio: '',
+          verified: tweetData.profiles.verified || false,
+          followers: 0,
+          following: 0,
+          country: '',
+          joinedDate: new Date(),
         },
         createdAt: new Date(tweetData.created_at),
-        likes: tweetData.likes_count,
-        retweets: tweetData.retweets_count,
-        replies: tweetData.replies_count,
-        views: tweetData.views_count,
-        images: tweetData.image_urls,
+        likes: tweetData.likes_count || 0,
+        retweets: tweetData.retweets_count || 0,
+        replies: tweetData.replies_count || 0,
+        views: tweetData.views_count || 0,
+        images: tweetData.image_urls || [],
         isLiked: userLikes.includes(tweetData.id),
         isRetweeted: userRetweets.includes(tweetData.id),
         isBookmarked: userBookmarks.includes(tweetData.id),
-        hashtags: tweetData.hashtags,
-        mentions: tweetData.mentions,
+        hashtags: tweetData.hashtags || [],
+        mentions: tweetData.mentions || [],
         tags: tweetData.tags || [],
         replyTo: tweetData.reply_to,
       });
 
-      const formattedTweets: Tweet[] = tweetsData.map(formatTweetData);
-      const formattedReplies: Tweet[] = repliesData.map(formatTweetData);
-      const formattedLikes: Tweet[] = likesData.map(like => formatTweetData(like.tweets));
+      const formattedTweets: Tweet[] = (tweetsResult.data || []).map(formatTweetData);
+      const formattedReplies: Tweet[] = (repliesResult.data || []).map(formatTweetData);
+      const formattedLikes: Tweet[] = (likesResult.data || []).map(like => formatTweetData(like.tweets));
 
-      setProfile(formattedProfile);
       setTweets(formattedTweets);
       setReplies(formattedReplies);
       setLikes(formattedLikes);
@@ -242,7 +268,6 @@ export const ProfilePage: React.FC = () => {
   };
 
   const handleLike = async (tweetId: string) => {
-    // TODO: Implement like functionality
     console.log('Like tweet:', tweetId);
   };
 
@@ -266,21 +291,6 @@ export const ProfilePage: React.FC = () => {
         return tweets.filter(tweet => tweet.images && tweet.images.length > 0);
       default:
         return tweets;
-    }
-  };
-
-  const getCurrentTabCount = () => {
-    switch (activeTab) {
-      case 'tweets':
-        return tweets.length;
-      case 'replies':
-        return replies.length;
-      case 'likes':
-        return likes.length;
-      case 'media':
-        return tweets.filter(tweet => tweet.images && tweet.images.length > 0).length;
-      default:
-        return tweets.length;
     }
   };
 
