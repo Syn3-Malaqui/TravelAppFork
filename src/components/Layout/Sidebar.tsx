@@ -7,8 +7,7 @@ import {
   User, 
   Settings,
   LogOut,
-  Hash,
-  TrendingUp,
+  UserPlus,
   ChevronRight
 } from 'lucide-react';
 import { Button } from '../ui/button';
@@ -21,9 +20,10 @@ import {
 } from '../ui/dropdown-menu';
 import { useAuth } from '../../hooks/useAuth';
 import { useNotifications } from '../../hooks/useNotifications';
-import { useHashtags } from '../../hooks/useHashtags';
+import { useFollow } from '../../hooks/useFollow';
 import { storageService } from '../../lib/storage';
 import { supabase } from '../../lib/supabase';
+import { User as UserType } from '../../types';
 
 const sidebarItems = [
   { icon: Home, label: 'Home', path: '/' },
@@ -37,13 +37,15 @@ export const Sidebar: React.FC = () => {
   const location = useLocation();
   const { user, signOut } = useAuth();
   const { unreadCount } = useNotifications();
-  const { trendingHashtags, loading: hashtagsLoading } = useHashtags();
+  const { followUser, isFollowing, loading: followLoading } = useFollow();
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [userProfile, setUserProfile] = useState<{
     displayName: string;
     username: string;
     avatar: string;
   } | null>(null);
+  const [recommendedUsers, setRecommendedUsers] = useState<UserType[]>([]);
+  const [loadingRecommendations, setLoadingRecommendations] = useState(false);
 
   // Fetch user profile data
   useEffect(() => {
@@ -78,6 +80,58 @@ export const Sidebar: React.FC = () => {
     fetchUserProfile();
   }, [user]);
 
+  // Fetch recommended users
+  useEffect(() => {
+    const fetchRecommendedUsers = async () => {
+      if (!user) return;
+
+      try {
+        setLoadingRecommendations(true);
+
+        // Get users that the current user is NOT following, ordered by follower count
+        const { data: followingData } = await supabase
+          .from('follows')
+          .select('following_id')
+          .eq('follower_id', user.id);
+
+        const followingIds = followingData?.map(f => f.following_id) || [];
+        
+        // Add current user ID to exclude them from recommendations
+        const excludeIds = [...followingIds, user.id];
+
+        const { data: usersData, error } = await supabase
+          .from('profiles')
+          .select('id, username, display_name, avatar_url, bio, verified, followers_count, country')
+          .not('id', 'in', `(${excludeIds.join(',')})`)
+          .order('followers_count', { ascending: false })
+          .limit(6);
+
+        if (error) throw error;
+
+        const formattedUsers: UserType[] = (usersData || []).map(userData => ({
+          id: userData.id,
+          username: userData.username,
+          displayName: userData.display_name,
+          avatar: userData.avatar_url || '',
+          bio: userData.bio || '',
+          verified: userData.verified || false,
+          followers: userData.followers_count || 0,
+          following: 0,
+          country: userData.country || '',
+          joinedDate: new Date(),
+        }));
+
+        setRecommendedUsers(formattedUsers);
+      } catch (error) {
+        console.error('Error fetching recommended users:', error);
+      } finally {
+        setLoadingRecommendations(false);
+      }
+    };
+
+    fetchRecommendedUsers();
+  }, [user]);
+
   const handleTweetClick = () => {
     navigate('/compose');
   };
@@ -99,12 +153,28 @@ export const Sidebar: React.FC = () => {
     navigate('/profile');
   };
 
-  const handleHashtagClick = (hashtag: string) => {
-    const cleanHashtag = hashtag.replace('#', '');
-    navigate(`/hashtag/${cleanHashtag}`);
+  const handleUserClick = (username: string) => {
+    navigate(`/profile/${username}`);
   };
 
-  const handleViewAllHashtags = () => {
+  const handleFollowClick = async (userId: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    
+    try {
+      if (isFollowing(userId)) {
+        // Don't unfollow from recommendations - just let them navigate to profile
+        return;
+      } else {
+        await followUser(userId);
+        // Remove from recommendations after following
+        setRecommendedUsers(prev => prev.filter(user => user.id !== userId));
+      }
+    } catch (error) {
+      console.error('Error following user:', error);
+    }
+  };
+
+  const handleViewAllRecommendations = () => {
     navigate('/search');
   };
 
@@ -161,95 +231,121 @@ export const Sidebar: React.FC = () => {
         </Button>
       </nav>
 
-      {/* Trending Hashtags Section */}
+      {/* Recommended People Section */}
       <div className="flex-1 overflow-hidden">
         <div className="bg-gray-50 rounded-2xl p-4 h-full flex flex-col">
           {/* Header */}
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center space-x-2">
-              <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
-                <Hash className="w-4 h-4 text-blue-500" />
+              <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
+                <UserPlus className="w-4 h-4 text-green-500" />
               </div>
-              <h3 className="font-bold text-gray-900 text-lg">Trending</h3>
+              <h3 className="font-bold text-gray-900 text-lg">Who to follow</h3>
             </div>
             <Button
               variant="ghost"
               size="sm"
-              onClick={handleViewAllHashtags}
+              onClick={handleViewAllRecommendations}
               className="text-blue-500 hover:text-blue-600 p-1"
             >
               <ChevronRight className="w-4 h-4" />
             </Button>
           </div>
 
-          {/* Hashtags List */}
+          {/* Users List */}
           <div className="flex-1 overflow-y-auto">
-            {hashtagsLoading ? (
-              <div className="space-y-3">
-                {Array.from({ length: 6 }).map((_, index) => (
+            {loadingRecommendations ? (
+              <div className="space-y-4">
+                {Array.from({ length: 4 }).map((_, index) => (
                   <div key={index} className="animate-pulse">
                     <div className="flex items-center space-x-3">
-                      <div className="w-6 h-6 bg-gray-200 rounded-full"></div>
+                      <div className="w-10 h-10 bg-gray-200 rounded-full"></div>
                       <div className="flex-1">
                         <div className="h-4 bg-gray-200 rounded w-3/4 mb-1"></div>
-                        <div className="h-3 bg-gray-200 rounded w-1/2"></div>
+                        <div className="h-3 bg-gray-200 rounded w-1/2 mb-2"></div>
+                        <div className="h-6 bg-gray-200 rounded w-16"></div>
                       </div>
                     </div>
                   </div>
                 ))}
               </div>
             ) : (
-              <div className="space-y-2">
-                {trendingHashtags.slice(0, 8).map((item, index) => (
+              <div className="space-y-3">
+                {recommendedUsers.slice(0, 5).map((recommendedUser) => (
                   <div
-                    key={item.hashtag}
-                    onClick={() => handleHashtagClick(item.hashtag)}
+                    key={recommendedUser.id}
                     className="p-3 hover:bg-white rounded-xl cursor-pointer transition-colors group"
+                    onClick={() => handleUserClick(recommendedUser.username)}
                   >
-                    <div className="flex items-start justify-between">
-                      <div className="flex items-center space-x-3 min-w-0 flex-1">
-                        <div className="w-6 h-6 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0">
-                          <Hash className="w-3 h-3 text-blue-500" />
-                        </div>
-                        <div className="min-w-0 flex-1">
+                    <div className="flex items-start space-x-3">
+                      <Avatar className="w-10 h-10 flex-shrink-0">
+                        <AvatarImage 
+                          src={recommendedUser.avatar ? storageService.getOptimizedImageUrl(recommendedUser.avatar, { width: 80, quality: 80 }) : undefined} 
+                        />
+                        <AvatarFallback className="bg-gray-200 text-gray-600 text-sm">
+                          {recommendedUser.displayName[0]?.toUpperCase()}
+                        </AvatarFallback>
+                      </Avatar>
+                      
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center space-x-1 mb-1">
                           <p className="font-bold text-gray-900 text-sm truncate group-hover:text-blue-600 transition-colors">
-                            {item.hashtag}
+                            {recommendedUser.displayName}
                           </p>
-                          <p className="text-xs text-gray-500 truncate">
-                            {item.count.toLocaleString()} posts
-                            {item.recent_tweets > 0 && (
-                              <span className="ml-1 text-blue-500">
-                                • {item.recent_tweets} recent
-                              </span>
-                            )}
-                          </p>
+                          {recommendedUser.verified && (
+                            <div className="w-3 h-3 bg-blue-500 rounded-full flex items-center justify-center flex-shrink-0">
+                              <span className="text-white text-xs">✓</span>
+                            </div>
+                          )}
                         </div>
-                      </div>
-                      <div className="flex items-center space-x-1 text-gray-400 flex-shrink-0 ml-2">
-                        <TrendingUp className="w-3 h-3" />
-                        <span className="text-xs">#{index + 1}</span>
+                        
+                        <p className="text-xs text-gray-500 truncate mb-2">
+                          @{recommendedUser.username}
+                        </p>
+                        
+                        {recommendedUser.bio && (
+                          <p className="text-xs text-gray-700 line-clamp-2 mb-2">
+                            {recommendedUser.bio}
+                          </p>
+                        )}
+                        
+                        <div className="flex items-center justify-between">
+                          <p className="text-xs text-gray-500">
+                            {recommendedUser.followers.toLocaleString()} followers
+                          </p>
+                          
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={(e) => handleFollowClick(recommendedUser.id, e)}
+                            disabled={followLoading}
+                            className="text-xs px-3 py-1 h-6 bg-blue-500 text-white border-blue-500 hover:bg-blue-600 hover:border-blue-600 rounded-full"
+                          >
+                            {followLoading ? '...' : 'Follow'}
+                          </Button>
+                        </div>
                       </div>
                     </div>
                   </div>
                 ))}
 
-                {trendingHashtags.length === 0 && !hashtagsLoading && (
+                {recommendedUsers.length === 0 && !loadingRecommendations && (
                   <div className="text-center py-6 text-gray-500">
-                    <Hash className="w-8 h-8 mx-auto mb-2 text-gray-300" />
-                    <p className="text-sm">No trending hashtags</p>
+                    <UserPlus className="w-8 h-8 mx-auto mb-2 text-gray-300" />
+                    <p className="text-sm">No recommendations</p>
                     <p className="text-xs text-gray-400 mt-1">Check back later!</p>
                   </div>
                 )}
 
                 {/* View More Button */}
-                {trendingHashtags.length > 8 && (
+                {recommendedUsers.length > 0 && (
                   <div className="pt-2">
                     <Button
                       variant="ghost"
-                      onClick={handleViewAllHashtags}
+                      onClick={handleViewAllRecommendations}
                       className="w-full text-blue-500 hover:text-blue-600 hover:bg-blue-50 text-sm py-2 rounded-xl"
                     >
-                      View all trends
+                      Show more
                     </Button>
                   </div>
                 )}
@@ -260,7 +356,7 @@ export const Sidebar: React.FC = () => {
           {/* Footer */}
           <div className="pt-3 border-t border-gray-200 mt-3">
             <p className="text-xs text-gray-400 text-center">
-              Trends from the past 48 hours
+              Suggestions based on your activity
             </p>
           </div>
         </div>
