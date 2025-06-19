@@ -254,7 +254,24 @@ export const useTweets = () => {
         return;
       }
 
-      // Optimized query using a single join instead of separate queries
+      // First, get the list of users the current user is following
+      const { data: followingData, error: followingError } = await supabase
+        .from('follows')
+        .select('following_id')
+        .eq('follower_id', user.id);
+
+      if (followingError) throw followingError;
+
+      // If user is not following anyone, return empty array
+      if (!followingData || followingData.length === 0) {
+        setFollowingTweets([]);
+        setLoading(false);
+        return;
+      }
+
+      const followingIds = followingData.map(follow => follow.following_id);
+
+      // Now fetch tweets from followed users
       const { data, error } = await supabase
         .from('tweets')
         .select(`
@@ -310,20 +327,15 @@ export const useTweets = () => {
             )
           )
         `)
-        .in('author_id', 
-          supabase
-            .from('follows')
-            .select('following_id')
-            .eq('follower_id', user.id)
-        )
+        .in('author_id', followingIds)
         .is('reply_to', null)
         .order('created_at', { ascending: false })
         .limit(20);
 
       if (error) throw error;
 
-      // Ensure data is an array before processing
-      const tweetsData = Array.isArray(data) ? data : [];
+      // Ensure data is an array before processing - more robust check
+      const tweetsData = (data && Array.isArray(data)) ? data : [];
 
       // Get all tweet IDs for interaction fetching
       const tweetIds = tweetsData.map(tweet => tweet.id);
@@ -334,8 +346,8 @@ export const useTweets = () => {
       const interactions = await fetchUserInteractions(allTweetIds);
       const { userLikes, userRetweets, userBookmarks } = interactions || { userLikes: [], userRetweets: [], userBookmarks: [] };
 
-      const formattedTweets: Tweet[] = (tweetsData as TweetWithProfile[]).map(tweet => 
-        formatTweetData(tweet, userLikes, userRetweets, userBookmarks)
+      const formattedTweets: Tweet[] = tweetsData.map(tweet => 
+        formatTweetData(tweet as TweetWithProfile, userLikes, userRetweets, userBookmarks)
       );
 
       setFollowingTweets(formattedTweets);
