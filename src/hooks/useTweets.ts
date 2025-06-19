@@ -10,6 +10,8 @@ export const useTweets = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const channelRef = useRef<RealtimeChannel | null>(null);
+  const lastFetchTimeRef = useRef<string | null>(null);
+  const pollingIntervalRef = useRef<NodeJS.Timeout | null>(null);
   
   // Cache for user interactions to reduce database queries
   const [userInteractions, setUserInteractions] = useState<{
@@ -152,6 +154,226 @@ export const useTweets = () => {
     }
   }, []);
 
+  // Check for new tweets since last fetch
+  const checkForNewTweets = useCallback(async () => {
+    try {
+      if (!lastFetchTimeRef.current) return;
+
+      // Check for new tweets in the main feed
+      const { data: newTweetsData, error: tweetsError } = await supabase
+        .from('tweets')
+        .select(`
+          id,
+          content,
+          author_id,
+          image_urls,
+          hashtags,
+          mentions,
+          tags,
+          likes_count,
+          retweets_count,
+          replies_count,
+          views_count,
+          created_at,
+          is_retweet,
+          original_tweet_id,
+          profiles!tweets_author_id_fkey (
+            id,
+            username,
+            display_name,
+            avatar_url,
+            bio,
+            verified,
+            followers_count,
+            following_count,
+            country,
+            created_at
+          ),
+          original_tweet:original_tweet_id (
+            id,
+            content,
+            image_urls,
+            hashtags,
+            mentions,
+            tags,
+            likes_count,
+            retweets_count,
+            replies_count,
+            views_count,
+            created_at,
+            profiles!tweets_author_id_fkey (
+              id,
+              username,
+              display_name,
+              avatar_url,
+              bio,
+              verified,
+              followers_count,
+              following_count,
+              country,
+              created_at
+            )
+          )
+        `)
+        .is('reply_to', null)
+        .gt('created_at', lastFetchTimeRef.current)
+        .order('created_at', { ascending: false })
+        .limit(10);
+
+      if (tweetsError) throw tweetsError;
+
+      const newTweets = Array.isArray(newTweetsData) ? newTweetsData : [];
+
+      if (newTweets.length > 0) {
+        // Get all tweet IDs for interaction fetching
+        const tweetIds = newTweets.map(tweet => tweet.id);
+        const originalTweetIds = newTweets.filter(tweet => tweet.original_tweet_id).map(tweet => tweet.original_tweet_id);
+        const allTweetIds = [...tweetIds, ...originalTweetIds];
+
+        // Fetch user interactions
+        const interactions = await fetchUserInteractions(allTweetIds);
+        const { userLikes, userRetweets, userBookmarks } = interactions || { userLikes: [], userRetweets: [], userBookmarks: [] };
+
+        const formattedTweets: Tweet[] = (newTweets as TweetWithProfile[]).map(tweet => 
+          formatTweetData(tweet, userLikes, userRetweets, userBookmarks)
+        );
+
+        // Add new tweets to the beginning of the list
+        setTweets(prev => {
+          const existingIds = new Set(prev.map(t => t.id));
+          const uniqueNewTweets = formattedTweets.filter(tweet => !existingIds.has(tweet.id));
+          
+          if (uniqueNewTweets.length > 0) {
+            return [...uniqueNewTweets, ...prev];
+          }
+          return prev;
+        });
+
+        // Update last fetch time
+        lastFetchTimeRef.current = newTweets[0].created_at;
+      }
+
+      // Also check for following tweets if user is authenticated
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        const { data: followingData } = await supabase
+          .from('follows')
+          .select('following_id')
+          .eq('follower_id', user.id);
+
+        if (followingData && followingData.length > 0) {
+          const followingIds = followingData.map(follow => follow.following_id);
+
+          const { data: newFollowingTweetsData, error: followingError } = await supabase
+            .from('tweets')
+            .select(`
+              id,
+              content,
+              author_id,
+              image_urls,
+              hashtags,
+              mentions,
+              tags,
+              likes_count,
+              retweets_count,
+              replies_count,
+              views_count,
+              created_at,
+              is_retweet,
+              original_tweet_id,
+              profiles!tweets_author_id_fkey (
+                id,
+                username,
+                display_name,
+                avatar_url,
+                bio,
+                verified,
+                followers_count,
+                following_count,
+                country,
+                created_at
+              ),
+              original_tweet:original_tweet_id (
+                id,
+                content,
+                image_urls,
+                hashtags,
+                mentions,
+                tags,
+                likes_count,
+                retweets_count,
+                replies_count,
+                views_count,
+                created_at,
+                profiles!tweets_author_id_fkey (
+                  id,
+                  username,
+                  display_name,
+                  avatar_url,
+                  bio,
+                  verified,
+                  followers_count,
+                  following_count,
+                  country,
+                  created_at
+                )
+              )
+            `)
+            .in('author_id', followingIds)
+            .is('reply_to', null)
+            .gt('created_at', lastFetchTimeRef.current)
+            .order('created_at', { ascending: false })
+            .limit(10);
+
+          if (!followingError && newFollowingTweetsData) {
+            const newFollowingTweets = Array.isArray(newFollowingTweetsData) ? newFollowingTweetsData : [];
+
+            if (newFollowingTweets.length > 0) {
+              const tweetIds = newFollowingTweets.map(tweet => tweet.id);
+              const originalTweetIds = newFollowingTweets.filter(tweet => tweet.original_tweet_id).map(tweet => tweet.original_tweet_id);
+              const allTweetIds = [...tweetIds, ...originalTweetIds];
+
+              const interactions = await fetchUserInteractions(allTweetIds);
+              const { userLikes, userRetweets, userBookmarks } = interactions || { userLikes: [], userRetweets: [], userBookmarks: [] };
+
+              const formattedFollowingTweets: Tweet[] = newFollowingTweets.map(tweet => 
+                formatTweetData(tweet as TweetWithProfile, userLikes, userRetweets, userBookmarks)
+              );
+
+              setFollowingTweets(prev => {
+                const existingIds = new Set(prev.map(t => t.id));
+                const uniqueNewTweets = formattedFollowingTweets.filter(tweet => !existingIds.has(tweet.id));
+                
+                if (uniqueNewTweets.length > 0) {
+                  return [...uniqueNewTweets, ...prev];
+                }
+                return prev;
+              });
+            }
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Error checking for new tweets:', error);
+    }
+  }, [fetchUserInteractions, formatTweetData]);
+
+  // Set up polling for new tweets
+  useEffect(() => {
+    if (!lastFetchTimeRef.current) return;
+
+    // Poll every 15 seconds for new tweets
+    pollingIntervalRef.current = setInterval(() => {
+      checkForNewTweets();
+    }, 15000);
+
+    return () => {
+      if (pollingIntervalRef.current) {
+        clearInterval(pollingIntervalRef.current);
+      }
+    };
+  }, [checkForNewTweets]);
+
   // Handle real-time updates for likes, retweets, and other interactions
   const handleRealtimeUpdate = useCallback((payload: any, table: string) => {
     const updateTweetInList = (tweetList: Tweet[]) => 
@@ -283,6 +505,9 @@ export const useTweets = () => {
           });
         }
       }
+
+      // Update last fetch time
+      lastFetchTimeRef.current = tweetData.created_at;
     } catch (error) {
       console.error('Error handling new tweet:', error);
     }
@@ -301,7 +526,7 @@ export const useTweets = () => {
 
         // Create new subscription channel
         const channel = supabase
-          .channel('tweet_interactions_and_new_tweets')
+          .channel(`tweet_interactions_and_new_tweets_${Date.now()}`)
           .on(
             'postgres_changes',
             {
@@ -421,6 +646,11 @@ export const useTweets = () => {
 
       // Ensure data is an array before processing
       const tweetsData = Array.isArray(data) ? data : [];
+
+      // Set last fetch time to the newest tweet's timestamp
+      if (tweetsData.length > 0) {
+        lastFetchTimeRef.current = tweetsData[0].created_at;
+      }
 
       // Get all tweet IDs for interaction fetching
       const tweetIds = tweetsData.map(tweet => tweet.id);
@@ -770,6 +1000,9 @@ export const useTweets = () => {
       setTweets(prev => [formattedTweet, ...prev]);
       setFollowingTweets(prev => [formattedTweet, ...prev]);
       
+      // Update last fetch time
+      lastFetchTimeRef.current = data.created_at;
+      
       return data;
     } catch (err: any) {
       throw new Error(err.message);
@@ -988,6 +1221,9 @@ export const useTweets = () => {
       if (channelRef.current) {
         channelRef.current.unsubscribe();
         supabase.removeChannel(channelRef.current);
+      }
+      if (pollingIntervalRef.current) {
+        clearInterval(pollingIntervalRef.current);
       }
     };
   }, []);

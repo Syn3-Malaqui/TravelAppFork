@@ -22,6 +22,8 @@ export const useLazyTweets = (options: UseLazyTweetsOptions = {}) => {
   const cacheTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const channelRef = useRef<RealtimeChannel | null>(null);
   const followingIdsRef = useRef<string[]>([]);
+  const lastFetchTimeRef = useRef<string | null>(null);
+  const pollingIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
   // Cache tweets in sessionStorage for better performance
   const cacheTweets = useCallback((tweetsToCache: Tweet[]) => {
@@ -47,8 +49,8 @@ export const useLazyTweets = (options: UseLazyTweetsOptions = {}) => {
       
       const { tweets: cachedTweets, timestamp, offset } = JSON.parse(cached);
       
-      // Cache expires after 5 minutes
-      if (Date.now() - timestamp > 5 * 60 * 1000) {
+      // Cache expires after 2 minutes for more frequent updates
+      if (Date.now() - timestamp > 2 * 60 * 1000) {
         sessionStorage.removeItem(cacheKey);
         return null;
       }
@@ -185,7 +187,148 @@ export const useLazyTweets = (options: UseLazyTweetsOptions = {}) => {
     }
   }, []);
 
-  // Handle real-time tweet insertions
+  // Check for new tweets since last fetch
+  const checkForNewTweets = useCallback(async () => {
+    try {
+      if (!lastFetchTimeRef.current) return;
+
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user && followingOnly) return;
+
+      let query = supabase
+        .from('tweets')
+        .select(`
+          id,
+          content,
+          author_id,
+          image_urls,
+          hashtags,
+          mentions,
+          tags,
+          likes_count,
+          retweets_count,
+          replies_count,
+          views_count,
+          created_at,
+          is_retweet,
+          original_tweet_id,
+          profiles!tweets_author_id_fkey (
+            id,
+            username,
+            display_name,
+            avatar_url,
+            bio,
+            verified,
+            followers_count,
+            following_count,
+            country,
+            created_at
+          ),
+          original_tweet:original_tweet_id (
+            id,
+            content,
+            image_urls,
+            hashtags,
+            mentions,
+            tags,
+            likes_count,
+            retweets_count,
+            replies_count,
+            views_count,
+            created_at,
+            profiles!tweets_author_id_fkey (
+              id,
+              username,
+              display_name,
+              avatar_url,
+              bio,
+              verified,
+              followers_count,
+              following_count,
+              country,
+              created_at
+            )
+          )
+        `)
+        .is('reply_to', null)
+        .gt('created_at', lastFetchTimeRef.current)
+        .order('created_at', { ascending: false });
+
+      // For following feed, filter by followed users
+      if (followingOnly && user) {
+        if (followingIdsRef.current.length === 0) {
+          await fetchFollowingUsers();
+        }
+        
+        if (followingIdsRef.current.length === 0) return;
+        query = query.in('author_id', followingIdsRef.current);
+      }
+
+      const { data, error } = await query.limit(20);
+
+      if (error) throw error;
+
+      const tweetsData = Array.isArray(data) ? data : [];
+
+      if (tweetsData.length > 0) {
+        // Get all tweet IDs for interaction fetching
+        const tweetIds = tweetsData.map(tweet => tweet.id);
+        const originalTweetIds = tweetsData.filter(tweet => tweet.original_tweet_id).map(tweet => tweet.original_tweet_id);
+        const allTweetIds = [...tweetIds, ...originalTweetIds];
+
+        // Fetch user interactions
+        const { userLikes, userRetweets, userBookmarks } = await fetchUserInteractions(allTweetIds);
+
+        const formattedTweets: Tweet[] = (tweetsData as TweetWithProfile[]).map(tweet => 
+          formatTweetData(tweet, userLikes, userRetweets, userBookmarks)
+        );
+
+        // Add new tweets to the beginning of the list
+        setTweets(prev => {
+          const existingIds = new Set(prev.map(t => t.id));
+          const newTweets = formattedTweets.filter(tweet => !existingIds.has(tweet.id));
+          
+          if (newTweets.length > 0) {
+            const updatedTweets = [...newTweets, ...prev];
+            
+            // Cache the updated tweets
+            if (cacheTimeoutRef.current) {
+              clearTimeout(cacheTimeoutRef.current);
+            }
+            cacheTimeoutRef.current = setTimeout(() => {
+              cacheTweets(updatedTweets);
+            }, 500);
+            
+            return updatedTweets;
+          }
+          return prev;
+        });
+
+        // Update last fetch time to the newest tweet's timestamp
+        lastFetchTimeRef.current = tweetsData[0].created_at;
+      }
+    } catch (error) {
+      console.error('Error checking for new tweets:', error);
+    }
+  }, [followingOnly, fetchUserInteractions, formatTweetData, cacheTweets, fetchFollowingUsers]);
+
+  // Set up polling for new tweets
+  useEffect(() => {
+    if (!lastFetchTimeRef.current) return;
+
+    // Poll every 10 seconds for new tweets
+    pollingIntervalRef.current = setInterval(() => {
+      checkForNewTweets();
+    }, 10000);
+
+    return () => {
+      if (pollingIntervalRef.current) {
+        clearInterval(pollingIntervalRef.current);
+      }
+    };
+  }, [checkForNewTweets]);
+
+  // Handle real-time tweet insertions via Supabase realtime
   const handleNewTweet = useCallback(async (payload: any) => {
     try {
       // Don't add if this is a reply (we only want main timeline tweets)
@@ -272,6 +415,9 @@ export const useLazyTweets = (options: UseLazyTweetsOptions = {}) => {
         
         const newTweets = [formattedTweet, ...prev];
         
+        // Update last fetch time
+        lastFetchTimeRef.current = tweetData.created_at;
+        
         // Cache the updated tweets
         if (cacheTimeoutRef.current) {
           clearTimeout(cacheTimeoutRef.current);
@@ -304,7 +450,7 @@ export const useLazyTweets = (options: UseLazyTweetsOptions = {}) => {
         }
 
         // Create new subscription
-        const channelName = `tweets_realtime_${followingOnly ? 'following' : 'for_you'}`;
+        const channelName = `tweets_realtime_${followingOnly ? 'following' : 'for_you'}_${Date.now()}`;
         
         const channel = supabase
           .channel(channelName)
@@ -452,6 +598,11 @@ export const useLazyTweets = (options: UseLazyTweetsOptions = {}) => {
       }
 
       if (tweetsData.length > 0) {
+        // Set last fetch time to the newest tweet's timestamp (for first load)
+        if (!lastFetchTimeRef.current && tweetsData.length > 0) {
+          lastFetchTimeRef.current = tweetsData[0].created_at;
+        }
+
         // Get all tweet IDs for interaction fetching
         const tweetIds = tweetsData.map(tweet => tweet.id);
         const originalTweetIds = tweetsData.filter(tweet => tweet.original_tweet_id).map(tweet => tweet.original_tweet_id);
@@ -502,7 +653,13 @@ export const useLazyTweets = (options: UseLazyTweetsOptions = {}) => {
     setError(null);
     offsetRef.current = 0;
     loadingRef.current = false;
+    lastFetchTimeRef.current = null;
     sessionStorage.removeItem(cacheKey);
+    
+    // Clear polling interval
+    if (pollingIntervalRef.current) {
+      clearInterval(pollingIntervalRef.current);
+    }
   }, [cacheKey]);
 
   // Initial load
@@ -512,6 +669,10 @@ export const useLazyTweets = (options: UseLazyTweetsOptions = {}) => {
       const cachedTweets = getCachedTweets();
       if (cachedTweets && cachedTweets.length > 0) {
         setTweets(cachedTweets);
+        // Set last fetch time from cached data
+        if (cachedTweets.length > 0) {
+          lastFetchTimeRef.current = cachedTweets[0].createdAt.toISOString();
+        }
         // Still load more in the background to get fresh data
         setTimeout(() => {
           loadMoreTweets();
@@ -531,6 +692,9 @@ export const useLazyTweets = (options: UseLazyTweetsOptions = {}) => {
       if (channelRef.current) {
         channelRef.current.unsubscribe();
         supabase.removeChannel(channelRef.current);
+      }
+      if (pollingIntervalRef.current) {
+        clearInterval(pollingIntervalRef.current);
       }
     };
   }, []);
