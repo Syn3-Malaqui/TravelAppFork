@@ -4,22 +4,18 @@ import { LoadingSpinner } from './LoadingSpinner';
 interface LazyLoadWrapperProps {
   children: React.ReactNode;
   fallback?: React.ReactNode;
-  className?: string;
 }
 
-export const LazyLoadWrapper: React.FC<LazyLoadWrapperProps> = ({
-  children,
-  fallback,
-  className = '',
+export const LazyLoadWrapper: React.FC<LazyLoadWrapperProps> = ({ 
+  children, 
+  fallback 
 }) => {
-  const defaultFallback = (
-    <div className={`min-h-screen bg-white flex items-center justify-center ${className}`}>
-      <LoadingSpinner size="lg" text="Loading..." />
-    </div>
-  );
-
   return (
-    <Suspense fallback={fallback || defaultFallback}>
+    <Suspense fallback={fallback || (
+      <div className="flex items-center justify-center min-h-screen">
+        <LoadingSpinner size="lg" text="Loading content..." />
+      </div>
+    )}>
       {children}
     </Suspense>
   );

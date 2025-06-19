@@ -4,6 +4,7 @@ import { InfiniteScrollTweets } from './InfiniteScrollTweets';
 import { MobileTabs } from '../Layout/MobileTabs';
 import { CountryFilter } from '../Layout/CountryFilter';
 import { CategoriesFilter } from '../Layout/CategoriesFilter';
+import { FilterNavigation } from '../Layout/FilterNavigation';
 import { TrendingSidebar } from '../Layout/TrendingSidebar';
 import { Button } from '../ui/button';
 import { LazyAvatar } from '../ui/LazyAvatar';
@@ -16,6 +17,7 @@ export const Timeline: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'for-you' | 'following'>('for-you');
   const [categoryFilter, setCategoryFilter] = useState<string | null>(null);
   const [countryFilter, setCountryFilter] = useState<string>('ALL');
+  const [selectedFilter, setSelectedFilter] = useState<string>('all');
   const [showSidebar, setShowSidebar] = useState(true);
   const { user } = useAuth();
   const [userProfile, setUserProfile] = useState<{
@@ -90,6 +92,46 @@ export const Timeline: React.FC = () => {
     setActiveTab(tab);
   };
 
+  const handleFilterChange = (filterId: string) => {
+    setSelectedFilter(filterId);
+    
+    // Map filter IDs to category filters
+    switch (filterId) {
+      case 'all':
+        setCategoryFilter(null);
+        break;
+      case 'general':
+        setCategoryFilter('General Discussions');
+        break;
+      case 'hotels':
+        setCategoryFilter('Hotels');
+        break;
+      case 'flights':
+        setCategoryFilter('Flights');
+        break;
+      case 'restaurants':
+        setCategoryFilter('Restaurants and Coffees');
+        break;
+      case 'visas':
+        setCategoryFilter('Visas');
+        break;
+      case 'car-rental':
+        setCategoryFilter('Car Rental');
+        break;
+      case 'schedules':
+        setCategoryFilter('Tourist Schedules');
+        break;
+      case 'images':
+        setCategoryFilter('Images and Creators');
+        break;
+      case 'real-estate':
+        setCategoryFilter('Real Estate');
+        break;
+      default:
+        setCategoryFilter(null);
+    }
+  };
+
   return (
     <div className="h-full flex">
       {/* Desktop Layout with Conditional Sidebar */}
@@ -129,19 +171,11 @@ export const Timeline: React.FC = () => {
               </Button>
             </div>
 
-            {/* Filters section - moved below tabs */}
-            <div className="flex items-center justify-between p-4 bg-gray-50 border-b border-gray-200">
-              <div className="flex items-center space-x-3">
-                <CategoriesFilter 
-                  selectedCategory={categoryFilter}
-                  onCategoryChange={handleCategoryFilter}
-                />
-                <CountryFilter 
-                  selectedCountry={countryFilter}
-                  onCountryChange={handleCountryFilter}
-                />
-              </div>
-            </div>
+            {/* WhatsApp-style filter navigation */}
+            <FilterNavigation 
+              selectedFilter={selectedFilter}
+              onFilterChange={handleFilterChange}
+            />
           </div>
 
           {/* Timeline - Scrollable container */}
@@ -175,7 +209,10 @@ export const Timeline: React.FC = () => {
                       <span>
                         Category: <span className="font-semibold">{categoryFilter}</span>
                         <button 
-                          onClick={() => setCategoryFilter(null)}
+                          onClick={() => {
+                            setCategoryFilter(null);
+                            setSelectedFilter('all');
+                          }}
                           className="ml-2 text-blue-500 hover:text-blue-700 underline"
                         >
                           Clear
@@ -214,29 +251,11 @@ export const Timeline: React.FC = () => {
         {/* Mobile Tabs */}
         <MobileTabs activeTab={activeTab} onTabChange={handleTabChange} />
 
-        {/* Mobile Filters - Desktop-Style with Rounded Buttons */}
-        <div className="bg-white border-b border-gray-200 px-4 py-3">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-3 flex-1">
-              <CategoriesFilter 
-                selectedCategory={categoryFilter}
-                onCategoryChange={handleCategoryFilter}
-              />
-              <CountryFilter 
-                selectedCountry={countryFilter}
-                onCountryChange={handleCountryFilter}
-              />
-            </div>
-            
-            {/* Active Filters Indicator */}
-            {(categoryFilter || countryFilter !== 'ALL') && (
-              <div className="flex items-center space-x-1 ml-3">
-                <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                <span className="text-xs text-blue-600 font-medium">Active</span>
-              </div>
-            )}
-          </div>
-        </div>
+        {/* WhatsApp-style filter navigation for mobile */}
+        <FilterNavigation 
+          selectedFilter={selectedFilter}
+          onFilterChange={handleFilterChange}
+        />
 
         {/* Timeline - Scrollable container */}
         <div className="flex-1 overflow-y-auto">
@@ -249,7 +268,10 @@ export const Timeline: React.FC = () => {
                     <span>
                       Category: <span className="font-semibold">{categoryFilter}</span>
                       <button 
-                        onClick={() => setCategoryFilter(null)}
+                        onClick={() => {
+                          setCategoryFilter(null);
+                          setSelectedFilter('all');
+                        }}
                         className="ml-2 text-blue-500 hover:text-blue-700 underline"
                       >
                         Clear
