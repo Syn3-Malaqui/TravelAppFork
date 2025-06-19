@@ -1,7 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { Search, X, TrendingUp, Hash, User, Filter, ChevronDown, ChevronUp } from 'lucide-react';
+import { Search, X, TrendingUp, Hash, User, Filter, ChevronDown, ChevronUp, Tag, Globe } from 'lucide-react';
 import { Button } from '../ui/button';
 import { Avatar, AvatarImage, AvatarFallback } from '../ui/avatar';
+import { 
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '../ui/dropdown-menu';
 import { TweetCard } from '../Tweet/TweetCard';
 import { MobileTweetCard } from '../Tweet/MobileTweetCard';
 import { TweetSkeletonList } from '../Tweet/TweetSkeleton';
@@ -269,92 +275,127 @@ export const OptimizedSearchPage: React.FC = () => {
             )}
           </div>
 
-          {/* Filter Toggle Button */}
+          {/* Filter Buttons Row */}
           <div className="flex items-center justify-between mt-3">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setShowFilters(!showFilters)}
-              className={`flex items-center space-x-2 ${hasActiveFilters ? 'border-blue-500 text-blue-600' : ''}`}
-            >
-              <Filter className="h-4 w-4" />
-              <span>Filters</span>
-              {hasActiveFilters && (
-                <span className="bg-blue-500 text-white text-xs rounded-full px-2 py-1">
-                  {selectedTags.length + selectedCountries.length}
-                </span>
-              )}
-              {showFilters ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-            </Button>
+            <div className="flex items-center space-x-3">
+              {/* Categories Dropdown */}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className={`flex items-center space-x-2 px-3 py-2 rounded-full text-sm ${
+                      selectedTags.length > 0 
+                        ? 'border-blue-500 text-blue-600 bg-blue-50' 
+                        : 'border-gray-300 hover:bg-gray-50'
+                    }`}
+                  >
+                    <Tag className="h-4 w-4" />
+                    <span>
+                      {selectedTags.length === 0 
+                        ? 'Categories' 
+                        : `Categories (${selectedTags.length})`
+                      }
+                    </span>
+                    <ChevronDown className="h-4 w-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent 
+                  className="w-72 max-h-80 overflow-y-auto rounded-xl"
+                  align="start"
+                  sideOffset={4}
+                >
+                  <div className="p-2">
+                    <div className="text-sm font-medium text-gray-700 mb-2 px-2">Select Categories</div>
+                    {TWEET_CATEGORIES.map((tag) => (
+                      <DropdownMenuItem
+                        key={tag}
+                        onClick={() => toggleTag(tag)}
+                        className={`flex items-center space-x-3 px-3 py-2 cursor-pointer rounded-lg mx-1 my-0.5 ${
+                          selectedTags.includes(tag) ? 'bg-blue-50 text-blue-700' : 'hover:bg-gray-50'
+                        }`}
+                      >
+                        <div className="w-6 h-6 rounded-full bg-gray-100 flex items-center justify-center flex-shrink-0">
+                          <Hash className="w-3 h-3 text-gray-600" />
+                        </div>
+                        <span className="flex-1 text-sm font-medium truncate">{tag}</span>
+                        {selectedTags.includes(tag) && (
+                          <div className="w-4 h-4 bg-blue-500 rounded-full flex items-center justify-center">
+                            <span className="text-white text-xs">✓</span>
+                          </div>
+                        )}
+                      </DropdownMenuItem>
+                    ))}
+                  </div>
+                </DropdownMenuContent>
+              </DropdownMenu>
 
+              {/* Countries Dropdown */}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className={`flex items-center space-x-2 px-3 py-2 rounded-full text-sm ${
+                      selectedCountries.length > 0 
+                        ? 'border-green-500 text-green-600 bg-green-50' 
+                        : 'border-gray-300 hover:bg-gray-50'
+                    }`}
+                  >
+                    <Globe className="h-4 w-4" />
+                    <span>
+                      {selectedCountries.length === 0 
+                        ? 'Countries' 
+                        : `Countries (${selectedCountries.length})`
+                      }
+                    </span>
+                    <ChevronDown className="h-4 w-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent 
+                  className="w-72 max-h-80 overflow-y-auto rounded-xl"
+                  align="start"
+                  sideOffset={4}
+                >
+                  <div className="p-2">
+                    <div className="text-sm font-medium text-gray-700 mb-2 px-2">Select Countries</div>
+                    {selectableCountries.map((country) => (
+                      <DropdownMenuItem
+                        key={country.code}
+                        onClick={() => toggleCountry(country.code)}
+                        className={`flex items-center space-x-3 px-3 py-2 cursor-pointer rounded-lg mx-1 my-0.5 ${
+                          selectedCountries.includes(country.code) ? 'bg-green-50 text-green-700' : 'hover:bg-gray-50'
+                        }`}
+                      >
+                        <div className="w-6 h-6 rounded-full bg-gray-100 flex items-center justify-center flex-shrink-0">
+                          <span className="text-sm">{country.flag}</span>
+                        </div>
+                        <span className="flex-1 text-sm font-medium truncate">{country.name}</span>
+                        {selectedCountries.includes(country.code) && (
+                          <div className="w-4 h-4 bg-green-500 rounded-full flex items-center justify-center">
+                            <span className="text-white text-xs">✓</span>
+                          </div>
+                        )}
+                      </DropdownMenuItem>
+                    ))}
+                  </div>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
+
+            {/* Clear All Filters Button */}
             {hasActiveFilters && (
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={clearAllFilters}
-                className="text-blue-600 hover:text-blue-700"
+                className="text-red-600 hover:text-red-700 hover:bg-red-50 px-3 py-2 rounded-full text-sm"
               >
                 Clear all
               </Button>
             )}
           </div>
         </div>
-
-        {/* Expandable Filters */}
-        {showFilters && (
-          <div className="border-t border-gray-200 bg-gray-50 p-4 space-y-4 flex-shrink-0">
-            {/* Tags Filter */}
-            <div>
-              <h3 className="text-sm font-medium text-gray-700 mb-2 flex items-center">
-                <Hash className="h-4 w-4 mr-1" />
-                Categories
-              </h3>
-              <div className="flex flex-wrap gap-2">
-                {TWEET_CATEGORIES.map((tag) => (
-                  <Button
-                    key={tag}
-                    variant="outline"
-                    size="sm"
-                    onClick={() => toggleTag(tag)}
-                    className={`text-xs ${
-                      selectedTags.includes(tag)
-                        ? 'bg-blue-500 text-white border-blue-500 hover:bg-blue-600'
-                        : 'border-gray-300 text-gray-700 hover:bg-gray-100'
-                    }`}
-                  >
-                    {tag}
-                  </Button>
-                ))}
-              </div>
-            </div>
-
-            {/* Countries Filter */}
-            <div>
-              <h3 className="text-sm font-medium text-gray-700 mb-2 flex items-center">
-                <User className="h-4 w-4 mr-1" />
-                Countries
-              </h3>
-              <div className="flex flex-wrap gap-2 max-h-32 overflow-y-auto">
-                {selectableCountries.map((country) => (
-                  <Button
-                    key={country.code}
-                    variant="outline"
-                    size="sm"
-                    onClick={() => toggleCountry(country.code)}
-                    className={`text-xs flex items-center space-x-1 ${
-                      selectedCountries.includes(country.code)
-                        ? 'bg-green-500 text-white border-green-500 hover:bg-green-600'
-                        : 'border-gray-300 text-gray-700 hover:bg-gray-100'
-                    }`}
-                  >
-                    <span>{country.flag}</span>
-                    <span>{country.name}</span>
-                  </Button>
-                ))}
-              </div>
-            </div>
-          </div>
-        )}
       </div>
 
       {/* Search Tabs - Fixed */}
@@ -507,12 +548,12 @@ export const OptimizedSearchPage: React.FC = () => {
             <div>
               {/* Active Filters Display */}
               {hasActiveFilters && (
-                <div className="bg-blue-50 border-b border-blue-200 px-4 py-3">
+                <div className="bg-gray-50 border-b border-gray-200 px-4 py-3">
                   <div className="flex items-center justify-between">
                     <div className="flex flex-wrap items-center gap-2">
-                      <span className="text-sm text-blue-700 font-medium">Active filters:</span>
+                      <span className="text-sm text-gray-700 font-medium">Active filters:</span>
                       {selectedTags.map(tag => (
-                        <span key={tag} className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-blue-100 text-blue-700">
+                        <span key={tag} className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-blue-100 text-blue-700 border border-blue-200">
                           <Hash className="w-3 h-3 mr-1" />
                           {tag}
                         </span>
@@ -520,7 +561,7 @@ export const OptimizedSearchPage: React.FC = () => {
                       {selectedCountries.map(countryCode => {
                         const country = selectableCountries.find(c => c.code === countryCode);
                         return (
-                          <span key={countryCode} className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-green-100 text-green-700">
+                          <span key={countryCode} className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-green-100 text-green-700 border border-green-200">
                             <span className="mr-1">{country?.flag}</span>
                             {country?.name}
                           </span>
@@ -531,7 +572,7 @@ export const OptimizedSearchPage: React.FC = () => {
                       variant="ghost"
                       size="sm"
                       onClick={clearAllFilters}
-                      className="text-blue-600 hover:text-blue-700 text-xs"
+                      className="text-red-600 hover:text-red-700 text-xs"
                     >
                       Clear
                     </Button>
