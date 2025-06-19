@@ -549,35 +549,39 @@ export const ComposePage: React.FC = () => {
                 </div>
               )}
 
-              {/* Categories Dropdown */}
+              {/* Categories Dropdown - Compact Design */}
               <div className={`${isMobile ? 'mt-4' : 'mt-6'}`}>
                 <div className={`flex items-center space-x-2 mb-2 ${isMobile ? 'mb-2' : 'mb-3'}`}>
                   <Tag className={`text-gray-500 ${isMobile ? 'h-4 w-4' : 'h-5 w-5'}`} />
-                  <span className={`font-medium text-gray-700 ${isMobile ? 'text-sm' : 'text-sm'}`}>Add categories:</span>
+                  <span className={`font-medium text-gray-700 ${isMobile ? 'text-sm' : 'text-sm'}`}>Categories:</span>
                 </div>
                 
                 <DropdownMenu open={categoriesDropdownOpen} onOpenChange={setCategoriesDropdownOpen}>
                   <DropdownMenuTrigger asChild>
                     <Button 
                       variant="outline" 
-                      className={`flex items-center justify-between w-full border-gray-300 hover:bg-gray-50 rounded-lg ${
-                        isMobile ? 'text-sm py-2 px-3' : 'text-sm py-3 px-4'
+                      className={`flex items-center justify-between border-gray-300 hover:bg-gray-50 rounded-full ${
+                        isMobile 
+                          ? 'text-xs py-2 px-3 h-8 w-full max-w-[200px]' 
+                          : 'text-sm py-2 px-4 h-9 w-full max-w-[250px]'
                       }`}
                     >
-                      <div className="flex items-center space-x-2">
-                        <Tag className="h-4 w-4 text-gray-500" />
-                        <span>
+                      <div className="flex items-center space-x-2 min-w-0">
+                        <Tag className="h-3 w-3 text-gray-500 flex-shrink-0" />
+                        <span className="truncate">
                           {selectedCategories.length === 0 
-                            ? 'Select categories...' 
+                            ? 'Select...' 
                             : `${selectedCategories.length} selected`
                           }
                         </span>
                       </div>
-                      <ChevronDown className="h-4 w-4 text-gray-500" />
+                      <ChevronDown className="h-3 w-3 text-gray-500 flex-shrink-0 ml-1" />
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent 
-                    className={`w-80 max-h-64 overflow-y-auto rounded-xl ${isMobile ? 'w-72' : 'w-80'}`}
+                    className={`max-h-48 overflow-y-auto rounded-2xl shadow-lg border-gray-200 ${
+                      isMobile ? 'w-64' : 'w-72'
+                    }`}
                     align="start"
                     sideOffset={4}
                   >
@@ -585,12 +589,10 @@ export const ComposePage: React.FC = () => {
                       <DropdownMenuItem
                         key={category}
                         onClick={() => toggleCategory(category)}
-                        className="flex items-center space-x-3 px-3 py-2 hover:bg-gray-50 cursor-pointer rounded-lg mx-1"
+                        className="flex items-center space-x-2 px-3 py-2 hover:bg-gray-50 cursor-pointer rounded-xl mx-1 my-0.5"
                       >
-                        <div className="relative flex-shrink-0">
-                          <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center border border-gray-200">
-                            <span className="text-lg">{categoryIcons[category] || '📝'}</span>
-                          </div>
+                        <div className="w-6 h-6 rounded-full bg-gray-100 flex items-center justify-center flex-shrink-0">
+                          <span className="text-sm">{categoryIcons[category] || '📝'}</span>
                         </div>
                         <span className="flex-1 text-sm font-medium truncate">{category}</span>
                         {selectedCategories.includes(category) && (
@@ -602,35 +604,39 @@ export const ComposePage: React.FC = () => {
                 </DropdownMenu>
               </div>
 
-              {/* Countries Dropdown */}
+              {/* Countries Dropdown - Compact Design */}
               <div className="mt-3">
                 <div className={`flex items-center space-x-2 mb-2 ${isMobile ? 'mb-2' : 'mb-3'}`}>
                   <Globe className={`text-gray-500 ${isMobile ? 'h-4 w-4' : 'h-5 w-5'}`} />
-                  <span className={`font-medium text-gray-700 ${isMobile ? 'text-sm' : 'text-sm'}`}>Add countries:</span>
+                  <span className={`font-medium text-gray-700 ${isMobile ? 'text-sm' : 'text-sm'}`}>Countries:</span>
                 </div>
                 
                 <DropdownMenu open={countriesDropdownOpen} onOpenChange={setCountriesDropdownOpen}>
                   <DropdownMenuTrigger asChild>
                     <Button 
                       variant="outline" 
-                      className={`flex items-center justify-between w-full border-gray-300 hover:bg-gray-50 rounded-lg ${
-                        isMobile ? 'text-sm py-2 px-3' : 'text-sm py-3 px-4'
+                      className={`flex items-center justify-between border-gray-300 hover:bg-gray-50 rounded-full ${
+                        isMobile 
+                          ? 'text-xs py-2 px-3 h-8 w-full max-w-[200px]' 
+                          : 'text-sm py-2 px-4 h-9 w-full max-w-[250px]'
                       }`}
                     >
-                      <div className="flex items-center space-x-2">
-                        <Globe className="h-4 w-4 text-gray-500" />
-                        <span>
+                      <div className="flex items-center space-x-2 min-w-0">
+                        <Globe className="h-3 w-3 text-gray-500 flex-shrink-0" />
+                        <span className="truncate">
                           {selectedCountries.length === 0 
-                            ? 'Select countries...' 
+                            ? 'Select...' 
                             : `${selectedCountries.length} selected`
                           }
                         </span>
                       </div>
-                      <ChevronDown className="h-4 w-4 text-gray-500" />
+                      <ChevronDown className="h-3 w-3 text-gray-500 flex-shrink-0 ml-1" />
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent 
-                    className={`w-80 max-h-64 overflow-y-auto rounded-xl ${isMobile ? 'w-72' : 'w-80'}`}
+                    className={`max-h-48 overflow-y-auto rounded-2xl shadow-lg border-gray-200 ${
+                      isMobile ? 'w-64' : 'w-72'
+                    }`}
                     align="start"
                     sideOffset={4}
                   >
@@ -638,12 +644,10 @@ export const ComposePage: React.FC = () => {
                       <DropdownMenuItem
                         key={country.code}
                         onClick={() => toggleCountry(country.code)}
-                        className="flex items-center space-x-3 px-3 py-2 hover:bg-gray-50 cursor-pointer rounded-lg mx-1"
+                        className="flex items-center space-x-2 px-3 py-2 hover:bg-gray-50 cursor-pointer rounded-xl mx-1 my-0.5"
                       >
-                        <div className="relative flex-shrink-0">
-                          <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center border border-gray-200">
-                            <span className="text-lg">{country.flag}</span>
-                          </div>
+                        <div className="w-6 h-6 rounded-full bg-gray-100 flex items-center justify-center flex-shrink-0">
+                          <span className="text-sm">{country.flag}</span>
                         </div>
                         <span className="flex-1 text-sm font-medium truncate">{country.name}</span>
                         {selectedCountries.includes(country.code) && (
