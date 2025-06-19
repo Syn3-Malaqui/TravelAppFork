@@ -672,9 +672,9 @@ export const OptimizedSearchPage: React.FC = () => {
           ) : (
             /* Search Results */
             <div>
-              {/* Active Filters Display */}
+              {/* Active Filters Display - Desktop Only */}
               {hasActiveFilters && (
-                <div className="bg-gray-50 border-b border-gray-200 px-4 py-3">
+                <div className="hidden md:block bg-gray-50 border-b border-gray-200 px-4 py-3">
                   <div className="flex items-center justify-between">
                     <div className="flex flex-wrap items-center gap-2">
                       <span className="text-sm text-gray-700 font-medium">Active filters:</span>
