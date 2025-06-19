@@ -25,6 +25,23 @@ export const useLazyTweets = (options: UseLazyTweetsOptions = {}) => {
   const lastFetchTimeRef = useRef<string | null>(null);
   const pollingIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
+  // Helper function to convert date strings back to Date objects
+  const convertDatesToObjects = useCallback((tweet: any): Tweet => {
+    return {
+      ...tweet,
+      createdAt: typeof tweet.createdAt === 'string' ? new Date(tweet.createdAt) : tweet.createdAt,
+      retweetedAt: tweet.retweetedAt ? (typeof tweet.retweetedAt === 'string' ? new Date(tweet.retweetedAt) : tweet.retweetedAt) : undefined,
+      author: {
+        ...tweet.author,
+        joinedDate: typeof tweet.author.joinedDate === 'string' ? new Date(tweet.author.joinedDate) : tweet.author.joinedDate,
+      },
+      retweetedBy: tweet.retweetedBy ? {
+        ...tweet.retweetedBy,
+        joinedDate: typeof tweet.retweetedBy.joinedDate === 'string' ? new Date(tweet.retweetedBy.joinedDate) : tweet.retweetedBy.joinedDate,
+      } : undefined,
+    };
+  }, []);
+
   // Cache tweets in sessionStorage for better performance
   const cacheTweets = useCallback((tweetsToCache: Tweet[]) => {
     try {
@@ -56,12 +73,16 @@ export const useLazyTweets = (options: UseLazyTweetsOptions = {}) => {
       }
       
       offsetRef.current = offset;
-      return cachedTweets;
+      
+      // Convert date strings back to Date objects
+      const tweetsWithDates = cachedTweets.map(convertDatesToObjects);
+      
+      return tweetsWithDates;
     } catch (error) {
       console.warn('Failed to get cached tweets:', error);
       return null;
     }
-  }, [cacheKey]);
+  }, [cacheKey, convertDatesToObjects]);
 
   const formatTweetData = useCallback((tweetData: TweetWithProfile, userLikes: string[], userRetweets: string[], userBookmarks: string[]): Tweet => {
     // If this is a retweet, format the original tweet
