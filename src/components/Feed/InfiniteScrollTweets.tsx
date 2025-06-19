@@ -245,7 +245,7 @@ export const InfiniteScrollTweets: React.FC<InfiniteScrollTweetsProps> = ({
         <TweetSkeletonList count={5} isMobile={isMobile} />
       )}
 
-      {/* Tweets */}
+      {/* Tweets with Twitter-style image formatting */}
       {filteredTweets.map((tweet, index) => (
         <div key={`${tweet.id}-${tweet.retweetedAt || tweet.createdAt}-${index}`} className="w-full">
           {isMobile ? (
