@@ -56,7 +56,8 @@ export const TweetCard: React.FC<TweetCardProps> = ({
   const [originalTweet, setOriginalTweet] = useState<Tweet | null>(null);
   const [loadingOriginal, setLoadingOriginal] = useState(false);
   const [replyingToTweetId, setReplyingToTweetId] = useState<string | null>(null);
-  const { replies, fetchReplies, createRetweet, removeRetweet } = useTweets();
+  const [isRetweeting, setIsRetweeting] = useState(false);
+  const { replies, fetchReplies, retweetTweet } = useTweets();
   const { observeTweet, unobserveTweet, recordView } = useTweetViews();
   const tweetRef = useRef<HTMLDivElement>(null);
 
@@ -235,14 +236,16 @@ export const TweetCard: React.FC<TweetCardProps> = ({
 
   const handleRetweetClick = async (e: React.MouseEvent) => {
     e.stopPropagation();
+    
+    if (isRetweeting) return; // Prevent double-clicks
+    
+    setIsRetweeting(true);
     try {
-      if (tweet.isRetweeted) {
-        await removeRetweet(tweet.id);
-      } else {
-        await createRetweet(tweet.id);
-      }
+      await retweetTweet(tweet.id);
     } catch (error: any) {
       console.error('Error toggling retweet:', error.message);
+    } finally {
+      setIsRetweeting(false);
     }
   };
 
@@ -631,14 +634,15 @@ export const TweetCard: React.FC<TweetCardProps> = ({
                 <Button 
                   variant="ghost" 
                   size="sm" 
-                  className={`p-2 flex items-center ${
+                  className={`p-2 flex items-center transition-all duration-200 ${
                     tweet.isRetweeted 
                       ? 'text-green-500 hover:text-green-600 hover:bg-green-50' 
                       : 'text-gray-500 hover:text-green-500 hover:bg-green-50'
-                  }`}
+                  } ${isRetweeting ? 'opacity-50 cursor-not-allowed' : ''}`}
                   onClick={handleRetweetClick}
+                  disabled={isRetweeting}
                 >
-                  <Repeat2 className="w-5 h-5" />
+                  <Repeat2 className={`w-5 h-5 ${isRetweeting ? 'animate-spin' : ''}`} />
                   <span className="text-sm ml-1">{formatNumber(tweet.retweets)}</span>
                 </Button>
 
