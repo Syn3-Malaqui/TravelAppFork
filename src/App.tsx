@@ -7,15 +7,19 @@ import { ComposePage } from './components/Tweet/ComposePage';
 import { TweetDetailPage } from './components/Tweet/TweetDetailPage';
 import { ProfilePage } from './components/Profile/ProfilePage';
 import { UserProfilePage } from './components/Profile/UserProfilePage';
-import { SearchPage } from './components/Search/SearchPage';
+import { OptimizedSearchPage } from './components/Search/OptimizedSearchPage';
 import { HashtagPage } from './components/Search/HashtagPage';
 import { NotificationsPage } from './components/Notifications/NotificationsPage';
 import { FloatingActionButton } from './components/ui/FloatingActionButton';
 import { AuthPage } from './components/Auth/AuthPage';
 import { useAuth } from './hooks/useAuth';
+import { usePreloader } from './hooks/usePreloader';
 
 function App() {
   const { user, loading } = useAuth();
+  
+  // Initialize preloader when user is authenticated
+  usePreloader();
 
   // Show loading spinner while checking auth state
   if (loading) {
@@ -47,7 +51,7 @@ function App() {
               <Route path="/" element={<Timeline />} />
               <Route path="/compose" element={<ComposePage />} />
               <Route path="/tweet/:tweetId" element={<TweetDetailPage />} />
-              <Route path="/search" element={<SearchPage />} />
+              <Route path="/search" element={<OptimizedSearchPage />} />
               <Route path="/hashtag/:hashtag" element={<HashtagPage />} />
               <Route path="/notifications" element={<NotificationsPage />} />
               <Route path="/profile/:username" element={<ProfilePage />} />
