@@ -13,6 +13,7 @@ export const useNotifications = () => {
   const channelRef = useRef<RealtimeChannel | null>(null);
   const fetchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const lastFetchRef = useRef<number>(0);
+  const initialFetchDoneRef = useRef<boolean>(false);
 
   const formatNotificationData = (notificationData: NotificationWithProfile): Notification => {
     const notification: Notification = {
@@ -69,15 +70,17 @@ export const useNotifications = () => {
     return notification;
   };
 
-  // Highly optimized fetch with minimal data and caching
-  const fetchNotifications = useCallback(async () => {
+  // Optimized fetch with minimal data
+  const fetchNotifications = useCallback(async (isInitialFetch = false) => {
     try {
-      // Prevent excessive fetching
-      const now = Date.now();
-      if (now - lastFetchRef.current < 2000) { // Minimum 2 seconds between fetches
-        return;
+      // For subsequent fetches, prevent excessive calls
+      if (!isInitialFetch) {
+        const now = Date.now();
+        if (now - lastFetchRef.current < 2000) {
+          return;
+        }
+        lastFetchRef.current = now;
       }
-      lastFetchRef.current = now;
 
       setLoading(true);
       setError(null);
@@ -89,7 +92,7 @@ export const useNotifications = () => {
         return;
       }
 
-      // Ultra-minimal query - only essential fields
+      // Optimized query with minimal data
       const { data, error } = await supabase
         .from('notifications')
         .select(`
@@ -102,83 +105,55 @@ export const useNotifications = () => {
             username,
             display_name,
             avatar_url,
-            verified
+            verified,
+            bio,
+            followers_count,
+            following_count,
+            country,
+            created_at
           ),
           tweet:tweet_id (
             id,
             content,
+            likes_count,
+            retweets_count,
+            replies_count,
+            views_count,
+            image_urls,
+            hashtags,
+            mentions,
+            tags,
+            created_at,
             profiles (
               id,
               username,
               display_name,
               avatar_url,
-              verified
+              verified,
+              bio,
+              followers_count,
+              following_count,
+              country,
+              created_at
             )
           )
         `)
         .eq('recipient_id', user.id)
         .order('created_at', { ascending: false })
-        .limit(15); // Significantly reduced limit
+        .limit(25); // Reasonable limit
 
       if (error) throw error;
 
-      // Process with minimal data transformation
-      const formattedNotifications: Notification[] = (data || []).map(item => {
-        const notification: Notification = {
-          id: item.id,
-          type: item.type,
-          actor: {
-            id: item.actor_profile.id,
-            username: item.actor_profile.username,
-            displayName: item.actor_profile.display_name,
-            avatar: item.actor_profile.avatar_url || '',
-            bio: '',
-            verified: item.actor_profile.verified || false,
-            followers: 0,
-            following: 0,
-            country: '',
-            joinedDate: new Date(),
-          },
-          createdAt: new Date(item.created_at),
-          read: item.read,
-        };
-
-        if (item.tweet) {
-          notification.tweet = {
-            id: item.tweet.id,
-            content: item.tweet.content,
-            author: {
-              id: item.tweet.profiles.id,
-              username: item.tweet.profiles.username,
-              displayName: item.tweet.profiles.display_name,
-              avatar: item.tweet.profiles.avatar_url || '',
-              bio: '',
-              verified: item.tweet.profiles.verified || false,
-              followers: 0,
-              following: 0,
-              country: '',
-              joinedDate: new Date(),
-            },
-            createdAt: new Date(),
-            likes: 0,
-            retweets: 0,
-            replies: 0,
-            views: 0,
-            images: [],
-            isLiked: false,
-            isRetweeted: false,
-            isBookmarked: false,
-            hashtags: [],
-            mentions: [],
-            tags: [],
-          };
-        }
-
-        return notification;
-      });
+      const formattedNotifications: Notification[] = (data as NotificationWithProfile[]).map(
+        formatNotificationData
+      );
 
       setNotifications(formattedNotifications);
       setUnreadCount(formattedNotifications.filter(n => !n.read).length);
+      
+      if (isInitialFetch) {
+        initialFetchDoneRef.current = true;
+      }
     } catch (err: any) {
       setError(err.message);
       console.error('Error fetching notifications:', err);
@@ -187,15 +162,20 @@ export const useNotifications = () => {
     }
   }, [user]);
 
-  // Debounced fetch to prevent excessive calls
+  // Debounced fetch for subsequent calls only
   const debouncedFetchNotifications = useCallback(() => {
+    // Skip debouncing for initial fetch
+    if (!initialFetchDoneRef.current) {
+      return;
+    }
+
     if (fetchTimeoutRef.current) {
       clearTimeout(fetchTimeoutRef.current);
     }
     
     fetchTimeoutRef.current = setTimeout(() => {
-      fetchNotifications();
-    }, 500); // 500ms debounce
+      fetchNotifications(false);
+    }, 500);
   }, [fetchNotifications]);
 
   const markAsRead = async (notificationId: string) => {
@@ -330,10 +310,12 @@ export const useNotifications = () => {
               filter: `recipient_id=eq.${user.id}`,
             },
             () => {
-              // Throttled refresh - only if not recently fetched
-              const now = Date.now();
-              if (now - lastFetchRef.current > 3000) { // 3 second minimum
-                debouncedFetchNotifications();
+              // Only throttle if initial fetch is done
+              if (initialFetchDoneRef.current) {
+                const now = Date.now();
+                if (now - lastFetchRef.current > 3000) {
+                  debouncedFetchNotifications();
+                }
               }
             }
           );
@@ -362,21 +344,23 @@ export const useNotifications = () => {
     };
   }, [user, debouncedFetchNotifications]);
 
-  // Initial fetch with delay to prevent race conditions
+  // Initial fetch - immediate, no throttling
   useEffect(() => {
-    const timer = setTimeout(() => {
-      fetchNotifications();
-    }, 100);
-
-    return () => clearTimeout(timer);
-  }, [fetchNotifications]);
+    if (user) {
+      fetchNotifications(true); // Mark as initial fetch
+    } else {
+      setNotifications([]);
+      setUnreadCount(0);
+      setLoading(false);
+    }
+  }, [user]); // Only depend on user, not fetchNotifications to avoid loops
 
   return {
     notifications,
     unreadCount,
     loading,
     error,
-    fetchNotifications,
+    fetchNotifications: () => fetchNotifications(false),
     markAsRead,
     markAllAsRead,
     deleteNotification,
