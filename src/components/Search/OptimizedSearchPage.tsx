@@ -275,125 +275,251 @@ export const OptimizedSearchPage: React.FC = () => {
             )}
           </div>
 
-          {/* Filter Buttons Row */}
-          <div className="flex items-center justify-between mt-3">
-            <div className="flex items-center space-x-3">
-              {/* Categories Dropdown */}
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className={`flex items-center space-x-2 px-3 py-2 rounded-full text-sm ${
-                      selectedTags.length > 0 
-                        ? 'border-blue-500 text-blue-600 bg-blue-50' 
-                        : 'border-gray-300 hover:bg-gray-50'
-                    }`}
+          {/* Filter Buttons Row - Mobile Optimized */}
+          <div className="mt-3">
+            {/* Mobile Layout - Stacked */}
+            <div className="md:hidden space-y-2">
+              <div className="flex items-center space-x-2 w-full">
+                {/* Categories Dropdown - Mobile */}
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className={`flex items-center space-x-1 px-3 py-2 rounded-full text-xs flex-1 min-w-0 ${
+                        selectedTags.length > 0 
+                          ? 'border-blue-500 text-blue-600 bg-blue-50' 
+                          : 'border-gray-300 hover:bg-gray-50'
+                      }`}
+                    >
+                      <Tag className="h-3 w-3 flex-shrink-0" />
+                      <span className="truncate">
+                        {selectedTags.length === 0 
+                          ? 'Categories' 
+                          : `Categories (${selectedTags.length})`
+                        }
+                      </span>
+                      <ChevronDown className="h-3 w-3 flex-shrink-0" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent 
+                    className="w-72 max-h-80 overflow-y-auto rounded-xl"
+                    align="start"
+                    sideOffset={4}
                   >
-                    <Tag className="h-4 w-4" />
-                    <span>
-                      {selectedTags.length === 0 
-                        ? 'Categories' 
-                        : `Categories (${selectedTags.length})`
-                      }
-                    </span>
-                    <ChevronDown className="h-4 w-4" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent 
-                  className="w-72 max-h-80 overflow-y-auto rounded-xl"
-                  align="start"
-                  sideOffset={4}
-                >
-                  <div className="p-2">
-                    <div className="text-sm font-medium text-gray-700 mb-2 px-2">Select Categories</div>
-                    {TWEET_CATEGORIES.map((tag) => (
-                      <DropdownMenuItem
-                        key={tag}
-                        onClick={() => toggleTag(tag)}
-                        className={`flex items-center space-x-3 px-3 py-2 cursor-pointer rounded-lg mx-1 my-0.5 ${
-                          selectedTags.includes(tag) ? 'bg-blue-50 text-blue-700' : 'hover:bg-gray-50'
-                        }`}
-                      >
-                        <div className="w-6 h-6 rounded-full bg-gray-100 flex items-center justify-center flex-shrink-0">
-                          <Hash className="w-3 h-3 text-gray-600" />
-                        </div>
-                        <span className="flex-1 text-sm font-medium truncate">{tag}</span>
-                        {selectedTags.includes(tag) && (
-                          <div className="w-4 h-4 bg-blue-500 rounded-full flex items-center justify-center">
-                            <span className="text-white text-xs">✓</span>
+                    <div className="p-2">
+                      <div className="text-sm font-medium text-gray-700 mb-2 px-2">Select Categories</div>
+                      {TWEET_CATEGORIES.map((tag) => (
+                        <DropdownMenuItem
+                          key={tag}
+                          onClick={() => toggleTag(tag)}
+                          className={`flex items-center space-x-3 px-3 py-2 cursor-pointer rounded-lg mx-1 my-0.5 ${
+                            selectedTags.includes(tag) ? 'bg-blue-50 text-blue-700' : 'hover:bg-gray-50'
+                          }`}
+                        >
+                          <div className="w-6 h-6 rounded-full bg-gray-100 flex items-center justify-center flex-shrink-0">
+                            <Hash className="w-3 h-3 text-gray-600" />
                           </div>
-                        )}
-                      </DropdownMenuItem>
-                    ))}
-                  </div>
-                </DropdownMenuContent>
-              </DropdownMenu>
+                          <span className="flex-1 text-sm font-medium truncate">{tag}</span>
+                          {selectedTags.includes(tag) && (
+                            <div className="w-4 h-4 bg-blue-500 rounded-full flex items-center justify-center">
+                              <span className="text-white text-xs">✓</span>
+                            </div>
+                          )}
+                        </DropdownMenuItem>
+                      ))}
+                    </div>
+                  </DropdownMenuContent>
+                </DropdownMenu>
 
-              {/* Countries Dropdown */}
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className={`flex items-center space-x-2 px-3 py-2 rounded-full text-sm ${
-                      selectedCountries.length > 0 
-                        ? 'border-green-500 text-green-600 bg-green-50' 
-                        : 'border-gray-300 hover:bg-gray-50'
-                    }`}
+                {/* Countries Dropdown - Mobile */}
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className={`flex items-center space-x-1 px-3 py-2 rounded-full text-xs flex-1 min-w-0 ${
+                        selectedCountries.length > 0 
+                          ? 'border-green-500 text-green-600 bg-green-50' 
+                          : 'border-gray-300 hover:bg-gray-50'
+                      }`}
+                    >
+                      <Globe className="h-3 w-3 flex-shrink-0" />
+                      <span className="truncate">
+                        {selectedCountries.length === 0 
+                          ? 'Countries' 
+                          : `Countries (${selectedCountries.length})`
+                        }
+                      </span>
+                      <ChevronDown className="h-3 w-3 flex-shrink-0" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent 
+                    className="w-72 max-h-80 overflow-y-auto rounded-xl"
+                    align="start"
+                    sideOffset={4}
                   >
-                    <Globe className="h-4 w-4" />
-                    <span>
-                      {selectedCountries.length === 0 
-                        ? 'Countries' 
-                        : `Countries (${selectedCountries.length})`
-                      }
-                    </span>
-                    <ChevronDown className="h-4 w-4" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent 
-                  className="w-72 max-h-80 overflow-y-auto rounded-xl"
-                  align="start"
-                  sideOffset={4}
-                >
-                  <div className="p-2">
-                    <div className="text-sm font-medium text-gray-700 mb-2 px-2">Select Countries</div>
-                    {selectableCountries.map((country) => (
-                      <DropdownMenuItem
-                        key={country.code}
-                        onClick={() => toggleCountry(country.code)}
-                        className={`flex items-center space-x-3 px-3 py-2 cursor-pointer rounded-lg mx-1 my-0.5 ${
-                          selectedCountries.includes(country.code) ? 'bg-green-50 text-green-700' : 'hover:bg-gray-50'
-                        }`}
-                      >
-                        <div className="w-6 h-6 rounded-full bg-gray-100 flex items-center justify-center flex-shrink-0">
-                          <span className="text-sm">{country.flag}</span>
-                        </div>
-                        <span className="flex-1 text-sm font-medium truncate">{country.name}</span>
-                        {selectedCountries.includes(country.code) && (
-                          <div className="w-4 h-4 bg-green-500 rounded-full flex items-center justify-center">
-                            <span className="text-white text-xs">✓</span>
+                    <div className="p-2">
+                      <div className="text-sm font-medium text-gray-700 mb-2 px-2">Select Countries</div>
+                      {selectableCountries.map((country) => (
+                        <DropdownMenuItem
+                          key={country.code}
+                          onClick={() => toggleCountry(country.code)}
+                          className={`flex items-center space-x-3 px-3 py-2 cursor-pointer rounded-lg mx-1 my-0.5 ${
+                            selectedCountries.includes(country.code) ? 'bg-green-50 text-green-700' : 'hover:bg-gray-50'
+                          }`}
+                        >
+                          <div className="w-6 h-6 rounded-full bg-gray-100 flex items-center justify-center flex-shrink-0">
+                            <span className="text-sm">{country.flag}</span>
                           </div>
-                        )}
-                      </DropdownMenuItem>
-                    ))}
-                  </div>
-                </DropdownMenuContent>
-              </DropdownMenu>
+                          <span className="flex-1 text-sm font-medium truncate">{country.name}</span>
+                          {selectedCountries.includes(country.code) && (
+                            <div className="w-4 h-4 bg-green-500 rounded-full flex items-center justify-center">
+                              <span className="text-white text-xs">✓</span>
+                            </div>
+                          )}
+                        </DropdownMenuItem>
+                      ))}
+                    </div>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
+
+              {/* Clear All Filters Button - Mobile */}
+              {hasActiveFilters && (
+                <div className="flex justify-center">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={clearAllFilters}
+                    className="text-red-600 hover:text-red-700 hover:bg-red-50 px-4 py-2 rounded-full text-xs"
+                  >
+                    Clear all filters
+                  </Button>
+                </div>
+              )}
             </div>
 
-            {/* Clear All Filters Button */}
-            {hasActiveFilters && (
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={clearAllFilters}
-                className="text-red-600 hover:text-red-700 hover:bg-red-50 px-3 py-2 rounded-full text-sm"
-              >
-                Clear all
-              </Button>
-            )}
+            {/* Desktop Layout - Horizontal */}
+            <div className="hidden md:flex items-center justify-between">
+              <div className="flex items-center space-x-3">
+                {/* Categories Dropdown - Desktop */}
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className={`flex items-center space-x-2 px-3 py-2 rounded-full text-sm ${
+                        selectedTags.length > 0 
+                          ? 'border-blue-500 text-blue-600 bg-blue-50' 
+                          : 'border-gray-300 hover:bg-gray-50'
+                      }`}
+                    >
+                      <Tag className="h-4 w-4" />
+                      <span>
+                        {selectedTags.length === 0 
+                          ? 'Categories' 
+                          : `Categories (${selectedTags.length})`
+                        }
+                      </span>
+                      <ChevronDown className="h-4 w-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent 
+                    className="w-72 max-h-80 overflow-y-auto rounded-xl"
+                    align="start"
+                    sideOffset={4}
+                  >
+                    <div className="p-2">
+                      <div className="text-sm font-medium text-gray-700 mb-2 px-2">Select Categories</div>
+                      {TWEET_CATEGORIES.map((tag) => (
+                        <DropdownMenuItem
+                          key={tag}
+                          onClick={() => toggleTag(tag)}
+                          className={`flex items-center space-x-3 px-3 py-2 cursor-pointer rounded-lg mx-1 my-0.5 ${
+                            selectedTags.includes(tag) ? 'bg-blue-50 text-blue-700' : 'hover:bg-gray-50'
+                          }`}
+                        >
+                          <div className="w-6 h-6 rounded-full bg-gray-100 flex items-center justify-center flex-shrink-0">
+                            <Hash className="w-3 h-3 text-gray-600" />
+                          </div>
+                          <span className="flex-1 text-sm font-medium truncate">{tag}</span>
+                          {selectedTags.includes(tag) && (
+                            <div className="w-4 h-4 bg-blue-500 rounded-full flex items-center justify-center">
+                              <span className="text-white text-xs">✓</span>
+                            </div>
+                          )}
+                        </DropdownMenuItem>
+                      ))}
+                    </div>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+
+                {/* Countries Dropdown - Desktop */}
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className={`flex items-center space-x-2 px-3 py-2 rounded-full text-sm ${
+                        selectedCountries.length > 0 
+                          ? 'border-green-500 text-green-600 bg-green-50' 
+                          : 'border-gray-300 hover:bg-gray-50'
+                      }`}
+                    >
+                      <Globe className="h-4 w-4" />
+                      <span>
+                        {selectedCountries.length === 0 
+                          ? 'Countries' 
+                          : `Countries (${selectedCountries.length})`
+                        }
+                      </span>
+                      <ChevronDown className="h-4 w-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent 
+                    className="w-72 max-h-80 overflow-y-auto rounded-xl"
+                    align="start"
+                    sideOffset={4}
+                  >
+                    <div className="p-2">
+                      <div className="text-sm font-medium text-gray-700 mb-2 px-2">Select Countries</div>
+                      {selectableCountries.map((country) => (
+                        <DropdownMenuItem
+                          key={country.code}
+                          onClick={() => toggleCountry(country.code)}
+                          className={`flex items-center space-x-3 px-3 py-2 cursor-pointer rounded-lg mx-1 my-0.5 ${
+                            selectedCountries.includes(country.code) ? 'bg-green-50 text-green-700' : 'hover:bg-gray-50'
+                          }`}
+                        >
+                          <div className="w-6 h-6 rounded-full bg-gray-100 flex items-center justify-center flex-shrink-0">
+                            <span className="text-sm">{country.flag}</span>
+                          </div>
+                          <span className="flex-1 text-sm font-medium truncate">{country.name}</span>
+                          {selectedCountries.includes(country.code) && (
+                            <div className="w-4 h-4 bg-green-500 rounded-full flex items-center justify-center">
+                              <span className="text-white text-xs">✓</span>
+                            </div>
+                          )}
+                        </DropdownMenuItem>
+                      ))}
+                    </div>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
+
+              {/* Clear All Filters Button - Desktop */}
+              {hasActiveFilters && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={clearAllFilters}
+                  className="text-red-600 hover:text-red-700 hover:bg-red-50 px-3 py-2 rounded-full text-sm"
+                >
+                  Clear all
+                </Button>
+              )}
+            </div>
           </div>
         </div>
       </div>
