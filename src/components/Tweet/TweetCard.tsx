@@ -544,18 +544,18 @@ export const TweetCard: React.FC<TweetCardProps> = ({
               {tweet.images && tweet.images.length > 0 && (
                 <div className="mb-3 rounded-2xl overflow-hidden border border-gray-200">
                   {tweet.images.length === 1 ? (
-                    // Single image - uniform aspect ratio (16:9)
+                    // Single image - centered and fills container
                     <div className="w-full aspect-[16/9] cursor-pointer" onClick={(e) => handleImageClick(0, e)}>
                       <LazyImage 
                         src={tweet.images[0]} 
                         alt="Tweet image" 
-                        className="w-full h-full object-cover hover:opacity-95 transition-opacity"
+                        className="w-full h-full object-cover object-center hover:opacity-95 transition-opacity"
                         width={600}
                         quality={80}
                       />
                     </div>
                   ) : tweet.images.length === 2 ? (
-                    // Two images - side by side with uniform aspect ratio (16:9)
+                    // Two images - side by side, centered and fills container
                     <div className="grid grid-cols-2 gap-1">
                       {tweet.images.map((image, index) => (
                         <div 
@@ -566,7 +566,7 @@ export const TweetCard: React.FC<TweetCardProps> = ({
                           <LazyImage 
                             src={image} 
                             alt={`Tweet image ${index + 1}`} 
-                            className="w-full h-full object-cover hover:opacity-95 transition-opacity"
+                            className="w-full h-full object-cover object-center hover:opacity-95 transition-opacity"
                             width={400}
                             quality={80}
                           />
@@ -574,13 +574,13 @@ export const TweetCard: React.FC<TweetCardProps> = ({
                       ))}
                     </div>
                   ) : tweet.images.length === 3 ? (
-                    // Three images - first takes full left side, two small on right
+                    // Three images - first takes full left side, two small on right, all centered
                     <div className="grid grid-cols-2 grid-rows-2 gap-1 h-80">
                       <div className="row-span-2 cursor-pointer" onClick={(e) => handleImageClick(0, e)}>
                         <LazyImage 
                           src={tweet.images[0]} 
                           alt="Tweet image 1" 
-                          className="w-full h-full object-cover hover:opacity-95 transition-opacity"
+                          className="w-full h-full object-cover object-center hover:opacity-95 transition-opacity"
                           width={400}
                           quality={80}
                         />
@@ -589,7 +589,7 @@ export const TweetCard: React.FC<TweetCardProps> = ({
                         <LazyImage 
                           src={tweet.images[1]} 
                           alt="Tweet image 2" 
-                          className="w-full h-full object-cover hover:opacity-95 transition-opacity"
+                          className="w-full h-full object-cover object-center hover:opacity-95 transition-opacity"
                           width={300}
                           quality={80}
                         />
@@ -598,14 +598,14 @@ export const TweetCard: React.FC<TweetCardProps> = ({
                         <LazyImage 
                           src={tweet.images[2]} 
                           alt="Tweet image 3" 
-                          className="w-full h-full object-cover hover:opacity-95 transition-opacity"
+                          className="w-full h-full object-cover object-center hover:opacity-95 transition-opacity"
                           width={300}
                           quality={80}
                         />
                       </div>
                     </div>
                   ) : (
-                    // Four images - 2x2 grid with uniform aspect ratio (16:9)
+                    // Four images - 2x2 grid, all centered and fills container
                     <div className="grid grid-cols-2 gap-1">
                       {tweet.images.map((image, index) => (
                         <div 
@@ -616,7 +616,7 @@ export const TweetCard: React.FC<TweetCardProps> = ({
                           <LazyImage 
                             src={image} 
                             alt={`Tweet image ${index + 1}`} 
-                            className="w-full h-full object-cover hover:opacity-95 transition-opacity"
+                            className="w-full h-full object-cover object-center hover:opacity-95 transition-opacity"
                             width={300}
                             quality={80}
                           />
@@ -781,7 +781,7 @@ export const TweetCard: React.FC<TweetCardProps> = ({
             <img
               src={tweet.images[selectedImageIndex]}
               alt={`Tweet image ${selectedImageIndex + 1}`}
-              className="max-w-full max-h-full object-contain"
+              className="max-w-full max-h-full object-contain object-center"
               loading="eager" // Force immediate loading for modal view
             />
 
