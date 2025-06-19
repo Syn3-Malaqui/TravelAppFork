@@ -82,7 +82,10 @@ export const useNotifications = () => {
         lastFetchRef.current = now;
       }
 
-      setLoading(true);
+      // Only set loading for initial fetch or when we have no data
+      if (isInitialFetch || notifications.length === 0) {
+        setLoading(true);
+      }
       setError(null);
 
       if (!user) {
@@ -158,9 +161,10 @@ export const useNotifications = () => {
       setError(err.message);
       console.error('Error fetching notifications:', err);
     } finally {
+      // Always set loading to false after fetch completes
       setLoading(false);
     }
-  }, [user]);
+  }, [user, notifications.length]);
 
   // Debounced fetch for subsequent calls only
   const debouncedFetchNotifications = useCallback(() => {
