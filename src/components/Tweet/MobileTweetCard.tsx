@@ -55,8 +55,7 @@ export const MobileTweetCard: React.FC<MobileTweetCardProps> = ({
   const [originalTweet, setOriginalTweet] = useState<Tweet | null>(null);
   const [loadingOriginal, setLoadingOriginal] = useState(false);
   const [replyingToTweetId, setReplyingToTweetId] = useState<string | null>(null);
-  const [isRetweeting, setIsRetweeting] = useState(false);
-  const { replies, fetchReplies, retweetTweet } = useTweets();
+  const { replies, fetchReplies, createRetweet, removeRetweet } = useTweets();
   const { observeTweet, unobserveTweet, recordView } = useTweetViews();
   const tweetRef = useRef<HTMLDivElement>(null);
 
@@ -235,16 +234,14 @@ export const MobileTweetCard: React.FC<MobileTweetCardProps> = ({
 
   const handleRetweetClick = async (e: React.MouseEvent) => {
     e.stopPropagation();
-    
-    if (isRetweeting) return; // Prevent double-clicks
-    
-    setIsRetweeting(true);
     try {
-      await retweetTweet(tweet.id);
+      if (tweet.isRetweeted) {
+        await removeRetweet(tweet.id);
+      } else {
+        await createRetweet(tweet.id);
+      }
     } catch (error: any) {
       console.error('Error toggling retweet:', error.message);
-    } finally {
-      setIsRetweeting(false);
     }
   };
 
@@ -633,15 +630,14 @@ export const MobileTweetCard: React.FC<MobileTweetCardProps> = ({
                 <Button 
                   variant="ghost" 
                   size="sm" 
-                  className={`p-1 h-8 flex items-center transition-all duration-200 ${
+                  className={`p-1 h-8 flex items-center ${
                     tweet.isRetweeted 
                       ? 'text-green-500' 
                       : 'text-gray-500'
-                  } ${isRetweeting ? 'opacity-50 cursor-not-allowed' : ''}`}
+                  }`}
                   onClick={handleRetweetClick}
-                  disabled={isRetweeting}
                 >
-                  <Repeat2 className={`w-4 h-4 ${isRetweeting ? 'animate-spin' : ''}`} />
+                  <Repeat2 className="w-4 h-4" />
                   <span className="text-xs ml-1">{formatNumber(tweet.retweets)}</span>
                 </Button>
 

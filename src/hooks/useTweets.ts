@@ -645,95 +645,44 @@ export const useTweets = () => {
     }
   };
 
-  // Optimized retweet function with instant UI updates
   const retweetTweet = async (tweetId: string) => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('User not authenticated');
 
-      // Get current user profile for retweet display
-      const { data: userProfile } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', user.id)
-        .single();
-
-      if (!userProfile) throw new Error('User profile not found');
-
-      // Update UI immediately for better UX
-      const updateTweetState = (prevTweets: Tweet[]) => {
-        return prevTweets.map(tweet => {
-          if (tweet.id === tweetId) {
-            if (tweet.isRetweeted) {
-              // If already retweeted, remove retweet
-              return {
-                ...tweet,
-                isRetweeted: false,
-                retweets: Math.max(0, tweet.retweets - 1)
-              };
-            } else {
-              // If not retweeted, add retweet
-              return {
-                ...tweet,
-                isRetweeted: true,
-                retweets: tweet.retweets + 1
-              };
-            }
-          }
-          return tweet;
-        });
-      };
-
-      // Find the current tweet to check if it's already retweeted
-      const currentTweet = tweets.find(t => t.id === tweetId) || followingTweets.find(t => t.id === tweetId);
-      const isCurrentlyRetweeted = currentTweet?.isRetweeted || false;
-
-      // Update both tweet lists immediately
-      setTweets(updateTweetState);
-      setFollowingTweets(updateTweetState);
-
-      try {
-        if (isCurrentlyRetweeted) {
-          // Remove retweet
-          await removeRetweet(tweetId);
-        } else {
-          // Add retweet - first add to retweets table
-          const { error: retweetError } = await supabase
-            .from('retweets')
-            .insert({
-              user_id: user.id,
-              tweet_id: tweetId,
-            });
-
-          if (retweetError && retweetError.code !== '23505') {
-            throw retweetError;
-          }
-
-          // Then create the retweet tweet entry
-          await createRetweet(tweetId);
-        }
-      } catch (dbError: any) {
-        // If database operation fails, revert the UI changes
-        console.error('Database operation failed, reverting UI changes:', dbError);
-        
-        const revertTweetState = (prevTweets: Tweet[]) => {
-          return prevTweets.map(tweet => {
-            if (tweet.id === tweetId) {
-              return {
-                ...tweet,
-                isRetweeted: isCurrentlyRetweeted,
-                retweets: isCurrentlyRetweeted ? tweet.retweets + 1 : Math.max(0, tweet.retweets - 1)
-              };
-            }
-            return tweet;
-          });
-        };
-
-        setTweets(revertTweetState);
-        setFollowingTweets(revertTweetState);
-        
-        throw dbError;
+      // Check if already retweeted and toggle accordingly
+      const tweet = tweets.find(t => t.id === tweetId) || followingTweets.find(t => t.id === tweetId);
+      if (tweet?.isRetweeted) {
+        // If already retweeted, remove the retweet
+        await removeRetweet(tweetId);
+        // Refresh data to sync state
+        await Promise.all([fetchTweets(), fetchFollowingTweets()]);
+        return;
       }
+
+      const { error } = await supabase
+        .from('retweets')
+        .insert({
+          user_id: user.id,
+          tweet_id: tweetId,
+        });
+
+      if (error) {
+        if (error.code === '23505') {
+          // If duplicate, it means it's already retweeted, so remove it instead
+          await removeRetweet(tweetId);
+          // Refresh data to sync state
+          await Promise.all([fetchTweets(), fetchFollowingTweets()]);
+          return;
+        }
+        throw error;
+      }
+      
+      // Create the retweet entry in tweets table
+      await createRetweet(tweetId);
+      
+      // Refresh data to sync state
+      await Promise.all([fetchTweets(), fetchFollowingTweets()]);
     } catch (err: any) {
       throw new Error(err.message);
     }
@@ -744,33 +693,12 @@ export const useTweets = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('User not authenticated');
 
-      // Update UI immediately
-      const updateTweetState = (prevTweets: Tweet[]) => {
-        return prevTweets.map(tweet => 
-          tweet.id === tweetId 
-            ? { ...tweet, isRetweeted: false, retweets: Math.max(0, tweet.retweets - 1) }
-            : tweet
-        );
-      };
-
-      setTweets(updateTweetState);
-      setFollowingTweets(updateTweetState);
-
       // Remove from both tables
       await removeRetweet(tweetId);
-    } catch (err: any) {
-      // Revert UI changes if database operation fails
-      const revertTweetState = (prevTweets: Tweet[]) => {
-        return prevTweets.map(tweet => 
-          tweet.id === tweetId 
-            ? { ...tweet, isRetweeted: true, retweets: tweet.retweets + 1 }
-            : tweet
-        );
-      };
-
-      setTweets(revertTweetState);
-      setFollowingTweets(revertTweetState);
       
+      // Refresh data to sync state
+      await Promise.all([fetchTweets(), fetchFollowingTweets()]);
+    } catch (err: any) {
       throw new Error(err.message);
     }
   };
