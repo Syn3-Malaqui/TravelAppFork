@@ -4,7 +4,7 @@ interface NotificationSkeletonProps {
   isMobile?: boolean;
 }
 
-export const NotificationSkeleton: React.FC<NotificationSkeletonProps> = ({ isMobile = false }) => {
+const NotificationSkeleton: React.FC<NotificationSkeletonProps> = ({ isMobile = false }) => {
   return (
     <div className="p-4 hover:bg-gray-50 transition-colors">
       <div className="flex space-x-3">
@@ -50,7 +50,7 @@ export const NotificationSkeleton: React.FC<NotificationSkeletonProps> = ({ isMo
   );
 };
 
-export const NotificationSkeletonList: React.FC<{ 
+const NotificationSkeletonList: React.FC<{ 
   count?: number; 
   isMobile?: boolean;
 }> = ({ count = 8, isMobile = false }) => {

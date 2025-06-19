@@ -45,7 +45,7 @@ export interface Notification {
   read: boolean;
 }
 
-export interface Message {
+interface Message {
   id: string;
   content: string;
   sender: User;
@@ -62,7 +62,7 @@ export interface Conversation {
 }
 
 // Database types
-export interface Profile {
+interface Profile {
   id: string;
   username: string;
   display_name: string;
@@ -76,7 +76,7 @@ export interface Profile {
   updated_at: string;
 }
 
-export interface TweetData {
+interface TweetData {
   id: string;
   content: string;
   author_id: string;
@@ -100,7 +100,7 @@ export interface TweetWithProfile extends TweetData {
   original_tweet?: TweetWithProfile;
 }
 
-export interface NotificationData {
+interface NotificationData {
   id: string;
   recipient_id: string;
   actor_id: string;
@@ -157,5 +157,5 @@ export const FILTER_COUNTRIES = [
 export type FilterCountry = typeof FILTER_COUNTRIES[number];
 
 // Legacy type for backward compatibility
-export type TweetTag = TweetCategory;
-export const TWEET_TAGS = TWEET_CATEGORIES;
+type TweetTag = TweetCategory;
+const TWEET_TAGS = TWEET_CATEGORIES;

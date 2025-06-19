@@ -1,6 +1,6 @@
 import { supabase } from './supabase';
 
-export class StorageService {
+class StorageService {
   private bucketName = 'tweet-images';
 
   /**
