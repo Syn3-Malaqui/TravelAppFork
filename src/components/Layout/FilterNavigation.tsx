@@ -127,7 +127,7 @@ export const FilterNavigation: React.FC<FilterNavigationProps> = ({
   };
 
   return (
-    <div className="bg-white border-b border-gray-200 px-2 py-2 w-full relative">
+    <div className="bg-white border-b border-gray-200 w-full relative h-12 flex items-center">
       {/* Left scroll button */}
       {showScrollButtons && (
         <button 
@@ -142,7 +142,7 @@ export const FilterNavigation: React.FC<FilterNavigationProps> = ({
       {/* Horizontally scrollable filter strip */}
       <div 
         ref={scrollContainerRef}
-        className="flex space-x-2 overflow-x-auto scrollbar-hide py-1 px-6"
+        className="flex space-x-2 overflow-x-auto scrollbar-hide py-1 px-6 w-full"
         style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
         onScroll={handleScroll}
       >
@@ -153,7 +153,7 @@ export const FilterNavigation: React.FC<FilterNavigationProps> = ({
             variant="ghost"
             size="sm"
             onClick={() => onFilterChange(filter.id)}
-            className={`rounded-full px-4 py-1 text-sm font-medium whitespace-nowrap transition-colors ${
+            className={`rounded-full px-3 py-1 text-sm font-medium whitespace-nowrap transition-colors flex-shrink-0 ${
               selectedFilter === filter.id
                 ? 'bg-green-100 text-green-800 hover:bg-green-200'
                 : 'text-gray-700 hover:bg-gray-100'
@@ -179,8 +179,8 @@ export const FilterNavigation: React.FC<FilterNavigationProps> = ({
       
       {/* Indicator for horizontal scrolling on mobile */}
       {isOverflowing && (
-        <div className="md:hidden flex justify-center mt-1">
-          <div className="w-10 h-1 bg-gray-200 rounded-full"></div>
+        <div className="md:hidden absolute bottom-0 left-0 right-0 flex justify-center">
+          <div className="w-10 h-1 bg-gray-200 rounded-full mb-0.5"></div>
         </div>
       )}
     </div>
