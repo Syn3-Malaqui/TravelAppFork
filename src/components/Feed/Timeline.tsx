@@ -220,7 +220,7 @@ export const Timeline: React.FC = () => {
                       onClick={clearFilters}
                       className="flex items-center text-blue-600 hover:text-blue-800 text-sm font-medium"
                     >
-                      <X className="h-3 w-3 mr-1" />
+                      <X className="h-3.5 w-3.5 mr-1" />
                       Clear filters
                     </button>
                   </div>
