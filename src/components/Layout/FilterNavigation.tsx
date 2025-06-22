@@ -1,12 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { ChevronDown, ChevronUp } from 'lucide-react';
+import { ChevronRight, ChevronLeft } from 'lucide-react';
 import { Button } from '../ui/button';
-import { 
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '../ui/dropdown-menu';
 
 interface FilterOption {
   id: string;
@@ -23,21 +17,18 @@ export const FilterNavigation: React.FC<FilterNavigationProps> = ({
   onFilterChange,
   selectedFilter
 }) => {
-  const [dropdownOpen, setDropdownOpen] = useState(false);
   const [isOverflowing, setIsOverflowing] = useState(false);
+  const [showScrollButtons, setShowScrollButtons] = useState(false);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const [initialAnimationDone, setInitialAnimationDone] = useState(false);
 
-  // Primary filters shown directly in the strip
-  const primaryFilters: FilterOption[] = [
+  // All filters shown directly in the strip
+  const allFilters: FilterOption[] = [
     { id: 'all', label: 'All', icon: '🌐' },
     { id: 'general', label: 'General', icon: '💬' },
     { id: 'hotels', label: 'Hotels', icon: '🏨' },
     { id: 'flights', label: 'Flights', icon: '✈️' },
     { id: 'restaurants', label: 'Restaurants', icon: '🍽️' },
-  ];
-
-  // Additional filters shown in the "More" dropdown
-  const moreFilters: FilterOption[] = [
     { id: 'visas', label: 'Visas', icon: '📋' },
     { id: 'car-rental', label: 'Car Rental', icon: '🚗' },
     { id: 'schedules', label: 'Schedules', icon: '📅' },
@@ -50,7 +41,9 @@ export const FilterNavigation: React.FC<FilterNavigationProps> = ({
     const checkOverflow = () => {
       const container = scrollContainerRef.current;
       if (container) {
-        setIsOverflowing(container.scrollWidth > container.clientWidth);
+        const isOverflow = container.scrollWidth > container.clientWidth;
+        setIsOverflowing(isOverflow);
+        setShowScrollButtons(isOverflow);
       }
     };
 
@@ -59,6 +52,33 @@ export const FilterNavigation: React.FC<FilterNavigationProps> = ({
     
     return () => window.removeEventListener('resize', checkOverflow);
   }, []);
+
+  // Initial animation to show scrollability
+  useEffect(() => {
+    if (isOverflowing && !initialAnimationDone && scrollContainerRef.current) {
+      const container = scrollContainerRef.current;
+      
+      // Wait a bit before starting the animation
+      const timeout = setTimeout(() => {
+        // Scroll right a bit to show there's more content
+        container.scrollTo({
+          left: 100,
+          behavior: 'smooth'
+        });
+        
+        // Then scroll back after a short delay
+        setTimeout(() => {
+          container.scrollTo({
+            left: 0,
+            behavior: 'smooth'
+          });
+          setInitialAnimationDone(true);
+        }, 800);
+      }, 1000);
+      
+      return () => clearTimeout(timeout);
+    }
+  }, [isOverflowing, initialAnimationDone]);
 
   // Scroll to selected filter to ensure it's visible
   useEffect(() => {
@@ -76,16 +96,58 @@ export const FilterNavigation: React.FC<FilterNavigationProps> = ({
     }
   }, [selectedFilter]);
 
+  const scrollLeft = () => {
+    if (scrollContainerRef.current) {
+      scrollContainerRef.current.scrollBy({
+        left: -200,
+        behavior: 'smooth'
+      });
+    }
+  };
+
+  const scrollRight = () => {
+    if (scrollContainerRef.current) {
+      scrollContainerRef.current.scrollBy({
+        left: 200,
+        behavior: 'smooth'
+      });
+    }
+  };
+
+  // Handle scroll events to show/hide scroll buttons
+  const handleScroll = () => {
+    const container = scrollContainerRef.current;
+    if (container) {
+      const atStart = container.scrollLeft <= 10;
+      const atEnd = container.scrollLeft + container.clientWidth >= container.scrollWidth - 10;
+      
+      // You can use these values to conditionally show/hide left/right buttons
+      // For now we'll just keep both visible if there's overflow
+    }
+  };
+
   return (
-    <div className="bg-white border-b border-gray-200 px-2 py-2 w-full">
+    <div className="bg-white border-b border-gray-200 px-2 py-2 w-full relative">
+      {/* Left scroll button */}
+      {showScrollButtons && (
+        <button 
+          onClick={scrollLeft}
+          className="absolute left-0 top-1/2 transform -translate-y-1/2 z-10 bg-white/80 rounded-full shadow-md p-1 hover:bg-gray-100 transition-colors"
+          aria-label="Scroll left"
+        >
+          <ChevronLeft className="h-5 w-5 text-gray-600" />
+        </button>
+      )}
+      
       {/* Horizontally scrollable filter strip */}
       <div 
         ref={scrollContainerRef}
-        className="flex space-x-2 overflow-x-auto scrollbar-hide pb-1"
+        className="flex space-x-2 overflow-x-auto scrollbar-hide py-1 px-6"
         style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+        onScroll={handleScroll}
       >
-        {/* Primary filters */}
-        {primaryFilters.map((filter) => (
+        {/* All filters */}
+        {allFilters.map((filter) => (
           <Button
             key={filter.id}
             variant="ghost"
@@ -102,48 +164,18 @@ export const FilterNavigation: React.FC<FilterNavigationProps> = ({
             {filter.label}
           </Button>
         ))}
-        
-        {/* More dropdown */}
-        <DropdownMenu open={dropdownOpen} onOpenChange={setDropdownOpen}>
-          <DropdownMenuTrigger asChild>
-            <Button
-              variant="ghost"
-              size="sm"
-              className={`rounded-full px-4 py-1 text-sm font-medium whitespace-nowrap transition-colors flex items-center ${
-                moreFilters.some(f => f.id === selectedFilter)
-                  ? 'bg-green-100 text-green-800 hover:bg-green-200'
-                  : 'text-gray-700 hover:bg-gray-100'
-              }`}
-            >
-              More
-              {dropdownOpen ? (
-                <ChevronUp className="ml-1 h-4 w-4" />
-              ) : (
-                <ChevronDown className="ml-1 h-4 w-4" />
-              )}
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="start" className="min-w-[150px] rounded-xl p-1">
-            {moreFilters.map((filter) => (
-              <DropdownMenuItem
-                key={filter.id}
-                onClick={() => {
-                  onFilterChange(filter.id);
-                  setDropdownOpen(false);
-                }}
-                className={`rounded-lg px-3 py-2 text-sm font-medium cursor-pointer ${
-                  selectedFilter === filter.id
-                    ? 'bg-green-100 text-green-800'
-                    : 'text-gray-700 hover:bg-gray-100'
-                }`}
-              >
-                {filter.icon && <span className="mr-2">{filter.icon}</span>}
-                {filter.label}
-              </DropdownMenuItem>
-            ))}
-          </DropdownMenuContent>
-        </DropdownMenu>
       </div>
+      
+      {/* Right scroll button */}
+      {showScrollButtons && (
+        <button 
+          onClick={scrollRight}
+          className="absolute right-0 top-1/2 transform -translate-y-1/2 z-10 bg-white/80 rounded-full shadow-md p-1 hover:bg-gray-100 transition-colors"
+          aria-label="Scroll right"
+        >
+          <ChevronRight className="h-5 w-5 text-gray-600" />
+        </button>
+      )}
       
       {/* Indicator for horizontal scrolling on mobile */}
       {isOverflowing && (
