@@ -24,7 +24,7 @@ export const Timeline: React.FC = () => {
   const [countryFilter, setCountryFilter] = useState<string>('ALL');
   const [selectedFilter, setSelectedFilter] = useState<string>('all');
   const [showSidebar, setShowSidebar] = useState(true);
-  const [availableCountries, setAvailableCountries] = useState<Array<{code: string, name: string, flag: string}>>([]);
+  const [availableCountries, setAvailableCountries] = useState<Array<{code: string, name: string}>>([]);
   const { user } = useAuth();
   const [userProfile, setUserProfile] = useState<{
     displayName: string;
@@ -72,8 +72,8 @@ export const Timeline: React.FC = () => {
 
         // Always include "All" at the beginning
         setAvailableCountries([
-          { code: 'ALL', name: 'All Countries', flag: '🌍' },
-          ...mappedCountries as Array<{code: string, name: string, flag: string}>
+          { code: 'ALL', name: 'All Countries' },
+          ...mappedCountries as Array<{code: string, name: string}>
         ]);
       } catch (error) {
         console.error('Error fetching countries:', error);
