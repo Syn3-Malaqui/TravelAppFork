@@ -5,7 +5,6 @@ import { Button } from '../ui/button';
 interface FilterOption {
   id: string;
   label: string;
-  icon?: string;
 }
 
 interface FilterNavigationProps {
@@ -25,16 +24,16 @@ export const FilterNavigation: React.FC<FilterNavigationProps> = ({
 
   // All filters shown directly in the strip
   const allFilters: FilterOption[] = [
-    { id: 'all', label: 'All', icon: '🌐' },
-    { id: 'general', label: 'General Discussions', icon: '💬' },
-    { id: 'visas', label: 'Visas', icon: '📋' },
-    { id: 'hotels', label: 'Hotels', icon: '🏨' },
-    { id: 'car-rental', label: 'Car Rental', icon: '🚗' },
-    { id: 'schedules', label: 'Tourist Schedules', icon: '📅' },
-    { id: 'flights', label: 'Flights', icon: '✈️' },
-    { id: 'restaurants', label: 'Restorants and coffees', icon: '🍽️' },
-    { id: 'images', label: 'Images and creators', icon: '📸' },
-    { id: 'real-estate', label: 'Real estate', icon: '🏠' },
+    { id: 'all', label: 'All' },
+    { id: 'general', label: 'General Discussions' },
+    { id: 'visas', label: 'Visas' },
+    { id: 'hotels', label: 'Hotels' },
+    { id: 'car-rental', label: 'Car Rental' },
+    { id: 'schedules', label: 'Tourist Schedules' },
+    { id: 'flights', label: 'Flights' },
+    { id: 'restaurants', label: 'Restorants and coffees' },
+    { id: 'images', label: 'Images and creators' },
+    { id: 'real-estate', label: 'Real estate' },
   ];
 
   // Check if the filter strip is overflowing and update scroll button visibility
@@ -162,7 +161,6 @@ export const FilterNavigation: React.FC<FilterNavigationProps> = ({
             }`}
             data-filter-id={filter.id}
           >
-            {filter.icon && <span className="mr-1.5">{filter.icon}</span>}
             {filter.label}
           </Button>
         ))}
