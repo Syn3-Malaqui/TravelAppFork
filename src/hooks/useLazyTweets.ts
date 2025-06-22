@@ -273,7 +273,8 @@ export const useLazyTweets = (options: UseLazyTweetsOptions = {}) => {
         `)
         .is('reply_to', null)
         .gt('created_at', lastFetchTimeRef.current)
-        .order('created_at', { ascending: false });
+        .order('created_at', { ascending: false })
+        .limit(10);
 
       // For following feed, filter by followed users
       if (followingOnly && user) {
@@ -285,7 +286,7 @@ export const useLazyTweets = (options: UseLazyTweetsOptions = {}) => {
         query = query.in('author_id', followingIdsRef.current);
       }
 
-      const { data, error } = await query.limit(20);
+      const { data, error } = await query;
 
       if (error) throw error;
 
@@ -602,7 +603,7 @@ export const useLazyTweets = (options: UseLazyTweetsOptions = {}) => {
         query = query.in('author_id', followingIds);
       }
 
-      // Apply pagination
+      // Apply pagination - REMOVED ENGAGEMENT SORTING, ONLY CHRONOLOGICAL
       query = query
         .order('created_at', { ascending: false })
         .range(offsetRef.current, offsetRef.current + pageSize - 1);
@@ -636,14 +637,8 @@ export const useLazyTweets = (options: UseLazyTweetsOptions = {}) => {
           formatTweetData(tweet, userLikes, userRetweets, userBookmarks)
         );
 
-        // Sort by engagement score for "For You" feed
-        if (!followingOnly) {
-          formattedTweets.sort((a, b) => {
-            const scoreA = a.likes * 1 + a.retweets * 2 + a.replies * 1.5;
-            const scoreB = b.likes * 1 + b.retweets * 2 + b.replies * 1.5;
-            return scoreB - scoreA;
-          });
-        }
+        // REMOVED: Engagement-based sorting for "For You" feed
+        // Now all tweets are shown in chronological order only
 
         setTweets(prev => {
           const newTweets = [...prev, ...formattedTweets];
