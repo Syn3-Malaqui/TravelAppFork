@@ -18,7 +18,8 @@ export const FilterNavigation: React.FC<FilterNavigationProps> = ({
   selectedFilter
 }) => {
   const [isOverflowing, setIsOverflowing] = useState(false);
-  const [showScrollButtons, setShowScrollButtons] = useState(false);
+  const [showLeftButton, setShowLeftButton] = useState(false);
+  const [showRightButton, setShowRightButton] = useState(false);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const [initialAnimationDone, setInitialAnimationDone] = useState(false);
 
@@ -36,17 +37,21 @@ export const FilterNavigation: React.FC<FilterNavigationProps> = ({
     { id: 'real-estate', label: 'Real Estate', icon: '🏠' },
   ];
 
-  // Check if the filter strip is overflowing
-  useEffect(() => {
-    const checkOverflow = () => {
-      const container = scrollContainerRef.current;
-      if (container) {
-        const isOverflow = container.scrollWidth > container.clientWidth;
-        setIsOverflowing(isOverflow);
-        setShowScrollButtons(isOverflow);
-      }
-    };
+  // Check if the filter strip is overflowing and update scroll button visibility
+  const checkOverflow = () => {
+    const container = scrollContainerRef.current;
+    if (container) {
+      const isOverflow = container.scrollWidth > container.clientWidth;
+      setIsOverflowing(isOverflow);
+      
+      // Show/hide scroll buttons based on scroll position
+      setShowLeftButton(container.scrollLeft > 10);
+      setShowRightButton(container.scrollLeft + container.clientWidth < container.scrollWidth - 10);
+    }
+  };
 
+  // Set up overflow detection and window resize handler
+  useEffect(() => {
     checkOverflow();
     window.addEventListener('resize', checkOverflow);
     
@@ -114,25 +119,22 @@ export const FilterNavigation: React.FC<FilterNavigationProps> = ({
     }
   };
 
-  // Handle scroll events to show/hide scroll buttons
+  // Handle scroll events to update button visibility
   const handleScroll = () => {
     const container = scrollContainerRef.current;
     if (container) {
-      const atStart = container.scrollLeft <= 10;
-      const atEnd = container.scrollLeft + container.clientWidth >= container.scrollWidth - 10;
-      
-      // You can use these values to conditionally show/hide left/right buttons
-      // For now we'll just keep both visible if there's overflow
+      setShowLeftButton(container.scrollLeft > 10);
+      setShowRightButton(container.scrollLeft + container.clientWidth < container.scrollWidth - 10);
     }
   };
 
   return (
-    <div className="bg-white border-b border-gray-200 w-full relative h-12 flex items-center">
-      {/* Left scroll button */}
-      {showScrollButtons && (
+    <div className="bg-white border-b border-gray-200 w-full relative h-12 flex-shrink-0 flex items-center">
+      {/* Left scroll button - only show when needed */}
+      {isOverflowing && showLeftButton && (
         <button 
           onClick={scrollLeft}
-          className="absolute left-0 top-1/2 transform -translate-y-1/2 z-10 bg-white/80 rounded-full shadow-md p-1 hover:bg-gray-100 transition-colors"
+          className="absolute left-0 top-1/2 transform -translate-y-1/2 z-10 bg-white/90 rounded-full shadow-md p-1 hover:bg-gray-100 transition-colors"
           aria-label="Scroll left"
         >
           <ChevronLeft className="h-5 w-5 text-gray-600" />
@@ -166,11 +168,11 @@ export const FilterNavigation: React.FC<FilterNavigationProps> = ({
         ))}
       </div>
       
-      {/* Right scroll button */}
-      {showScrollButtons && (
+      {/* Right scroll button - only show when needed */}
+      {isOverflowing && showRightButton && (
         <button 
           onClick={scrollRight}
-          className="absolute right-0 top-1/2 transform -translate-y-1/2 z-10 bg-white/80 rounded-full shadow-md p-1 hover:bg-gray-100 transition-colors"
+          className="absolute right-0 top-1/2 transform -translate-y-1/2 z-10 bg-white/90 rounded-full shadow-md p-1 hover:bg-gray-100 transition-colors"
           aria-label="Scroll right"
         >
           <ChevronRight className="h-5 w-5 text-gray-600" />
