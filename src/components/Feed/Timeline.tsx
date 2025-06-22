@@ -6,10 +6,16 @@ import { FilterNavigation } from '../Layout/FilterNavigation';
 import { TrendingSidebar } from '../Layout/TrendingSidebar';
 import { Button } from '../ui/button';
 import { LazyAvatar } from '../ui/LazyAvatar';
+import { 
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '../ui/dropdown-menu';
 import { useAuth } from '../../hooks/useAuth';
 import { supabase } from '../../lib/supabase';
 import { FILTER_COUNTRIES } from '../../types';
-import { X } from 'lucide-react';
+import { X, ChevronDown, Check, Globe } from 'lucide-react';
 
 export const Timeline: React.FC = () => {
   const navigate = useNavigate();
@@ -18,6 +24,7 @@ export const Timeline: React.FC = () => {
   const [countryFilter, setCountryFilter] = useState<string>('ALL');
   const [selectedFilter, setSelectedFilter] = useState<string>('all');
   const [showSidebar, setShowSidebar] = useState(true);
+  const [availableCountries, setAvailableCountries] = useState<Array<{code: string, name: string, flag: string}>>([]);
   const { user } = useAuth();
   const [userProfile, setUserProfile] = useState<{
     displayName: string;
@@ -40,6 +47,42 @@ export const Timeline: React.FC = () => {
 
     // Cleanup
     return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  // Fetch available countries from the database
+  useEffect(() => {
+    const fetchAvailableCountries = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('country')
+          .not('country', 'is', null)
+          .not('country', 'eq', '');
+
+        if (error) throw error;
+
+        // Get unique countries from the database
+        const uniqueCountries = [...new Set(data.map(profile => profile.country))];
+        
+        // Map to our country format, including only countries that exist in our predefined list
+        const mappedCountries = uniqueCountries
+          .map(countryCode => FILTER_COUNTRIES.find(c => c.code === countryCode))
+          .filter(Boolean) // Remove undefined entries
+          .sort((a, b) => a!.name.localeCompare(b!.name)); // Sort alphabetically
+
+        // Always include "All" at the beginning
+        setAvailableCountries([
+          { code: 'ALL', name: 'All Countries', flag: '🌍' },
+          ...mappedCountries as Array<{code: string, name: string, flag: string}>
+        ]);
+      } catch (error) {
+        console.error('Error fetching countries:', error);
+        // Fallback to predefined countries
+        setAvailableCountries(FILTER_COUNTRIES);
+      }
+    };
+
+    fetchAvailableCountries();
   }, []);
 
   // Fetch user profile data for the composer
@@ -123,11 +166,17 @@ export const Timeline: React.FC = () => {
     }
   };
 
+  const handleCountryChange = (countryCode: string) => {
+    setCountryFilter(countryCode);
+  };
+
   const clearFilters = () => {
     setCategoryFilter(null);
     setCountryFilter('ALL');
     setSelectedFilter('all');
   };
+
+  const selectedCountryData = availableCountries.find(c => c.code === countryFilter) || availableCountries[0];
 
   return (
     <div className="h-full flex">
@@ -137,9 +186,48 @@ export const Timeline: React.FC = () => {
         <div className={`flex-1 border-r border-gray-200 flex flex-col ${showSidebar ? '' : 'border-r-0'}`}>
           {/* Desktop Header with Tabs - Fixed */}
           <div className="bg-white/95 backdrop-blur-md border-b border-gray-200 z-50 flex-shrink-0">
-            {/* Top section with title */}
+            {/* Top section with country filter */}
             <div className="flex items-center justify-between p-4 border-b border-gray-100">
-              <h1 className="text-xl font-bold">Home</h1>
+              {/* Country Filter Dropdown */}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button 
+                    variant="ghost" 
+                    className="flex items-center space-x-2 px-3 py-2 hover:bg-gray-50 rounded-lg text-sm font-medium"
+                  >
+                    <Globe className="h-4 w-4 text-gray-500" />
+                    <span className="text-lg">{selectedCountryData?.flag}</span>
+                    <span className="font-semibold">{selectedCountryData?.name}</span>
+                    <ChevronDown className="h-4 w-4 text-gray-500" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent 
+                  align="start" 
+                  className="w-72 max-h-80 overflow-y-auto rounded-xl"
+                  sideOffset={4}
+                >
+                  <div className="p-2">
+                    <div className="text-sm font-medium text-gray-700 mb-2 px-2">Select Country</div>
+                    {availableCountries.map((country) => (
+                      <DropdownMenuItem
+                        key={country.code}
+                        onClick={() => handleCountryChange(country.code)}
+                        className={`flex items-center space-x-3 px-3 py-2 cursor-pointer rounded-lg mx-1 my-0.5 ${
+                          countryFilter === country.code ? 'bg-blue-50 text-blue-700' : 'hover:bg-gray-50'
+                        }`}
+                      >
+                        <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center border border-gray-200 flex-shrink-0">
+                          <span className="text-lg">{country.flag}</span>
+                        </div>
+                        <span className="flex-1 text-sm font-medium truncate">{country.name}</span>
+                        {countryFilter === country.code && (
+                          <Check className="h-4 w-4 text-blue-600 flex-shrink-0" />
+                        )}
+                      </DropdownMenuItem>
+                    ))}
+                  </div>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
             
             {/* Tabs section */}
@@ -211,7 +299,7 @@ export const Timeline: React.FC = () => {
                       {countryFilter !== 'ALL' && (
                         <span className="flex items-center">
                           <span>Country: <span className="font-semibold">
-                            {FILTER_COUNTRIES.find(c => c.code === countryFilter)?.name}
+                            {availableCountries.find(c => c.code === countryFilter)?.name}
                           </span></span>
                         </span>
                       )}
@@ -269,7 +357,7 @@ export const Timeline: React.FC = () => {
                     {countryFilter !== 'ALL' && (
                       <span className="flex items-center">
                         <span>Country: <span className="font-semibold">
-                          {FILTER_COUNTRIES.find(c => c.code === countryFilter)?.name}
+                          {availableCountries.find(c => c.code === countryFilter)?.name}
                         </span></span>
                       </span>
                     )}
