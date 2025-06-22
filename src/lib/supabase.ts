@@ -10,8 +10,10 @@ if (!supabaseUrl || !supabaseAnonKey) {
   throw new Error('Missing Supabase environment variables');
 }
 
-// Validate URL format
-if (!supabaseUrl.includes('.supabase.co')) {
+// Validate URL format - ensure it doesn't have trailing paths
+const cleanUrl = supabaseUrl.replace(/\/rest.*$/, '').replace(/\/$/, '');
+
+if (!cleanUrl.includes('.supabase.co')) {
   console.error('Invalid Supabase URL format. Expected format: https://your-project-ref.supabase.co');
   throw new Error('Invalid Supabase URL format');
 }
@@ -22,4 +24,15 @@ if (!supabaseAnonKey.startsWith('eyJ')) {
   throw new Error('Invalid Supabase anon key format');
 }
 
-export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey);
+export const supabase = createClient<Database>(cleanUrl, supabaseAnonKey, {
+  auth: {
+    autoRefreshToken: true,
+    persistSession: true,
+    detectSessionInUrl: false
+  },
+  realtime: {
+    params: {
+      eventsPerSecond: 10
+    }
+  }
+});
