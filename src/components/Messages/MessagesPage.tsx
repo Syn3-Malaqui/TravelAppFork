@@ -1,12 +1,14 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Send, Search, MoreHorizontal } from 'lucide-react';
+import { ArrowLeft, Send, Search, MoreHorizontal, User, MessageCircle } from 'lucide-react';
 import { Button } from '../ui/button';
 import { Avatar, AvatarImage, AvatarFallback } from '../ui/avatar';
 import { useMessages, Conversation, Message } from '../../hooks/useMessages';
 import { useAuth } from '../../hooks/useAuth';
 import { storageService } from '../../lib/storage';
 import { formatDistanceToNow } from 'date-fns';
+import { supabase } from '../../lib/supabase';
+import { User as UserType } from '../../types';
 
 export const MessagesPage: React.FC = () => {
   const navigate = useNavigate();
@@ -18,14 +20,19 @@ export const MessagesPage: React.FC = () => {
     error, 
     fetchMessages, 
     sendMessage, 
-    markAsRead 
+    markAsRead,
+    createConversation 
   } = useMessages();
   
   const [selectedConversation, setSelectedConversation] = useState<Conversation | null>(null);
   const [newMessage, setNewMessage] = useState('');
   const [sendingMessage, setSendingMessage] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState<UserType[]>([]);
+  const [searchLoading, setSearchLoading] = useState(false);
+  const [showSearchResults, setShowSearchResults] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // Auto-scroll to bottom when new messages arrive
   useEffect(() => {
@@ -40,8 +47,96 @@ export const MessagesPage: React.FC = () => {
     }
   }, [selectedConversation, fetchMessages, markAsRead]);
 
+  // Search for users when search query changes
+  useEffect(() => {
+    if (searchTimeoutRef.current) {
+      clearTimeout(searchTimeoutRef.current);
+    }
+
+    if (searchQuery.trim().length > 0) {
+      setShowSearchResults(true);
+      searchTimeoutRef.current = setTimeout(() => {
+        searchUsers(searchQuery.trim());
+      }, 300);
+    } else {
+      setShowSearchResults(false);
+      setSearchResults([]);
+    }
+
+    return () => {
+      if (searchTimeoutRef.current) {
+        clearTimeout(searchTimeoutRef.current);
+      }
+    };
+  }, [searchQuery]);
+
+  const searchUsers = async (query: string) => {
+    if (!user) return;
+
+    try {
+      setSearchLoading(true);
+      
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('id, username, display_name, avatar_url, verified, bio')
+        .or(`username.ilike.%${query}%,display_name.ilike.%${query}%`)
+        .neq('id', user.id) // Exclude current user
+        .limit(10);
+
+      if (error) throw error;
+
+      const formattedUsers: UserType[] = (data || []).map(profile => ({
+        id: profile.id,
+        username: profile.username,
+        displayName: profile.display_name,
+        avatar: profile.avatar_url || '',
+        bio: profile.bio || '',
+        verified: profile.verified || false,
+        followers: 0,
+        following: 0,
+        joinedDate: new Date(),
+        country: '',
+      }));
+
+      setSearchResults(formattedUsers);
+    } catch (error) {
+      console.error('Error searching users:', error);
+      setSearchResults([]);
+    } finally {
+      setSearchLoading(false);
+    }
+  };
+
+  const handleUserSelect = async (selectedUser: UserType) => {
+    try {
+      setSearchLoading(true);
+      
+      // Create or get existing conversation
+      await createConversation(selectedUser.id);
+      
+      // Clear search
+      setSearchQuery('');
+      setShowSearchResults(false);
+      setSearchResults([]);
+      
+      // Find the conversation in the list and select it
+      const conversation = conversations.find(conv => 
+        conv.otherParticipant.id === selectedUser.id
+      );
+      
+      if (conversation) {
+        setSelectedConversation(conversation);
+      }
+    } catch (error) {
+      console.error('Error creating conversation:', error);
+    } finally {
+      setSearchLoading(false);
+    }
+  };
+
   const handleConversationSelect = (conversation: Conversation) => {
     setSelectedConversation(conversation);
+    setShowSearchResults(false);
   };
 
   const handleSendMessage = async (e: React.FormEvent) => {
@@ -105,27 +200,80 @@ export const MessagesPage: React.FC = () => {
           </div>
 
           {/* Search */}
-          <div className="p-4 border-b border-gray-100">
+          <div className="p-4 border-b border-gray-100 relative">
             <div className="relative">
               <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
               <input
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search conversations"
+                placeholder="Search conversations or people"
                 className="w-full pl-10 pr-4 py-2 bg-gray-100 rounded-full focus:bg-white focus:ring-2 focus:ring-blue-500 focus:outline-none transition-all"
               />
             </div>
+
+            {/* Search Results Dropdown */}
+            {showSearchResults && (
+              <div className="absolute top-full left-4 right-4 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg z-20 max-h-64 overflow-y-auto">
+                {searchLoading ? (
+                  <div className="p-4 text-center">
+                    <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-500 mx-auto"></div>
+                  </div>
+                ) : searchResults.length > 0 ? (
+                  <div className="py-2">
+                    <div className="px-3 py-2 text-xs font-medium text-gray-500 border-b border-gray-100">
+                      People
+                    </div>
+                    {searchResults.map((user) => (
+                      <div
+                        key={user.id}
+                        onClick={() => handleUserSelect(user)}
+                        className="flex items-center space-x-3 px-3 py-3 hover:bg-gray-50 cursor-pointer transition-colors"
+                      >
+                        <Avatar className="w-10 h-10">
+                          <AvatarImage 
+                            src={user.avatar ? storageService.getOptimizedImageUrl(user.avatar, { width: 80, quality: 80 }) : undefined} 
+                          />
+                          <AvatarFallback>{user.displayName[0]}</AvatarFallback>
+                        </Avatar>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center space-x-2">
+                            <p className="font-bold text-gray-900 text-sm truncate">
+                              {user.displayName}
+                            </p>
+                            {user.verified && (
+                              <div className="w-4 h-4 bg-blue-500 rounded-full flex items-center justify-center">
+                                <span className="text-white text-xs">✓</span>
+                              </div>
+                            )}
+                          </div>
+                          <p className="text-gray-500 text-sm">@{user.username}</p>
+                          {user.bio && (
+                            <p className="text-gray-600 text-xs mt-1 line-clamp-1">{user.bio}</p>
+                          )}
+                        </div>
+                        <MessageCircle className="w-4 h-4 text-gray-400" />
+                      </div>
+                    ))}
+                  </div>
+                ) : searchQuery.trim().length > 0 ? (
+                  <div className="p-4 text-center text-gray-500">
+                    <User className="w-8 h-8 mx-auto mb-2 text-gray-300" />
+                    <p className="text-sm">No users found</p>
+                  </div>
+                ) : null}
+              </div>
+            )}
           </div>
 
           {/* Conversations */}
           <div className="flex-1 overflow-y-auto">
-            {filteredConversations.length === 0 ? (
+            {!showSearchResults && filteredConversations.length === 0 ? (
               <div className="text-center py-12 text-gray-500">
                 <p className="text-lg">No conversations yet</p>
-                <p className="text-sm mt-2">Start a conversation by messaging someone!</p>
+                <p className="text-sm mt-2">Search for people to start messaging!</p>
               </div>
-            ) : (
+            ) : !showSearchResults ? (
               <div className="divide-y divide-gray-100">
                 {filteredConversations.map((conversation) => (
                   <div
@@ -181,7 +329,7 @@ export const MessagesPage: React.FC = () => {
                   </div>
                 ))}
               </div>
-            )}
+            ) : null}
           </div>
         </div>
 
@@ -267,7 +415,7 @@ export const MessagesPage: React.FC = () => {
             <div className="flex-1 flex items-center justify-center text-gray-500">
               <div className="text-center">
                 <p className="text-lg mb-2">Select a conversation</p>
-                <p className="text-sm">Choose a conversation from the list to start messaging</p>
+                <p className="text-sm">Choose a conversation from the list or search for people to start messaging</p>
               </div>
             </div>
           )}
@@ -292,27 +440,80 @@ export const MessagesPage: React.FC = () => {
             </div>
 
             {/* Search */}
-            <div className="p-4 border-b border-gray-100">
+            <div className="p-4 border-b border-gray-100 relative">
               <div className="relative">
                 <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
                 <input
                   type="text"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="Search conversations"
+                  placeholder="Search conversations or people"
                   className="w-full pl-10 pr-4 py-2 bg-gray-100 rounded-full focus:bg-white focus:ring-2 focus:ring-blue-500 focus:outline-none transition-all"
                 />
               </div>
+
+              {/* Search Results Dropdown */}
+              {showSearchResults && (
+                <div className="absolute top-full left-4 right-4 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg z-20 max-h-64 overflow-y-auto">
+                  {searchLoading ? (
+                    <div className="p-4 text-center">
+                      <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-500 mx-auto"></div>
+                    </div>
+                  ) : searchResults.length > 0 ? (
+                    <div className="py-2">
+                      <div className="px-3 py-2 text-xs font-medium text-gray-500 border-b border-gray-100">
+                        People
+                      </div>
+                      {searchResults.map((user) => (
+                        <div
+                          key={user.id}
+                          onClick={() => handleUserSelect(user)}
+                          className="flex items-center space-x-3 px-3 py-3 hover:bg-gray-50 cursor-pointer transition-colors"
+                        >
+                          <Avatar className="w-10 h-10">
+                            <AvatarImage 
+                              src={user.avatar ? storageService.getOptimizedImageUrl(user.avatar, { width: 80, quality: 80 }) : undefined} 
+                            />
+                            <AvatarFallback>{user.displayName[0]}</AvatarFallback>
+                          </Avatar>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center space-x-2">
+                              <p className="font-bold text-gray-900 text-sm truncate">
+                                {user.displayName}
+                              </p>
+                              {user.verified && (
+                                <div className="w-4 h-4 bg-blue-500 rounded-full flex items-center justify-center">
+                                  <span className="text-white text-xs">✓</span>
+                                </div>
+                              )}
+                            </div>
+                            <p className="text-gray-500 text-sm">@{user.username}</p>
+                            {user.bio && (
+                              <p className="text-gray-600 text-xs mt-1 line-clamp-1">{user.bio}</p>
+                            )}
+                          </div>
+                          <MessageCircle className="w-4 h-4 text-gray-400" />
+                        </div>
+                      ))}
+                    </div>
+                  ) : searchQuery.trim().length > 0 ? (
+                    <div className="p-4 text-center text-gray-500">
+                      <User className="w-8 h-8 mx-auto mb-2 text-gray-300" />
+                      <p className="text-sm">No users found</p>
+                    </div>
+                  ) : null}
+                </div>
+              )}
             </div>
 
             {/* Conversations */}
             <div className="flex-1 overflow-y-auto pb-20">
-              {filteredConversations.length === 0 ? (
+              {!showSearchResults && filteredConversations.length === 0 ? (
                 <div className="text-center py-12 text-gray-500">
                   <p className="text-lg">No conversations yet</p>
-                  <p className="text-sm mt-2">Start a conversation by messaging someone!</p>
+                  <p className="text-sm mt-2">Search for people to start messaging!</p>
                 </div>
-              ) : (
+              ) : !showSearchResults ? (
                 <div className="divide-y divide-gray-100">
                   {filteredConversations.map((conversation) => (
                     <div
@@ -363,7 +564,7 @@ export const MessagesPage: React.FC = () => {
                     </div>
                   ))}
                 </div>
-              )}
+              ) : null}
             </div>
           </>
         ) : (
