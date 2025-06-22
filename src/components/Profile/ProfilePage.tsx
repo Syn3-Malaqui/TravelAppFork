@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Calendar, MapPin, Link as LinkIcon, UserPlus, UserMinus, Settings } from 'lucide-react';
+import { ArrowLeft, Calendar, MapPin, Link as LinkIcon, UserPlus, UserMinus, Settings, MessageCircle } from 'lucide-react';
 import { Button } from '../ui/button';
 import { Avatar, AvatarImage, AvatarFallback } from '../ui/avatar';
 import { TweetCard } from '../Tweet/TweetCard';
@@ -10,6 +10,7 @@ import { TweetSkeletonList } from '../Tweet/TweetSkeleton';
 import { TrendingSidebar } from '../Layout/TrendingSidebar';
 import { useAuth } from '../../hooks/useAuth';
 import { useFollow } from '../../hooks/useFollow';
+import { useMessages } from '../../hooks/useMessages';
 import { supabase } from '../../lib/supabase';
 import { storageService } from '../../lib/storage';
 import { Tweet, User } from '../../types';
@@ -20,6 +21,7 @@ export const ProfilePage: React.FC = () => {
   const navigate = useNavigate();
   const { user: currentUser } = useAuth();
   const { followUser, unfollowUser, isFollowing, loading: followLoading } = useFollow();
+  const { createConversation } = useMessages();
   
   const [profile, setProfile] = useState<User | null>(null);
   const [tweets, setTweets] = useState<Tweet[]>([]);
@@ -29,6 +31,7 @@ export const ProfilePage: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'tweets' | 'replies' | 'media' | 'likes'>('tweets');
   const [showSidebar, setShowSidebar] = useState(true);
+  const [messageLoading, setMessageLoading] = useState(false);
 
   // Handle window resize to show/hide sidebar
   useEffect(() => {
@@ -267,6 +270,24 @@ export const ProfilePage: React.FC = () => {
     }
   };
 
+  const handleMessage = async () => {
+    if (!profile || !currentUser) return;
+    
+    try {
+      setMessageLoading(true);
+      
+      // Create or get existing conversation
+      await createConversation(profile.id);
+      
+      // Navigate to messages page
+      navigate('/messages');
+    } catch (error: any) {
+      console.error('Error creating conversation:', error.message);
+    } finally {
+      setMessageLoading(false);
+    }
+  };
+
   const handleLike = async (tweetId: string) => {
     console.log('Like tweet:', tweetId);
   };
@@ -357,7 +378,7 @@ export const ProfilePage: React.FC = () => {
               
               {/* Profile Info */}
               <div className="px-4 pb-4">
-                {/* Avatar and Follow Button */}
+                {/* Avatar and Action Buttons */}
                 <div className="flex items-end justify-between -mt-16 mb-4">
                   <Avatar className="w-32 h-32 border-4 border-white bg-white">
                     <AvatarImage 
@@ -372,30 +393,50 @@ export const ProfilePage: React.FC = () => {
                       Edit profile
                     </Button>
                   ) : (
-                    <Button
-                      variant={userIsFollowing ? "outline" : "default"}
-                      onClick={handleFollow}
-                      disabled={followLoading}
-                      className={`mt-16 px-6 py-2 font-bold rounded-full transition-colors ${
-                        userIsFollowing 
-                          ? 'border-gray-300 text-gray-700 hover:bg-red-50 hover:text-red-600 hover:border-red-300' 
-                          : 'bg-blue-500 text-white hover:bg-blue-600'
-                      }`}
-                    >
-                      {followLoading ? (
-                        '...'
-                      ) : userIsFollowing ? (
-                        <>
-                          <UserMinus className="w-4 h-4 mr-2" />
-                          Following
-                        </>
-                      ) : (
-                        <>
-                          <UserPlus className="w-4 h-4 mr-2" />
-                          Follow
-                        </>
-                      )}
-                    </Button>
+                    <div className="flex space-x-3 mt-16">
+                      {/* Message Button */}
+                      <Button
+                        variant="outline"
+                        onClick={handleMessage}
+                        disabled={messageLoading}
+                        className="px-6 py-2 font-bold rounded-full border-gray-300 text-gray-700 hover:bg-gray-50 transition-colors"
+                      >
+                        {messageLoading ? (
+                          '...'
+                        ) : (
+                          <>
+                            <MessageCircle className="w-4 h-4 mr-2" />
+                            Message
+                          </>
+                        )}
+                      </Button>
+
+                      {/* Follow Button */}
+                      <Button
+                        variant={userIsFollowing ? "outline" : "default"}
+                        onClick={handleFollow}
+                        disabled={followLoading}
+                        className={`px-6 py-2 font-bold rounded-full transition-colors ${
+                          userIsFollowing 
+                            ? 'border-gray-300 text-gray-700 hover:bg-red-50 hover:text-red-600 hover:border-red-300' 
+                            : 'bg-blue-500 text-white hover:bg-blue-600'
+                        }`}
+                      >
+                        {followLoading ? (
+                          '...'
+                        ) : userIsFollowing ? (
+                          <>
+                            <UserMinus className="w-4 h-4 mr-2" />
+                            Following
+                          </>
+                        ) : (
+                          <>
+                            <UserPlus className="w-4 h-4 mr-2" />
+                            Follow
+                          </>
+                        )}
+                      </Button>
+                    </div>
                   )}
                 </div>
 
@@ -540,7 +581,7 @@ export const ProfilePage: React.FC = () => {
             
             {/* Profile Info */}
             <div className="px-4 pb-4">
-              {/* Avatar and Follow Button */}
+              {/* Avatar and Action Buttons */}
               <div className="flex items-end justify-between -mt-16 mb-4">
                 <Avatar className="w-32 h-32 border-4 border-white bg-white">
                   <AvatarImage 
@@ -555,30 +596,50 @@ export const ProfilePage: React.FC = () => {
                     Edit profile
                   </Button>
                 ) : (
-                  <Button
-                    variant={userIsFollowing ? "outline" : "default"}
-                    onClick={handleFollow}
-                    disabled={followLoading}
-                    className={`mt-16 px-6 py-2 font-bold rounded-full transition-colors ${
-                      userIsFollowing 
-                        ? 'border-gray-300 text-gray-700 hover:bg-red-50 hover:text-red-600 hover:border-red-300' 
-                        : 'bg-blue-500 text-white hover:bg-blue-600'
-                    }`}
-                  >
-                    {followLoading ? (
-                      '...'
-                    ) : userIsFollowing ? (
-                      <>
-                        <UserMinus className="w-4 h-4 mr-2" />
-                        Following
-                      </>
-                    ) : (
-                      <>
-                        <UserPlus className="w-4 h-4 mr-2" />
-                        Follow
-                      </>
-                    )}
-                  </Button>
+                  <div className="flex flex-col space-y-2 mt-16">
+                    {/* Message Button */}
+                    <Button
+                      variant="outline"
+                      onClick={handleMessage}
+                      disabled={messageLoading}
+                      className="px-4 py-2 font-bold rounded-full border-gray-300 text-gray-700 hover:bg-gray-50 transition-colors text-sm"
+                    >
+                      {messageLoading ? (
+                        '...'
+                      ) : (
+                        <>
+                          <MessageCircle className="w-4 h-4 mr-2" />
+                          Message
+                        </>
+                      )}
+                    </Button>
+
+                    {/* Follow Button */}
+                    <Button
+                      variant={userIsFollowing ? "outline" : "default"}
+                      onClick={handleFollow}
+                      disabled={followLoading}
+                      className={`px-4 py-2 font-bold rounded-full transition-colors text-sm ${
+                        userIsFollowing 
+                          ? 'border-gray-300 text-gray-700 hover:bg-red-50 hover:text-red-600 hover:border-red-300' 
+                          : 'bg-blue-500 text-white hover:bg-blue-600'
+                      }`}
+                    >
+                      {followLoading ? (
+                        '...'
+                      ) : userIsFollowing ? (
+                        <>
+                          <UserMinus className="w-4 h-4 mr-2" />
+                          Following
+                        </>
+                      ) : (
+                        <>
+                          <UserPlus className="w-4 h-4 mr-2" />
+                          Follow
+                        </>
+                      )}
+                    </Button>
+                  </div>
                 )}
               </div>
 
