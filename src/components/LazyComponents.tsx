@@ -29,6 +29,10 @@ export const LazyNotificationsPage = lazy(() =>
   import('./Notifications/NotificationsPage').then(module => ({ default: module.NotificationsPage }))
 );
 
+export const LazyMessagesPage = lazy(() => 
+  import('./Messages/MessagesPage').then(module => ({ default: module.MessagesPage }))
+);
+
 export const LazyEditProfileModal = lazy(() => 
   import('./Profile/EditProfileModal').then(module => ({ default: module.EditProfileModal }))
 );

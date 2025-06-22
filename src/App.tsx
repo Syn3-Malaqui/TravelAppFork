@@ -18,6 +18,7 @@ import {
   LazyOptimizedSearchPage,
   LazyHashtagPage,
   LazyNotificationsPage,
+  LazyMessagesPage,
 } from './components/LazyComponents';
 
 function App() {
@@ -91,6 +92,14 @@ function App() {
                 element={
                   <LazyLoadWrapper>
                     <LazyNotificationsPage />
+                  </LazyLoadWrapper>
+                } 
+              />
+              <Route 
+                path="/messages" 
+                element={
+                  <LazyLoadWrapper>
+                    <LazyMessagesPage />
                   </LazyLoadWrapper>
                 } 
               />
