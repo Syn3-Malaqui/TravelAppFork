@@ -10,12 +10,14 @@ export const LazyLoadWrapper: React.FC<LazyLoadWrapperProps> = ({
   children, 
   fallback 
 }) => {
+  const defaultFallback = (
+    <div className="min-h-screen bg-white flex items-center justify-center">
+      <LoadingSpinner size="lg" text="Loading..." />
+    </div>
+  );
+
   return (
-    <Suspense fallback={fallback || (
-      <div className="flex items-center justify-center min-h-screen">
-        <LoadingSpinner size="lg" text="Loading..." />
-      </div>
-    )}>
+    <Suspense fallback={fallback || defaultFallback}>
       {children}
     </Suspense>
   );

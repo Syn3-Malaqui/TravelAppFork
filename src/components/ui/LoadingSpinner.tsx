@@ -1,9 +1,7 @@
 import React from 'react';
 
-type SpinnerSize = 'sm' | 'md' | 'lg' | 'xl';
-
 interface LoadingSpinnerProps {
-  size?: SpinnerSize;
+  size?: 'sm' | 'md' | 'lg';
   text?: string;
   className?: string;
 }
@@ -11,29 +9,29 @@ interface LoadingSpinnerProps {
 export const LoadingSpinner: React.FC<LoadingSpinnerProps> = ({ 
   size = 'md', 
   text,
-  className = ''
+  className = '' 
 }) => {
   const sizeClasses = {
-    sm: 'h-4 w-4 border-2',
-    md: 'h-8 w-8 border-2',
-    lg: 'h-12 w-12 border-3',
-    xl: 'h-16 w-16 border-4'
+    sm: 'h-4 w-4',
+    md: 'h-8 w-8',
+    lg: 'h-12 w-12'
   };
 
   const textSizeClasses = {
-    sm: 'text-xs',
-    md: 'text-sm',
-    lg: 'text-base',
-    xl: 'text-lg'
+    sm: 'text-sm',
+    md: 'text-base',
+    lg: 'text-lg'
   };
 
   return (
-    <div className={`flex flex-col items-center justify-center ${className}`}>
+    <div className={`flex flex-col items-center justify-center space-y-2 ${className}`}>
       <div 
-        className={`${sizeClasses[size]} rounded-full border-blue-500 border-t-transparent animate-spin`}
+        className={`animate-spin rounded-full border-b-2 border-blue-500 ${sizeClasses[size]}`}
+        role="status"
+        aria-label="Loading"
       />
       {text && (
-        <p className={`mt-2 text-gray-500 ${textSizeClasses[size]}`}>
+        <p className={`text-gray-600 ${textSizeClasses[size]}`}>
           {text}
         </p>
       )}
