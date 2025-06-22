@@ -42,11 +42,6 @@ export const CategoriesFilter: React.FC<CategoriesFilterProps> = ({
     return selectedCategory;
   };
 
-  const getDisplayIcon = () => {
-    if (!selectedCategory) return '🌐';
-    return categoryIcons[selectedCategory] || '📝';
-  };
-
   const getMobileDisplayText = () => {
     if (!selectedCategory) return 'Categories';
     // Truncate long category names for mobile
@@ -61,14 +56,9 @@ export const CategoriesFilter: React.FC<CategoriesFilterProps> = ({
           variant="outline" 
           className="flex items-center space-x-2 px-3 md:px-4 py-2 border-gray-300 hover:bg-gray-50 rounded-full text-xs md:text-sm min-w-0"
         >
-          {/* Desktop version with icons */}
+          {/* Desktop version */}
           <div className="hidden md:flex items-center space-x-2">
             <Tag className="h-4 w-4 text-gray-500" />
-            <div className="relative">
-              <div className="w-6 h-6 rounded-full bg-gray-100 flex items-center justify-center">
-                <span className="text-sm">{getDisplayIcon()}</span>
-              </div>
-            </div>
             <span className="font-medium">{getDisplayText()}</span>
             <ChevronDown className="h-4 w-4 text-gray-500" />
           </div>
@@ -91,11 +81,6 @@ export const CategoriesFilter: React.FC<CategoriesFilterProps> = ({
             onClick={() => handleCategorySelect(null)}
             className="flex items-center space-x-3 px-3 py-2 hover:bg-gray-50 cursor-pointer rounded-lg mx-1"
           >
-            <div className="relative flex-shrink-0">
-              <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center border border-gray-200">
-                <span className="text-lg">🌐</span>
-              </div>
-            </div>
             <span className="flex-1 text-sm font-medium truncate">All Categories</span>
             {!selectedCategory && (
               <Check className="h-4 w-4 text-blue-600 flex-shrink-0" />
@@ -109,11 +94,6 @@ export const CategoriesFilter: React.FC<CategoriesFilterProps> = ({
               onClick={() => handleCategorySelect(category)}
               className="flex items-center space-x-3 px-3 py-2 hover:bg-gray-50 cursor-pointer rounded-lg mx-1"
             >
-              <div className="relative flex-shrink-0">
-                <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center border border-gray-200">
-                  <span className="text-lg">{categoryIcons[category] || '📝'}</span>
-                </div>
-              </div>
               <span className="flex-1 text-sm font-medium truncate">{category}</span>
               {selectedCategory === category && (
                 <Check className="h-4 w-4 text-blue-600 flex-shrink-0" />

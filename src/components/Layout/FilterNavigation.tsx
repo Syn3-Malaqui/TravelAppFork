@@ -19,6 +19,7 @@ export const FilterNavigation: React.FC<FilterNavigationProps> = ({
   const [isOverflowing, setIsOverflowing] = useState(false);
   const [showLeftButton, setShowLeftButton] = useState(false);
   const [showRightButton, setShowRightButton] = useState(false);
+  const [visibleFilters, setVisibleFilters] = useState<number>(5); // Default to 5 visible filters
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const [initialAnimationDone, setInitialAnimationDone] = useState(false);
 
@@ -36,6 +37,30 @@ export const FilterNavigation: React.FC<FilterNavigationProps> = ({
     { id: 'real-estate', label: 'Real estate' },
   ];
 
+  // Adjust visible filters based on screen width
+  useEffect(() => {
+    const handleResize = () => {
+      const width = window.innerWidth;
+      if (width < 640) {
+        setVisibleFilters(3); // Small mobile
+      } else if (width < 768) {
+        setVisibleFilters(4); // Mobile
+      } else if (width < 1024) {
+        setVisibleFilters(5); // Tablet
+      } else if (width < 1280) {
+        setVisibleFilters(6); // Small desktop
+      } else {
+        setVisibleFilters(8); // Large desktop
+      }
+      
+      checkOverflow();
+    };
+    
+    handleResize();
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
   // Check if the filter strip is overflowing and update scroll button visibility
   const checkOverflow = () => {
     const container = scrollContainerRef.current;
@@ -52,10 +77,7 @@ export const FilterNavigation: React.FC<FilterNavigationProps> = ({
   // Set up overflow detection and window resize handler
   useEffect(() => {
     checkOverflow();
-    window.addEventListener('resize', checkOverflow);
-    
-    return () => window.removeEventListener('resize', checkOverflow);
-  }, []);
+  }, [visibleFilters]);
 
   // Initial animation to show scrollability
   useEffect(() => {

@@ -24,6 +24,14 @@ export const useLazyTweets = (options: UseLazyTweetsOptions = {}) => {
   const followingIdsRef = useRef<string[]>([]);
   const lastFetchTimeRef = useRef<string | null>(null);
   const pollingIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const isDeployedRef = useRef<boolean>(false);
+
+  // Detect if we're in a deployed environment
+  useEffect(() => {
+    isDeployedRef.current = window.location.hostname !== 'localhost' && 
+                            window.location.hostname !== '127.0.0.1' &&
+                            !window.location.hostname.includes('stackblitz');
+  }, []);
 
   // Helper function to convert date strings back to Date objects
   const convertDatesToObjects = useCallback((tweet: any): Tweet => {
@@ -66,8 +74,9 @@ export const useLazyTweets = (options: UseLazyTweetsOptions = {}) => {
       
       const { tweets: cachedTweets, timestamp, offset } = JSON.parse(cached);
       
-      // Cache expires after 2 minutes for more frequent updates
-      if (Date.now() - timestamp > 2 * 60 * 1000) {
+      // Cache expires after 1 minute for deployed environments, 2 minutes for local
+      const cacheExpiry = isDeployedRef.current ? 1 * 60 * 1000 : 2 * 60 * 1000;
+      if (Date.now() - timestamp > cacheExpiry) {
         sessionStorage.removeItem(cacheKey);
         return null;
       }
@@ -208,7 +217,7 @@ export const useLazyTweets = (options: UseLazyTweetsOptions = {}) => {
     }
   }, []);
 
-  // Check for new tweets since last fetch
+  // Enhanced polling for deployed environments
   const checkForNewTweets = useCallback(async () => {
     try {
       if (!lastFetchTimeRef.current) return;
@@ -274,7 +283,7 @@ export const useLazyTweets = (options: UseLazyTweetsOptions = {}) => {
         .is('reply_to', null)
         .gt('created_at', lastFetchTimeRef.current)
         .order('created_at', { ascending: false })
-        .limit(10);
+        .limit(20); // Increased limit for deployed environments
 
       // For following feed, filter by followed users
       if (followingOnly && user) {
@@ -334,14 +343,16 @@ export const useLazyTweets = (options: UseLazyTweetsOptions = {}) => {
     }
   }, [followingOnly, fetchUserInteractions, formatTweetData, cacheTweets, fetchFollowingUsers]);
 
-  // Set up polling for new tweets
+  // Set up polling - more aggressive for deployed environments
   useEffect(() => {
     if (!lastFetchTimeRef.current) return;
 
-    // Poll every 10 seconds for new tweets
+    // More frequent polling for deployed environments
+    const pollingInterval = isDeployedRef.current ? 5000 : 10000; // 5s for deployed, 10s for local
+    
     pollingIntervalRef.current = setInterval(() => {
       checkForNewTweets();
-    }, 10000);
+    }, pollingInterval);
 
     return () => {
       if (pollingIntervalRef.current) {
@@ -455,7 +466,7 @@ export const useLazyTweets = (options: UseLazyTweetsOptions = {}) => {
     }
   }, [followingOnly, fetchUserInteractions, formatTweetData, cacheTweets]);
 
-  // Set up real-time subscription
+  // Set up real-time subscription with fallback for deployed environments
   useEffect(() => {
     const setupRealtimeSubscription = async () => {
       try {
@@ -471,26 +482,29 @@ export const useLazyTweets = (options: UseLazyTweetsOptions = {}) => {
           await fetchFollowingUsers();
         }
 
-        // Create new subscription
-        const channelName = `tweets_realtime_${followingOnly ? 'following' : 'for_you'}_${Date.now()}`;
-        
-        const channel = supabase
-          .channel(channelName)
-          .on(
-            'postgres_changes',
-            {
-              event: 'INSERT',
-              schema: 'public',
-              table: 'tweets',
-              filter: 'reply_to=is.null', // Only listen for main tweets, not replies
-            },
-            handleNewTweet
-          );
+        // Only set up real-time for local development or if explicitly enabled
+        if (!isDeployedRef.current) {
+          // Create new subscription
+          const channelName = `tweets_realtime_${followingOnly ? 'following' : 'for_you'}_${Date.now()}`;
+          
+          const channel = supabase
+            .channel(channelName)
+            .on(
+              'postgres_changes',
+              {
+                event: 'INSERT',
+                schema: 'public',
+                table: 'tweets',
+                filter: 'reply_to=is.null', // Only listen for main tweets, not replies
+              },
+              handleNewTweet
+            );
 
-        channelRef.current = channel;
-        
-        if (channel.state !== 'joined' && channel.state !== 'joining') {
-          await channel.subscribe();
+          channelRef.current = channel;
+          
+          if (channel.state !== 'joined' && channel.state !== 'joining') {
+            await channel.subscribe();
+          }
         }
       } catch (error) {
         console.error('Error setting up real-time subscription:', error);
