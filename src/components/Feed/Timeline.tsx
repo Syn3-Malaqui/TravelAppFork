@@ -24,6 +24,8 @@ export const Timeline: React.FC = () => {
   const [countryFilter, setCountryFilter] = useState<string>('ALL');
   const [selectedFilter, setSelectedFilter] = useState<string>('all');
   const [showSidebar, setShowSidebar] = useState(true);
+  const [showFilterNavigation, setShowFilterNavigation] = useState(true);
+  const [isMobileView, setIsMobileView] = useState(false);
   const [availableCountries, setAvailableCountries] = useState<Array<{code: string, name: string}>>([]);
   const { user } = useAuth();
   const [userProfile, setUserProfile] = useState<{
@@ -32,11 +34,35 @@ export const Timeline: React.FC = () => {
     avatar: string;
   } | null>(null);
 
-  // Handle window resize to show/hide sidebar
+  // Handle window resize with responsive breakpoints
   useEffect(() => {
     const handleResize = () => {
-      // Hide sidebar when window width is less than 1280px (xl breakpoint)
-      setShowSidebar(window.innerWidth >= 1280);
+      const width = window.innerWidth;
+      
+      // Mobile view: < 768px
+      if (width < 768) {
+        setIsMobileView(true);
+        setShowSidebar(false);
+        setShowFilterNavigation(true);
+      }
+      // Tablet view: 768px - 1024px (hide sidebar, show filter navigation)
+      else if (width < 1024) {
+        setIsMobileView(false);
+        setShowSidebar(false);
+        setShowFilterNavigation(true);
+      }
+      // Small desktop: 1024px - 1280px (show sidebar, hide filter navigation)
+      else if (width < 1280) {
+        setIsMobileView(false);
+        setShowSidebar(true);
+        setShowFilterNavigation(false);
+      }
+      // Large desktop: >= 1280px (show both)
+      else {
+        setIsMobileView(false);
+        setShowSidebar(true);
+        setShowFilterNavigation(true);
+      }
     };
 
     // Set initial state
@@ -178,9 +204,67 @@ export const Timeline: React.FC = () => {
 
   const selectedCountryData = availableCountries.find(c => c.code === countryFilter) || availableCountries[0];
 
+  // Mobile view
+  if (isMobileView) {
+    return (
+      <div className="md:hidden w-full border-r border-gray-200 overflow-hidden flex flex-col">
+        {/* Mobile Tabs */}
+        <MobileTabs activeTab={activeTab} onTabChange={handleTabChange} />
+
+        {/* WhatsApp-style filter navigation for mobile */}
+        <FilterNavigation 
+          selectedFilter={selectedFilter}
+          onFilterChange={handleFilterChange}
+        />
+
+        {/* Timeline - Scrollable container */}
+        <div className="flex-1 overflow-y-auto">
+          <div className="flex flex-col pb-20">
+            {/* Filter indicators */}
+            {(categoryFilter || countryFilter !== 'ALL') && (
+              <div className="bg-blue-50 border-b border-blue-200 px-4 py-2">
+                <div className="flex items-center justify-between">
+                  <div className="text-xs text-blue-700 flex items-center space-x-2">
+                    {categoryFilter && (
+                      <span className="flex items-center">
+                        <span>Category: <span className="font-semibold">{categoryFilter}</span></span>
+                      </span>
+                    )}
+                    {countryFilter !== 'ALL' && (
+                      <span className="flex items-center">
+                        <span>Country: <span className="font-semibold">
+                          {availableCountries.find(c => c.code === countryFilter)?.name}
+                        </span></span>
+                      </span>
+                    )}
+                  </div>
+                  <button 
+                    onClick={clearFilters}
+                    className="flex items-center text-blue-600 hover:text-blue-800 text-xs font-medium"
+                  >
+                    <X className="h-3 w-3 mr-1" />
+                    Clear
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Infinite Scroll Tweets */}
+            <InfiniteScrollTweets 
+              isMobile={true} 
+              feedType={activeTab}
+              categoryFilter={categoryFilter}
+              countryFilter={countryFilter}
+            />
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Desktop view
   return (
     <div className="h-full flex">
-      {/* Desktop Layout with Conditional Sidebar */}
       <div className="hidden md:flex flex-1">
         {/* Main Content */}
         <div className={`flex-1 border-r border-gray-200 flex flex-col ${showSidebar ? '' : 'border-r-0'}`}>
@@ -251,11 +335,13 @@ export const Timeline: React.FC = () => {
               </Button>
             </div>
 
-            {/* WhatsApp-style filter navigation */}
-            <FilterNavigation 
-              selectedFilter={selectedFilter}
-              onFilterChange={handleFilterChange}
-            />
+            {/* Conditional Filter Navigation */}
+            {showFilterNavigation && (
+              <FilterNavigation 
+                selectedFilter={selectedFilter}
+                onFilterChange={handleFilterChange}
+              />
+            )}
           </div>
 
           {/* Timeline - Scrollable container */}
@@ -321,62 +407,8 @@ export const Timeline: React.FC = () => {
           </div>
         </div>
 
-        {/* Right Sidebar - Conditionally Rendered and separate from scrolling */}
+        {/* Right Sidebar - Conditionally Rendered */}
         {showSidebar && <TrendingSidebar />}
-      </div>
-
-      {/* Mobile Layout */}
-      <div className="md:hidden w-full border-r border-gray-200 overflow-hidden flex flex-col">
-        {/* Mobile Tabs */}
-        <MobileTabs activeTab={activeTab} onTabChange={handleTabChange} />
-
-        {/* WhatsApp-style filter navigation for mobile */}
-        <FilterNavigation 
-          selectedFilter={selectedFilter}
-          onFilterChange={handleFilterChange}
-        />
-
-        {/* Timeline - Scrollable container */}
-        <div className="flex-1 overflow-y-auto">
-          <div className="flex flex-col pb-20">
-            {/* Filter indicators */}
-            {(categoryFilter || countryFilter !== 'ALL') && (
-              <div className="bg-blue-50 border-b border-blue-200 px-4 py-2">
-                <div className="flex items-center justify-between">
-                  <div className="text-xs text-blue-700 flex items-center space-x-2">
-                    {categoryFilter && (
-                      <span className="flex items-center">
-                        <span>Category: <span className="font-semibold">{categoryFilter}</span></span>
-                      </span>
-                    )}
-                    {countryFilter !== 'ALL' && (
-                      <span className="flex items-center">
-                        <span>Country: <span className="font-semibold">
-                          {availableCountries.find(c => c.code === countryFilter)?.name}
-                        </span></span>
-                      </span>
-                    )}
-                  </div>
-                  <button 
-                    onClick={clearFilters}
-                    className="flex items-center text-blue-600 hover:text-blue-800 text-xs font-medium"
-                  >
-                    <X className="h-3 w-3 mr-1" />
-                    Clear
-                  </button>
-                </div>
-              </div>
-            )}
-
-            {/* Infinite Scroll Tweets */}
-            <InfiniteScrollTweets 
-              isMobile={true} 
-              feedType={activeTab}
-              categoryFilter={categoryFilter}
-              countryFilter={countryFilter}
-            />
-          </div>
-        </div>
       </div>
     </div>
   );
