@@ -26,15 +26,15 @@ export const FilterNavigation: React.FC<FilterNavigationProps> = ({
   // All filters shown directly in the strip
   const allFilters: FilterOption[] = [
     { id: 'all', label: 'All', icon: '🌐' },
-    { id: 'general', label: 'General', icon: '💬' },
-    { id: 'hotels', label: 'Hotels', icon: '🏨' },
-    { id: 'flights', label: 'Flights', icon: '✈️' },
-    { id: 'restaurants', label: 'Restaurants', icon: '🍽️' },
+    { id: 'general', label: 'General Discussions', icon: '💬' },
     { id: 'visas', label: 'Visas', icon: '📋' },
+    { id: 'hotels', label: 'Hotels', icon: '🏨' },
     { id: 'car-rental', label: 'Car Rental', icon: '🚗' },
-    { id: 'schedules', label: 'Schedules', icon: '📅' },
-    { id: 'images', label: 'Images', icon: '📸' },
-    { id: 'real-estate', label: 'Real Estate', icon: '🏠' },
+    { id: 'schedules', label: 'Tourist Schedules', icon: '📅' },
+    { id: 'flights', label: 'Flights', icon: '✈️' },
+    { id: 'restaurants', label: 'Restorants and coffees', icon: '🍽️' },
+    { id: 'images', label: 'Images and creators', icon: '📸' },
+    { id: 'real-estate', label: 'Real estate', icon: '🏠' },
   ];
 
   // Check if the filter strip is overflowing and update scroll button visibility

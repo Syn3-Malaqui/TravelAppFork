@@ -272,9 +272,9 @@ export const ComposePage: React.FC = () => {
     'Car Rental': '🚗',
     'Tourist Schedules': '📅',
     'Flights': '✈️',
-    'Restaurants and Coffees': '🍽️',
-    'Images and Creators': '📸',
-    'Real Estate': '🏠'
+    'Restorants and coffees': '🍽️',
+    'Images and creators': '📸',
+    'Real estate': '🏠'
   };
 
   return (

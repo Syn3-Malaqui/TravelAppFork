@@ -101,7 +101,7 @@ export const Timeline: React.FC = () => {
         setCategoryFilter('Flights');
         break;
       case 'restaurants':
-        setCategoryFilter('Restaurants and Coffees');
+        setCategoryFilter('Restorants and coffees');
         break;
       case 'visas':
         setCategoryFilter('Visas');
@@ -113,10 +113,10 @@ export const Timeline: React.FC = () => {
         setCategoryFilter('Tourist Schedules');
         break;
       case 'images':
-        setCategoryFilter('Images and Creators');
+        setCategoryFilter('Images and creators');
         break;
       case 'real-estate':
-        setCategoryFilter('Real Estate');
+        setCategoryFilter('Real estate');
         break;
       default:
         setCategoryFilter(null);
