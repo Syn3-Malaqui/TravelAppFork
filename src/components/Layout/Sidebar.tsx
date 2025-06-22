@@ -6,8 +6,7 @@ import {
   Bell, 
   User, 
   Settings,
-  LogOut,
-  UserPlus
+  LogOut
 } from 'lucide-react';
 import { Button } from '../ui/button';
 import { Avatar, AvatarImage, AvatarFallback } from '../ui/avatar';
@@ -21,7 +20,6 @@ import { useAuth } from '../../hooks/useAuth';
 import { useNotifications } from '../../hooks/useNotifications';
 import { storageService } from '../../lib/storage';
 import { supabase } from '../../lib/supabase';
-import { User as UserType } from '../../types';
 
 const sidebarItems = [
   { icon: Home, label: 'Home', path: '/' },
@@ -41,8 +39,6 @@ export const Sidebar: React.FC = () => {
     username: string;
     avatar: string;
   } | null>(null);
-  const [recommendedUsers, setRecommendedUsers] = useState<UserType[]>([]);
-  const [loadingRecommendations, setLoadingRecommendations] = useState(false);
 
   // Fetch user profile data
   useEffect(() => {
@@ -77,58 +73,6 @@ export const Sidebar: React.FC = () => {
     fetchUserProfile();
   }, [user]);
 
-  // Fetch recommended users
-  useEffect(() => {
-    const fetchRecommendedUsers = async () => {
-      if (!user) return;
-
-      try {
-        setLoadingRecommendations(true);
-
-        // Get users that the current user is NOT following, ordered by follower count
-        const { data: followingData } = await supabase
-          .from('follows')
-          .select('following_id')
-          .eq('follower_id', user.id);
-
-        const followingIds = followingData?.map(f => f.following_id) || [];
-        
-        // Add current user ID to exclude them from recommendations
-        const excludeIds = [...followingIds, user.id];
-
-        const { data: usersData, error } = await supabase
-          .from('profiles')
-          .select('id, username, display_name, avatar_url, bio, verified, followers_count, country')
-          .not('id', 'in', `(${excludeIds.join(',')})`)
-          .order('followers_count', { ascending: false })
-          .limit(5); // Reduced limit since we're not showing "Show more"
-
-        if (error) throw error;
-
-        const formattedUsers: UserType[] = (usersData || []).map(userData => ({
-          id: userData.id,
-          username: userData.username,
-          displayName: userData.display_name,
-          avatar: userData.avatar_url || '',
-          bio: userData.bio || '',
-          verified: userData.verified || false,
-          followers: userData.followers_count || 0,
-          following: 0,
-          country: userData.country || '',
-          joinedDate: new Date(),
-        }));
-
-        setRecommendedUsers(formattedUsers);
-      } catch (error) {
-        console.error('Error fetching recommended users:', error);
-      } finally {
-        setLoadingRecommendations(false);
-      }
-    };
-
-    fetchRecommendedUsers();
-  }, [user]);
-
   const handleTweetClick = () => {
     navigate('/compose');
   };
@@ -148,10 +92,6 @@ export const Sidebar: React.FC = () => {
 
   const handleProfileClick = () => {
     navigate('/profile');
-  };
-
-  const handleUserClick = (username: string) => {
-    navigate(`/profile/${username}`);
   };
 
   return (
@@ -207,99 +147,8 @@ export const Sidebar: React.FC = () => {
         </Button>
       </nav>
 
-      {/* Recommended People Section */}
-      <div className="flex-1 overflow-hidden">
-        <div className="bg-gray-50 rounded-2xl p-4 h-full flex flex-col">
-          {/* Header */}
-          <div className="flex items-center space-x-2 mb-4">
-            <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
-              <UserPlus className="w-4 h-4 text-green-500" />
-            </div>
-            <h3 className="font-bold text-gray-900 text-lg">Who to follow</h3>
-          </div>
-
-          {/* Users List */}
-          <div className="flex-1 overflow-y-auto">
-            {loadingRecommendations ? (
-              <div className="space-y-4">
-                {Array.from({ length: 4 }).map((_, index) => (
-                  <div key={index} className="animate-pulse">
-                    <div className="flex items-center space-x-3">
-                      <div className="w-10 h-10 bg-gray-200 rounded-full"></div>
-                      <div className="flex-1">
-                        <div className="h-4 bg-gray-200 rounded w-3/4 mb-1"></div>
-                        <div className="h-3 bg-gray-200 rounded w-1/2"></div>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <div className="space-y-3">
-                {recommendedUsers.map((recommendedUser) => (
-                  <div
-                    key={recommendedUser.id}
-                    className="p-3 hover:bg-white rounded-xl cursor-pointer transition-colors group"
-                    onClick={() => handleUserClick(recommendedUser.username)}
-                  >
-                    <div className="flex items-start space-x-3">
-                      <Avatar className="w-10 h-10 flex-shrink-0">
-                        <AvatarImage 
-                          src={recommendedUser.avatar ? storageService.getOptimizedImageUrl(recommendedUser.avatar, { width: 80, quality: 80 }) : undefined} 
-                        />
-                        <AvatarFallback className="bg-gray-200 text-gray-600 text-sm">
-                          {recommendedUser.displayName[0]?.toUpperCase()}
-                        </AvatarFallback>
-                      </Avatar>
-                      
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center space-x-1 mb-1">
-                          <p className="font-bold text-gray-900 text-sm truncate group-hover:text-blue-600 transition-colors">
-                            {recommendedUser.displayName}
-                          </p>
-                          {recommendedUser.verified && (
-                            <div className="w-3 h-3 bg-blue-500 rounded-full flex items-center justify-center flex-shrink-0">
-                              <span className="text-white text-xs">✓</span>
-                            </div>
-                          )}
-                        </div>
-                        
-                        <p className="text-xs text-gray-500 truncate mb-2">
-                          @{recommendedUser.username}
-                        </p>
-                        
-                        {recommendedUser.bio && (
-                          <p className="text-xs text-gray-700 line-clamp-2">
-                            {recommendedUser.bio}
-                          </p>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                ))}
-
-                {recommendedUsers.length === 0 && !loadingRecommendations && (
-                  <div className="text-center py-6 text-gray-500">
-                    <UserPlus className="w-8 h-8 mx-auto mb-2 text-gray-300" />
-                    <p className="text-sm">No recommendations</p>
-                    <p className="text-xs text-gray-400 mt-1">Check back later!</p>
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
-
-          {/* Footer */}
-          <div className="pt-3 border-t border-gray-200 mt-3">
-            <p className="text-xs text-gray-400 text-center">
-              Suggestions based on your activity
-            </p>
-          </div>
-        </div>
-      </div>
-
       {/* Settings and User Profile Section */}
-      <div className="mt-4 space-y-4">
+      <div className="mt-auto space-y-4">
         {/* Settings Dropdown */}
         <DropdownMenu open={settingsOpen} onOpenChange={setSettingsOpen}>
           <DropdownMenuTrigger asChild>
