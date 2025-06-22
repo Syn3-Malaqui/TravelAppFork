@@ -95,11 +95,11 @@ export const useLazyTweets = (options: UseLazyTweetsOptions = {}) => {
           username: tweetData.original_tweet.profiles.username,
           displayName: tweetData.original_tweet.profiles.display_name,
           avatar: tweetData.original_tweet.profiles.avatar_url || '',
-          bio: tweetData.original_tweet.profiles.bio,
-          verified: tweetData.original_tweet.profiles.verified,
-          followers: tweetData.original_tweet.profiles.followers_count,
-          following: tweetData.original_tweet.profiles.following_count,
-          country: tweetData.original_tweet.profiles.country,
+          bio: tweetData.original_tweet.profiles.bio || '',
+          verified: tweetData.original_tweet.profiles.verified || false,
+          followers: tweetData.original_tweet.profiles.followers_count || 0,
+          following: tweetData.original_tweet.profiles.following_count || 0,
+          country: tweetData.original_tweet.profiles.country || '',
           joinedDate: new Date(tweetData.original_tweet.profiles.created_at),
         },
         createdAt: new Date(tweetData.original_tweet.created_at),
@@ -120,11 +120,11 @@ export const useLazyTweets = (options: UseLazyTweetsOptions = {}) => {
           username: tweetData.profiles.username,
           displayName: tweetData.profiles.display_name,
           avatar: tweetData.profiles.avatar_url || '',
-          bio: tweetData.profiles.bio,
-          verified: tweetData.profiles.verified,
-          followers: tweetData.profiles.followers_count,
-          following: tweetData.profiles.following_count,
-          country: tweetData.profiles.country,
+          bio: tweetData.profiles.bio || '',
+          verified: tweetData.profiles.verified || false,
+          followers: tweetData.profiles.followers_count || 0,
+          following: tweetData.profiles.following_count || 0,
+          country: tweetData.profiles.country || '',
           joinedDate: new Date(tweetData.profiles.created_at),
         },
         retweetedAt: new Date(tweetData.created_at),
@@ -142,11 +142,11 @@ export const useLazyTweets = (options: UseLazyTweetsOptions = {}) => {
         username: tweetData.profiles.username,
         displayName: tweetData.profiles.display_name,
         avatar: tweetData.profiles.avatar_url || '',
-        bio: tweetData.profiles.bio,
-        verified: tweetData.profiles.verified,
-        followers: tweetData.profiles.followers_count,
-        following: tweetData.profiles.following_count,
-        country: tweetData.profiles.country,
+        bio: tweetData.profiles.bio || '',
+        verified: tweetData.profiles.verified || false,
+        followers: tweetData.profiles.followers_count || 0,
+        following: tweetData.profiles.following_count || 0,
+        country: tweetData.profiles.country || '',
         joinedDate: new Date(tweetData.profiles.created_at),
       },
       createdAt: new Date(tweetData.created_at),
@@ -603,7 +603,7 @@ export const useLazyTweets = (options: UseLazyTweetsOptions = {}) => {
         query = query.in('author_id', followingIds);
       }
 
-      // Apply pagination - REMOVED ENGAGEMENT SORTING, ONLY CHRONOLOGICAL
+      // Apply pagination
       query = query
         .order('created_at', { ascending: false })
         .range(offsetRef.current, offsetRef.current + pageSize - 1);
@@ -637,8 +637,14 @@ export const useLazyTweets = (options: UseLazyTweetsOptions = {}) => {
           formatTweetData(tweet, userLikes, userRetweets, userBookmarks)
         );
 
-        // REMOVED: Engagement-based sorting for "For You" feed
-        // Now all tweets are shown in chronological order only
+        // Sort by engagement score for "For You" feed
+        if (!followingOnly) {
+          formattedTweets.sort((a, b) => {
+            const scoreA = a.likes * 1 + a.retweets * 2 + a.replies * 1.5;
+            const scoreB = b.likes * 1 + b.retweets * 2 + b.replies * 1.5;
+            return scoreB - scoreA;
+          });
+        }
 
         setTweets(prev => {
           const newTweets = [...prev, ...formattedTweets];
