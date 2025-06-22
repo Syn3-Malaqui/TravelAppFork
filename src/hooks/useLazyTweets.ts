@@ -603,7 +603,7 @@ export const useLazyTweets = (options: UseLazyTweetsOptions = {}) => {
         query = query.in('author_id', followingIds);
       }
 
-      // Apply pagination
+      // Apply pagination and simple chronological sorting
       query = query
         .order('created_at', { ascending: false })
         .range(offsetRef.current, offsetRef.current + pageSize - 1);
@@ -637,15 +637,7 @@ export const useLazyTweets = (options: UseLazyTweetsOptions = {}) => {
           formatTweetData(tweet, userLikes, userRetweets, userBookmarks)
         );
 
-        // Sort by engagement score for "For You" feed
-        if (!followingOnly) {
-          formattedTweets.sort((a, b) => {
-            const scoreA = a.likes * 1 + a.retweets * 2 + a.replies * 1.5;
-            const scoreB = b.likes * 1 + b.retweets * 2 + b.replies * 1.5;
-            return scoreB - scoreA;
-          });
-        }
-
+        // No sorting - just keep chronological order from the database
         setTweets(prev => {
           const newTweets = [...prev, ...formattedTweets];
           // Cache the tweets
