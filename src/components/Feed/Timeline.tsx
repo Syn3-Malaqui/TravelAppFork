@@ -15,7 +15,7 @@ import {
 import { useAuth } from '../../hooks/useAuth';
 import { supabase } from '../../lib/supabase';
 import { FILTER_COUNTRIES } from '../../types';
-import { X, ChevronDown, Check, Globe } from 'lucide-react';
+import { X, ChevronDown, Check } from 'lucide-react';
 
 export const Timeline: React.FC = () => {
   const navigate = useNavigate();
@@ -195,8 +195,6 @@ export const Timeline: React.FC = () => {
                     variant="ghost" 
                     className="flex items-center space-x-2 px-3 py-2 hover:bg-gray-50 rounded-lg text-sm font-medium"
                   >
-                    <Globe className="h-4 w-4 text-gray-500" />
-                    <span className="text-lg">{selectedCountryData?.flag}</span>
                     <span className="font-semibold">{selectedCountryData?.name}</span>
                     <ChevronDown className="h-4 w-4 text-gray-500" />
                   </Button>
@@ -216,9 +214,6 @@ export const Timeline: React.FC = () => {
                           countryFilter === country.code ? 'bg-blue-50 text-blue-700' : 'hover:bg-gray-50'
                         }`}
                       >
-                        <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center border border-gray-200 flex-shrink-0">
-                          <span className="text-lg">{country.flag}</span>
-                        </div>
                         <span className="flex-1 text-sm font-medium truncate">{country.name}</span>
                         {countryFilter === country.code && (
                           <Check className="h-4 w-4 text-blue-600 flex-shrink-0" />
