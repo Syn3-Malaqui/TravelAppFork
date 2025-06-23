@@ -1,6 +1,12 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { ChevronRight, ChevronLeft } from 'lucide-react';
+import { ChevronRight, ChevronLeft, MoreHorizontal, Check } from 'lucide-react';
 import { Button } from '../ui/button';
+import { 
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '../ui/dropdown-menu';
 
 interface FilterOption {
   id: string;
@@ -19,11 +25,11 @@ export const FilterNavigation: React.FC<FilterNavigationProps> = ({
   const [isOverflowing, setIsOverflowing] = useState(false);
   const [showLeftButton, setShowLeftButton] = useState(false);
   const [showRightButton, setShowRightButton] = useState(false);
-  const [visibleFilters, setVisibleFilters] = useState<number>(5); // Default to 5 visible filters
+  const [moreDropdownOpen, setMoreDropdownOpen] = useState(false);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const [initialAnimationDone, setInitialAnimationDone] = useState(false);
 
-  // All filters shown directly in the strip
+  // All filters
   const allFilters: FilterOption[] = [
     { id: 'all', label: 'All' },
     { id: 'general', label: 'General Discussions' },
@@ -37,21 +43,56 @@ export const FilterNavigation: React.FC<FilterNavigationProps> = ({
     { id: 'real-estate', label: 'Real estate' },
   ];
 
+  // Determine which filters to show directly and which to put in the "More" dropdown
+  const [visibleFilters, setVisibleFilters] = useState<FilterOption[]>([]);
+  const [moreFilters, setMoreFilters] = useState<FilterOption[]>([]);
+
   // Adjust visible filters based on screen width
   useEffect(() => {
     const handleResize = () => {
       const width = window.innerWidth;
+      let visibleCount = 4; // Default for desktop
+      
       if (width < 640) {
-        setVisibleFilters(3); // Small mobile
+        visibleCount = 3; // Small mobile
       } else if (width < 768) {
-        setVisibleFilters(4); // Mobile
+        visibleCount = 4; // Mobile
       } else if (width < 1024) {
-        setVisibleFilters(5); // Tablet
+        visibleCount = 5; // Tablet
       } else if (width < 1280) {
-        setVisibleFilters(6); // Small desktop
+        visibleCount = 4; // Small desktop
       } else {
-        setVisibleFilters(8); // Large desktop
+        visibleCount = 4; // Large desktop
       }
+      
+      // Always include "All" and the selected filter in visible filters
+      let newVisibleFilters = [allFilters[0]]; // Start with "All"
+      
+      // Add the selected filter if it's not "All" and not already included
+      const selectedFilterObj = allFilters.find(f => f.id === selectedFilter);
+      if (selectedFilter !== 'all' && selectedFilterObj) {
+        newVisibleFilters.push(selectedFilterObj);
+        visibleCount--; // Reduce count since we added the selected filter
+      }
+      
+      // Fill remaining slots with filters that aren't already included
+      const remainingFilters = allFilters.filter(f => 
+        f.id !== 'all' && f.id !== selectedFilter
+      );
+      
+      // Add remaining filters up to the visible count
+      newVisibleFilters = [
+        ...newVisibleFilters,
+        ...remainingFilters.slice(0, visibleCount)
+      ];
+      
+      // Determine which filters go into the "More" dropdown
+      const newMoreFilters = allFilters.filter(
+        filter => !newVisibleFilters.some(vf => vf.id === filter.id)
+      );
+      
+      setVisibleFilters(newVisibleFilters);
+      setMoreFilters(newMoreFilters);
       
       checkOverflow();
     };
@@ -59,7 +100,7 @@ export const FilterNavigation: React.FC<FilterNavigationProps> = ({
     handleResize();
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
-  }, []);
+  }, [selectedFilter]);
 
   // Check if the filter strip is overflowing and update scroll button visibility
   const checkOverflow = () => {
@@ -74,7 +115,7 @@ export const FilterNavigation: React.FC<FilterNavigationProps> = ({
     }
   };
 
-  // Set up overflow detection and window resize handler
+  // Set up overflow detection
   useEffect(() => {
     checkOverflow();
   }, [visibleFilters]);
@@ -169,8 +210,8 @@ export const FilterNavigation: React.FC<FilterNavigationProps> = ({
         style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
         onScroll={handleScroll}
       >
-        {/* All filters */}
-        {allFilters.map((filter) => (
+        {/* Visible filters */}
+        {visibleFilters.map((filter) => (
           <Button
             key={filter.id}
             variant="ghost"
@@ -186,6 +227,46 @@ export const FilterNavigation: React.FC<FilterNavigationProps> = ({
             {filter.label}
           </Button>
         ))}
+        
+        {/* More dropdown - only show if there are more filters */}
+        {moreFilters.length > 0 && (
+          <DropdownMenu open={moreDropdownOpen} onOpenChange={setMoreDropdownOpen}>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="rounded-full px-3 py-1 text-sm font-medium whitespace-nowrap transition-colors flex-shrink-0 text-gray-700 hover:bg-gray-100"
+              >
+                <span className="flex items-center">
+                  <MoreHorizontal className="w-4 h-4 mr-1" />
+                  More
+                </span>
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent 
+              align="start" 
+              className="w-56 max-h-80 overflow-y-auto rounded-xl"
+              sideOffset={4}
+            >
+              <div className="p-2">
+                {moreFilters.map((filter) => (
+                  <DropdownMenuItem
+                    key={filter.id}
+                    onClick={() => onFilterChange(filter.id)}
+                    className={`flex items-center justify-between px-3 py-2 cursor-pointer rounded-lg mx-1 my-0.5 ${
+                      selectedFilter === filter.id ? 'bg-green-50 text-green-800' : 'hover:bg-gray-50'
+                    }`}
+                  >
+                    <span className="text-sm font-medium">{filter.label}</span>
+                    {selectedFilter === filter.id && (
+                      <Check className="h-4 w-4 text-green-600" />
+                    )}
+                  </DropdownMenuItem>
+                ))}
+              </div>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        )}
       </div>
       
       {/* Right scroll button - only show when needed */}
