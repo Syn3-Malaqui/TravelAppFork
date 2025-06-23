@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { User, Session } from '@supabase/supabase-js';
-import { supabase } from '../lib/supabase';
+import { supabase, refreshAuthSession } from '../lib/supabase';
 
 interface AuthMetadata {
   username?: string;
@@ -14,12 +14,32 @@ export const useAuth = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Get initial session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      setLoading(false);
-    });
+    // Refresh session on initial load to handle JWT expiration
+    const initAuth = async () => {
+      setLoading(true);
+      
+      try {
+        // First try to refresh the session
+        const refreshData = await refreshAuthSession();
+        if (refreshData?.session) {
+          setSession(refreshData.session);
+          setUser(refreshData.session.user);
+          setLoading(false);
+          return;
+        }
+        
+        // If refresh fails, get current session
+        const { data: { session } } = await supabase.auth.getSession();
+        setSession(session);
+        setUser(session?.user ?? null);
+      } catch (error) {
+        console.error('Auth initialization error:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    initAuth();
 
     // Listen for auth changes
     const {

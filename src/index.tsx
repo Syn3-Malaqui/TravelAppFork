@@ -1,8 +1,9 @@
-import { StrictMode, Suspense } from "react";
+import { StrictMode, Suspense, useEffect } from "react";
 import { createRoot } from "react-dom/client";
 import App from "./App";
 import "./index.css";
 import { LoadingSpinner } from "./components/ui/LoadingSpinner";
+import { refreshAuthSession } from "./lib/supabase";
 
 // Preload critical CSS
 const preloadCSS = () => {
@@ -33,6 +34,23 @@ const preloadFonts = () => {
 preloadCSS();
 preloadFonts();
 
+// AppWrapper to handle auth refresh
+const AppWrapper = () => {
+  useEffect(() => {
+    // Refresh auth session on initial load
+    refreshAuthSession();
+    
+    // Set up periodic session refresh (every 10 minutes)
+    const refreshInterval = setInterval(() => {
+      refreshAuthSession();
+    }, 10 * 60 * 1000);
+    
+    return () => clearInterval(refreshInterval);
+  }, []);
+  
+  return <App />;
+};
+
 // Create root with fallback
 createRoot(document.getElementById("app") as HTMLElement).render(
   <StrictMode>
@@ -41,7 +59,7 @@ createRoot(document.getElementById("app") as HTMLElement).render(
         <LoadingSpinner size="lg" text="Loading application..." />
       </div>
     }>
-      <App />
+      <AppWrapper />
     </Suspense>
   </StrictMode>
 );

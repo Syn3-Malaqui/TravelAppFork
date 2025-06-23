@@ -28,6 +28,7 @@ export const FilterNavigation: React.FC<FilterNavigationProps> = ({
   const [moreDropdownOpen, setMoreDropdownOpen] = useState(false);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const [initialAnimationDone, setInitialAnimationDone] = useState(false);
+  const [containerWidth, setContainerWidth] = useState(0);
 
   // All filters
   const allFilters: FilterOption[] = [
@@ -47,60 +48,65 @@ export const FilterNavigation: React.FC<FilterNavigationProps> = ({
   const [visibleFilters, setVisibleFilters] = useState<FilterOption[]>([]);
   const [moreFilters, setMoreFilters] = useState<FilterOption[]>([]);
 
-  // Adjust visible filters based on screen width
+  // Update container width on resize
   useEffect(() => {
-    const handleResize = () => {
-      const width = window.innerWidth;
-      let visibleCount = 4; // Default for desktop
-      
-      if (width < 640) {
-        visibleCount = 3; // Small mobile
-      } else if (width < 768) {
-        visibleCount = 4; // Mobile
-      } else if (width < 1024) {
-        visibleCount = 5; // Tablet
-      } else if (width < 1280) {
-        visibleCount = 4; // Small desktop
-      } else {
-        visibleCount = 4; // Large desktop
+    const updateContainerWidth = () => {
+      if (scrollContainerRef.current) {
+        setContainerWidth(scrollContainerRef.current.clientWidth);
       }
-      
-      // Always include "All" and the selected filter in visible filters
-      let newVisibleFilters = [allFilters[0]]; // Start with "All"
-      
-      // Add the selected filter if it's not "All" and not already included
-      const selectedFilterObj = allFilters.find(f => f.id === selectedFilter);
-      if (selectedFilter !== 'all' && selectedFilterObj) {
-        newVisibleFilters.push(selectedFilterObj);
-        visibleCount--; // Reduce count since we added the selected filter
-      }
-      
-      // Fill remaining slots with filters that aren't already included
-      const remainingFilters = allFilters.filter(f => 
-        f.id !== 'all' && f.id !== selectedFilter
-      );
-      
-      // Add remaining filters up to the visible count
-      newVisibleFilters = [
-        ...newVisibleFilters,
-        ...remainingFilters.slice(0, visibleCount)
-      ];
-      
-      // Determine which filters go into the "More" dropdown
-      const newMoreFilters = allFilters.filter(
-        filter => !newVisibleFilters.some(vf => vf.id === filter.id)
-      );
-      
-      setVisibleFilters(newVisibleFilters);
-      setMoreFilters(newMoreFilters);
-      
-      checkOverflow();
     };
     
-    handleResize();
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, [selectedFilter]);
+    updateContainerWidth();
+    window.addEventListener('resize', updateContainerWidth);
+    return () => window.removeEventListener('resize', updateContainerWidth);
+  }, []);
+
+  // Calculate which filters can fit in the container
+  useEffect(() => {
+    if (containerWidth === 0) return;
+    
+    // Always include "All" filter
+    let newVisibleFilters = [allFilters[0]];
+    
+    // Add the selected filter if it's not "All"
+    const selectedFilterObj = allFilters.find(f => f.id === selectedFilter);
+    if (selectedFilter !== 'all' && selectedFilterObj) {
+      if (!newVisibleFilters.some(f => f.id === selectedFilter)) {
+        newVisibleFilters.push(selectedFilterObj);
+      }
+    }
+    
+    // Estimate how many filters can fit
+    // Average filter width (including margin) is about 130px
+    const averageFilterWidth = 130;
+    const moreButtonWidth = 100;
+    const availableWidth = containerWidth - moreButtonWidth;
+    
+    // Calculate how many additional filters can fit
+    let additionalFiltersCount = Math.floor(availableWidth / averageFilterWidth) - newVisibleFilters.length;
+    additionalFiltersCount = Math.max(0, additionalFiltersCount);
+    
+    // Get remaining filters that aren't already included
+    const remainingFilters = allFilters.filter(f => 
+      !newVisibleFilters.some(vf => vf.id === f.id)
+    );
+    
+    // Add as many as will fit
+    newVisibleFilters = [
+      ...newVisibleFilters,
+      ...remainingFilters.slice(0, additionalFiltersCount)
+    ];
+    
+    // Determine which filters go into the "More" dropdown
+    const newMoreFilters = allFilters.filter(
+      filter => !newVisibleFilters.some(vf => vf.id === filter.id)
+    );
+    
+    setVisibleFilters(newVisibleFilters);
+    setMoreFilters(newMoreFilters);
+    
+    checkOverflow();
+  }, [selectedFilter, containerWidth]);
 
   // Check if the filter strip is overflowing and update scroll button visibility
   const checkOverflow = () => {

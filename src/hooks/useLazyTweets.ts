@@ -25,12 +25,15 @@ export const useLazyTweets = (options: UseLazyTweetsOptions = {}) => {
   const lastFetchTimeRef = useRef<string | null>(null);
   const pollingIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const isDeployedRef = useRef<boolean>(false);
+  const retryTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const retryCountRef = useRef(0);
+  const maxRetries = 5;
 
   // Detect if we're in a deployed environment
   useEffect(() => {
     isDeployedRef.current = window.location.hostname !== 'localhost' && 
-                            window.location.hostname !== '127.0.0.1' &&
-                            !window.location.hostname.includes('stackblitz');
+                          window.location.hostname !== '127.0.0.1' &&
+                          !window.location.hostname.includes('stackblitz');
   }, []);
 
   // Helper function to convert date strings back to Date objects
@@ -178,16 +181,35 @@ export const useLazyTweets = (options: UseLazyTweetsOptions = {}) => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user || tweetIds.length === 0) return { userLikes: [], userRetweets: [], userBookmarks: [] };
 
-      const [likesResult, retweetsResult, bookmarksResult] = await Promise.all([
-        supabase.from('likes').select('tweet_id').eq('user_id', user.id).in('tweet_id', tweetIds),
-        supabase.from('retweets').select('tweet_id').eq('user_id', user.id).in('tweet_id', tweetIds),
-        supabase.from('bookmarks').select('tweet_id').eq('user_id', user.id).in('tweet_id', tweetIds)
-      ]);
+      // Split into smaller batches to avoid URL length limits
+      const batchSize = 20;
+      const batches = [];
+      
+      for (let i = 0; i < tweetIds.length; i += batchSize) {
+        batches.push(tweetIds.slice(i, i + batchSize));
+      }
+      
+      let allLikes: string[] = [];
+      let allRetweets: string[] = [];
+      let allBookmarks: string[] = [];
+      
+      // Process each batch
+      for (const batch of batches) {
+        const [likesResult, retweetsResult, bookmarksResult] = await Promise.all([
+          supabase.from('likes').select('tweet_id').eq('user_id', user.id).in('tweet_id', batch),
+          supabase.from('retweets').select('tweet_id').eq('user_id', user.id).in('tweet_id', batch),
+          supabase.from('bookmarks').select('tweet_id').eq('user_id', user.id).in('tweet_id', batch)
+        ]);
+        
+        if (likesResult.data) allLikes = [...allLikes, ...likesResult.data.map(like => like.tweet_id)];
+        if (retweetsResult.data) allRetweets = [...allRetweets, ...retweetsResult.data.map(retweet => retweet.tweet_id)];
+        if (bookmarksResult.data) allBookmarks = [...allBookmarks, ...bookmarksResult.data.map(bookmark => bookmark.tweet_id)];
+      }
 
       return {
-        userLikes: likesResult.data?.map(like => like.tweet_id) || [],
-        userRetweets: retweetsResult.data?.map(retweet => retweet.tweet_id) || [],
-        userBookmarks: bookmarksResult.data?.map(bookmark => bookmark.tweet_id) || [],
+        userLikes: allLikes,
+        userRetweets: allRetweets,
+        userBookmarks: allBookmarks,
       };
     } catch (error) {
       console.error('Error fetching user interactions:', error);
@@ -337,9 +359,27 @@ export const useLazyTweets = (options: UseLazyTweetsOptions = {}) => {
 
         // Update last fetch time to the newest tweet's timestamp
         lastFetchTimeRef.current = tweetsData[0].created_at;
+        
+        // Reset retry counter on success
+        retryCountRef.current = 0;
       }
     } catch (error) {
       console.error('Error checking for new tweets:', error);
+      
+      // Implement exponential backoff for retries
+      if (retryCountRef.current < maxRetries) {
+        const backoffTime = Math.min(1000 * Math.pow(2, retryCountRef.current), 30000);
+        console.log(`Retrying in ${backoffTime}ms (attempt ${retryCountRef.current + 1}/${maxRetries})`);
+        
+        if (retryTimeoutRef.current) {
+          clearTimeout(retryTimeoutRef.current);
+        }
+        
+        retryTimeoutRef.current = setTimeout(() => {
+          retryCountRef.current++;
+          checkForNewTweets();
+        }, backoffTime);
+      }
     }
   }, [followingOnly, fetchUserInteractions, formatTweetData, cacheTweets, fetchFollowingUsers]);
 
@@ -665,10 +705,28 @@ export const useLazyTweets = (options: UseLazyTweetsOptions = {}) => {
         });
         
         offsetRef.current += tweetsData.length;
+        
+        // Reset retry counter on success
+        retryCountRef.current = 0;
       }
     } catch (err: any) {
       setError(err.message);
       console.error('Error loading tweets:', err);
+      
+      // Implement exponential backoff for retries
+      if (retryCountRef.current < maxRetries) {
+        const backoffTime = Math.min(1000 * Math.pow(2, retryCountRef.current), 30000);
+        console.log(`Retrying in ${backoffTime}ms (attempt ${retryCountRef.current + 1}/${maxRetries})`);
+        
+        if (retryTimeoutRef.current) {
+          clearTimeout(retryTimeoutRef.current);
+        }
+        
+        retryTimeoutRef.current = setTimeout(() => {
+          retryCountRef.current++;
+          loadMoreTweets();
+        }, backoffTime);
+      }
     } finally {
       setLoading(false);
       loadingRef.current = false;
@@ -683,10 +741,16 @@ export const useLazyTweets = (options: UseLazyTweetsOptions = {}) => {
     loadingRef.current = false;
     lastFetchTimeRef.current = null;
     sessionStorage.removeItem(cacheKey);
+    retryCountRef.current = 0;
     
     // Clear polling interval
     if (pollingIntervalRef.current) {
       clearInterval(pollingIntervalRef.current);
+    }
+    
+    // Clear retry timeout
+    if (retryTimeoutRef.current) {
+      clearTimeout(retryTimeoutRef.current);
     }
   }, [cacheKey]);
 
@@ -723,6 +787,9 @@ export const useLazyTweets = (options: UseLazyTweetsOptions = {}) => {
       }
       if (pollingIntervalRef.current) {
         clearInterval(pollingIntervalRef.current);
+      }
+      if (retryTimeoutRef.current) {
+        clearTimeout(retryTimeoutRef.current);
       }
     };
   }, []);
