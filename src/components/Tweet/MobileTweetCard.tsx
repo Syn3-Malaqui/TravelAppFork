@@ -257,7 +257,35 @@ export const MobileTweetCard: React.FC<MobileTweetCardProps> = ({
 
   const handleShareClick = (e: React.MouseEvent) => {
     e.stopPropagation();
-    // Handle share functionality
+    
+    // Create the full URL for sharing
+    const tweetUrl = `${window.location.origin}/tweet/${tweet.id}`;
+    
+    // Use Web Share API if available (better for mobile)
+    if (navigator.share) {
+      navigator.share({
+        title: `Tweet by ${tweet.author.displayName}`,
+        text: tweet.content.substring(0, 100) + (tweet.content.length > 100 ? '...' : ''),
+        url: tweetUrl
+      }).catch(err => {
+        console.error('Error sharing:', err);
+        // Fallback to copying to clipboard
+        copyToClipboard(tweetUrl);
+      });
+    } else {
+      // Fallback for browsers that don't support Web Share API
+      copyToClipboard(tweetUrl);
+    }
+  };
+  
+  const copyToClipboard = (text: string) => {
+    navigator.clipboard.writeText(text)
+      .then(() => {
+        alert('Link copied to clipboard!');
+      })
+      .catch(err => {
+        console.error('Failed to copy:', err);
+      });
   };
 
   const handleViewsClick = (e: React.MouseEvent) => {
