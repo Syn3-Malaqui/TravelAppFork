@@ -37,7 +37,7 @@ export const supabase = createClient<Database>(cleanUrl, supabaseAnonKey, {
   },
   global: {
     fetch: (...args) => {
-      // Add retry logic for network errors and JWT expiration
+      // Add retry logic for network errors
       return fetchWithRetry(args[0] as RequestInfo, args[1] as RequestInit);
     }
   }
@@ -47,18 +47,6 @@ export const supabase = createClient<Database>(cleanUrl, supabaseAnonKey, {
 async function fetchWithRetry(url: RequestInfo, init?: RequestInit, retries = 3, backoff = 300): Promise<Response> {
   try {
     const response = await fetch(url, init);
-    
-    // If we get a 401 Unauthorized (likely JWT expired), try to refresh the session
-    if (response.status === 401) {
-      const { error } = await supabase.auth.refreshSession();
-      
-      // If refresh failed and we have retries left, wait and try again
-      if (error && retries > 0) {
-        await new Promise(resolve => setTimeout(resolve, backoff));
-        return fetchWithRetry(url, init, retries - 1, backoff * 2);
-      }
-    }
-    
     return response;
   } catch (error) {
     // For network errors, retry if we have retries left

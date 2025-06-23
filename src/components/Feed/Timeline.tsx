@@ -121,15 +121,24 @@ export const Timeline: React.FC = () => {
           .from('profiles')
           .select('display_name, username, avatar_url')
           .eq('id', user.id)
-          .single();
+          .maybeSingle();
 
         if (error) throw error;
 
-        setUserProfile({
-          displayName: data.display_name,
-          username: data.username,
-          avatar: data.avatar_url || '',
-        });
+        if (data) {
+          setUserProfile({
+            displayName: data.display_name,
+            username: data.username,
+            avatar: data.avatar_url || '',
+          });
+        } else {
+          // Fallback to auth metadata when no profile exists
+          setUserProfile({
+            displayName: user.user_metadata?.display_name || 'User',
+            username: user.user_metadata?.username || 'user',
+            avatar: user.user_metadata?.avatar_url || '',
+          });
+        }
       } catch (error) {
         console.error('Error fetching user profile:', error);
         // Fallback to auth metadata
