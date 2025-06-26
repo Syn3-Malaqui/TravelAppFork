@@ -3,21 +3,21 @@ import tailwind from "tailwindcss";
 import { defineConfig } from "vite";
 
 // https://vite.dev/config/
-export default defineConfig({
+export default defineConfig(({ mode }) => ({
   plugins: [react()],
-  base: "./",
+  base: "/",
   css: {
     postcss: {
       plugins: [tailwind()],
     },
   },
   build: {
-    // Improve build performance
+    // Improve build performance and optimize for Vercel
     target: 'esnext',
     minify: 'terser',
     terserOptions: {
       compress: {
-        drop_console: true,
+        drop_console: mode === 'production',
         drop_debugger: true,
       },
     },
@@ -38,6 +38,8 @@ export default defineConfig({
         },
       },
     },
+    // Optimize for Vercel's build limits
+    chunkSizeWarningLimit: 1000,
   },
   optimizeDeps: {
     include: [
@@ -55,4 +57,4 @@ export default defineConfig({
       overlay: true,
     },
   },
-});
+}));
