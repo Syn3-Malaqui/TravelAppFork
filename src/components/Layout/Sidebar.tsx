@@ -134,8 +134,7 @@ export const Sidebar: React.FC = () => {
                 >
                   {isRTL ? (
                     <>
-                      <span className="mr-3">{item.label}</span>
-                      <div className="relative">
+                      <div className="relative ml-3">
                         <item.icon className="h-6 w-6" />
                         {isNotifications && unreadCount > 0 && (
                           <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
@@ -143,6 +142,7 @@ export const Sidebar: React.FC = () => {
                           </span>
                         )}
                       </div>
+                      <span>{item.label}</span>
                     </>
                   ) : (
                     <>
@@ -183,8 +183,8 @@ export const Sidebar: React.FC = () => {
             >
               {isRTL ? (
                 <>
-                  <span className="mr-3">{language === 'en' ? 'Settings' : 'الإعدادات'}</span>
-                  <Settings className="h-5 w-5" />
+                  <Settings className="h-5 w-5 ml-3" />
+                  <span>{language === 'en' ? 'Settings' : 'الإعدادات'}</span>
                 </>
               ) : (
                 <>
@@ -228,16 +228,16 @@ export const Sidebar: React.FC = () => {
         >
           {isRTL ? (
             <>
-              <div className="min-w-0 text-right mr-3">
-                <div className="font-bold text-sm truncate">{userProfile?.displayName || 'User'}</div>
-                <div className="text-gray-500 text-sm truncate">@{userProfile?.username || 'user'}</div>
-              </div>
-              <Avatar className="w-10 h-10">
+              <Avatar className="w-10 h-10 ml-3">
                 <AvatarImage 
                   src={userProfile?.avatar ? storageService.getOptimizedImageUrl(userProfile.avatar, { width: 80, quality: 80 }) : undefined} 
                 />
                 <AvatarFallback>{userProfile?.displayName[0]?.toUpperCase() || 'U'}</AvatarFallback>
               </Avatar>
+              <div className="min-w-0 text-right">
+                <div className="font-bold text-sm truncate">{userProfile?.displayName || 'User'}</div>
+                <div className="text-gray-500 text-sm truncate">@{userProfile?.username || 'user'}</div>
+              </div>
             </>
           ) : (
             <>
