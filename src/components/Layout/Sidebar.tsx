@@ -104,9 +104,9 @@ export const Sidebar: React.FC = () => {
   };
 
   return (
-    <div className={`w-64 h-full border-r border-gray-200 bg-white p-4 flex flex-col ${isRTL ? 'border-l border-r-0' : ''}`}>
+    <div className={`w-64 h-full ${isRTL ? 'border-l border-r-0' : 'border-r border-l-0'} border-gray-200 bg-white p-4 flex flex-col`}>
       {/* Logo */}
-      <div className="mb-8">
+      <div className={`mb-8 ${isRTL ? 'flex justify-end' : 'flex justify-start'}`}>
         <div className="w-12 h-12">
           <img 
             src="https://i.ibb.co/3YPVCWX2/Website-Logo.jpg" 
@@ -128,19 +128,35 @@ export const Sidebar: React.FC = () => {
                 <Button
                   variant="ghost"
                   onClick={() => handleNavClick(item.path)}
-                  className={`w-full ${isRTL ? 'justify-end' : 'justify-start'} text-xl py-3 px-4 h-auto relative ${
+                  className={`w-full ${isRTL ? 'justify-end text-right' : 'justify-start text-left'} text-xl py-3 px-4 h-auto relative ${
                     isActive ? 'font-bold text-blue-500' : 'font-normal text-gray-700 hover:bg-gray-100'
                   }`}
                 >
-                  <div className="relative">
-                    <item.icon className={`h-6 w-6 ${isRTL ? 'ml-4' : 'mr-4'}`} />
-                    {isNotifications && unreadCount > 0 && (
-                      <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
-                        {unreadCount > 99 ? '99+' : unreadCount}
-                      </span>
-                    )}
-                  </div>
-                  {item.label}
+                  {isRTL ? (
+                    <>
+                      {item.label}
+                      <div className="relative">
+                        <item.icon className="h-6 w-6 ml-4" />
+                        {isNotifications && unreadCount > 0 && (
+                          <span className="absolute -top-2 -left-2 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
+                            {unreadCount > 99 ? '99+' : unreadCount}
+                          </span>
+                        )}
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <div className="relative">
+                        <item.icon className="h-6 w-6 mr-4" />
+                        {isNotifications && unreadCount > 0 && (
+                          <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
+                            {unreadCount > 99 ? '99+' : unreadCount}
+                          </span>
+                        )}
+                      </div>
+                      {item.label}
+                    </>
+                  )}
                 </Button>
               </li>
             );
@@ -163,10 +179,19 @@ export const Sidebar: React.FC = () => {
           <DropdownMenuTrigger asChild>
             <Button 
               variant="ghost"
-              className={`w-full ${isRTL ? 'justify-end' : 'justify-start'} text-lg py-3 px-4 h-auto text-gray-700 hover:bg-gray-100`}
+              className={`w-full ${isRTL ? 'justify-end text-right' : 'justify-start text-left'} text-lg py-3 px-4 h-auto text-gray-700 hover:bg-gray-100`}
             >
-              <Settings className={`h-5 w-5 ${isRTL ? 'ml-4' : 'mr-4'}`} />
-              {language === 'en' ? 'Settings' : 'الإعدادات'}
+              {isRTL ? (
+                <>
+                  {language === 'en' ? 'Settings' : 'الإعدادات'}
+                  <Settings className="h-5 w-5 ml-4" />
+                </>
+              ) : (
+                <>
+                  <Settings className="h-5 w-5 mr-4" />
+                  {language === 'en' ? 'Settings' : 'الإعدادات'}
+                </>
+              )}
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent 
@@ -196,16 +221,18 @@ export const Sidebar: React.FC = () => {
 
         {/* User Profile */}
         <div 
-          className="flex items-center p-3 hover:bg-gray-50 rounded-lg cursor-pointer transition-colors"
+          className={`flex items-center p-3 hover:bg-gray-50 rounded-lg cursor-pointer transition-colors ${
+            isRTL ? 'flex-row-reverse' : ''
+          }`}
           onClick={handleProfileClick}
         >
-          <Avatar className="w-10 h-10 mr-3">
+          <Avatar className={`w-10 h-10 ${isRTL ? 'ml-3' : 'mr-3'}`}>
             <AvatarImage 
               src={userProfile?.avatar ? storageService.getOptimizedImageUrl(userProfile.avatar, { width: 80, quality: 80 }) : undefined} 
             />
             <AvatarFallback>{userProfile?.displayName[0]?.toUpperCase() || 'U'}</AvatarFallback>
           </Avatar>
-          <div className="flex-1 min-w-0">
+          <div className={`flex-1 min-w-0 ${isRTL ? 'text-right' : 'text-left'}`}>
             <div className="font-bold text-sm truncate">{userProfile?.displayName || 'User'}</div>
             <div className="text-gray-500 text-sm truncate">@{userProfile?.username || 'user'}</div>
           </div>
