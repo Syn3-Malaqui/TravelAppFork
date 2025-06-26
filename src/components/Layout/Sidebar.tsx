@@ -4,7 +4,6 @@ import {
   Home, 
   Search, 
   Bell, 
-  // Mail, // Removed since Messages is hidden
   User, 
   Settings,
   LogOut,
@@ -20,7 +19,6 @@ import {
 } from '../ui/dropdown-menu';
 import { useAuth } from '../../hooks/useAuth';
 import { useNotifications } from '../../hooks/useNotifications';
-// import { useMessages } from '../../hooks/useMessages'; // Removed since Messages is hidden
 import { storageService } from '../../lib/storage';
 import { supabase } from '../../lib/supabase';
 import { useLanguageStore } from '../../store/useLanguageStore';
@@ -30,7 +28,6 @@ const getSidebarItems = (language: string) => [
   { icon: Home, label: language === 'en' ? 'Home' : 'الرئيسية', path: '/' },
   { icon: Search, label: language === 'en' ? 'Explore' : 'استكشف', path: '/search' },
   { icon: Bell, label: language === 'en' ? 'Notifications' : 'الإشعارات', path: '/notifications' },
-  // { icon: Mail, label: 'Messages', path: '/messages' }, // Hidden per user request
   { icon: User, label: language === 'en' ? 'Profile' : 'الملف الشخصي', path: '/profile' },
 ];
 
@@ -39,7 +36,6 @@ export const Sidebar: React.FC = () => {
   const location = useLocation();
   const { user, signOut } = useAuth();
   const { unreadCount } = useNotifications();
-  // const { totalUnreadCount: unreadMessagesCount } = useMessages(); // Removed since Messages is hidden
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [languageSelectorOpen, setLanguageSelectorOpen] = useState(false);
   const { language, isRTL } = useLanguageStore();

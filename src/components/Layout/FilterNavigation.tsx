@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { ChevronRight, ChevronLeft } from 'lucide-react';
 import { Button } from '../ui/button';
+import { useLanguageStore } from '../../store/useLanguageStore';
 
 interface FilterOption {
   id: string;
@@ -21,20 +22,23 @@ export const FilterNavigation: React.FC<FilterNavigationProps> = ({
   const [showRightButton, setShowRightButton] = useState(false);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const [initialAnimationDone, setInitialAnimationDone] = useState(false);
+  const { language, isRTL } = useLanguageStore();
 
-  // All filters shown directly in the strip
-  const allFilters: FilterOption[] = [
-    { id: 'all', label: 'All' },
-    { id: 'general', label: 'General Discussions' },
-    { id: 'visas', label: 'Visas' },
-    { id: 'hotels', label: 'Hotels' },
-    { id: 'car-rental', label: 'Car Rental' },
-    { id: 'schedules', label: 'Tourist Schedules' },
-    { id: 'flights', label: 'Flights' },
-    { id: 'restaurants', label: 'Restorants and coffees' },
-    { id: 'images', label: 'Images and creators' },
-    { id: 'real-estate', label: 'Real estate' },
+  // All filters with language support
+  const getAllFilters = (): FilterOption[] => [
+    { id: 'all', label: language === 'en' ? 'All' : 'الكل' },
+    { id: 'general', label: language === 'en' ? 'General Discussions' : 'مناقشات عامة' },
+    { id: 'visas', label: language === 'en' ? 'Visas' : 'التأشيرات' },
+    { id: 'hotels', label: language === 'en' ? 'Hotels' : 'الفنادق' },
+    { id: 'car-rental', label: language === 'en' ? 'Car Rental' : 'تأجير السيارات' },
+    { id: 'schedules', label: language === 'en' ? 'Tourist Schedules' : 'برامج سياحية' },
+    { id: 'flights', label: language === 'en' ? 'Flights' : 'الطيران' },
+    { id: 'restaurants', label: language === 'en' ? 'Restaurants and Coffees' : 'المطاعم والمقاهي' },
+    { id: 'images', label: language === 'en' ? 'Images and Creators' : 'الصور والمبدعون' },
+    { id: 'real-estate', label: language === 'en' ? 'Real Estate' : 'العقارات' },
   ];
+
+  const allFilters = getAllFilters();
 
   // Check if the filter strip is overflowing and update scroll button visibility
   const checkOverflow = () => {
@@ -128,7 +132,7 @@ export const FilterNavigation: React.FC<FilterNavigationProps> = ({
   };
 
   return (
-    <div className="bg-white border-b border-gray-200 w-full relative h-12 flex-shrink-0 flex items-center">
+    <div className={`bg-white border-b border-gray-200 w-full relative h-12 flex-shrink-0 flex items-center ${isRTL ? 'font-arabic' : ''}`}>
       {/* Left scroll button - only show when needed */}
       {isOverflowing && showLeftButton && (
         <button 

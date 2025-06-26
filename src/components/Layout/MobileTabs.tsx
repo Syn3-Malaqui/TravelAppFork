@@ -1,19 +1,22 @@
 import React from 'react';
 import { Button } from '../ui/button';
+import { useLanguageStore } from '../../store/useLanguageStore';
 
 interface MobileTabsProps {
   activeTab: 'for-you' | 'following';
   onTabChange: (tab: 'for-you' | 'following') => void;
 }
 
-const tabs = [
-  { id: 'for-you', label: 'For you' },
-  { id: 'following', label: 'Following' },
-];
-
 export const MobileTabs: React.FC<MobileTabsProps> = ({ activeTab, onTabChange }) => {
+  const { language, isRTL } = useLanguageStore();
+  
+  const tabs = [
+    { id: 'for-you', label: language === 'en' ? 'For you' : 'لك' },
+    { id: 'following', label: language === 'en' ? 'Following' : 'المتابعة' },
+  ];
+
   return (
-    <div className="md:hidden border-b border-gray-200 bg-white">
+    <div className={`md:hidden border-b border-gray-200 bg-white ${isRTL ? 'font-arabic' : ''}`}>
       <div className="flex">
         {tabs.map((tab) => (
           <Button

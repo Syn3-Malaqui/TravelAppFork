@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Search, Bell, User, Settings, LogOut, Home, Mail, Languages } from 'lucide-react';
+import { Search, Bell, User, Settings, LogOut, Home, Languages } from 'lucide-react';
 import { Button } from '../ui/button';
 import { 
   DropdownMenu,
@@ -10,23 +10,14 @@ import {
 } from '../ui/dropdown-menu';
 import { useAuth } from '../../hooks/useAuth';
 import { useNotifications } from '../../hooks/useNotifications';
-import { useMessages } from '../../hooks/useMessages';
 import { useLanguageStore } from '../../store/useLanguageStore';
 import { LanguageSelector } from '../ui/LanguageSelector';
-
-const navItems = [
-  { icon: Search, label: 'Search', path: '/search' },
-  { icon: Bell, label: 'Notifications', path: '/notifications' },
-  { icon: Mail, label: 'Messages', path: '/messages' },
-  { icon: User, label: 'Profile', path: '/profile' },
-];
 
 export const MobileNavigation: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { signOut } = useAuth();
   const { unreadCount } = useNotifications();
-  const { totalUnreadCount: unreadMessagesCount } = useMessages();
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [languageSelectorOpen, setLanguageSelectorOpen] = useState(false);
   const { language, isRTL } = useLanguageStore();
@@ -47,31 +38,31 @@ export const MobileNavigation: React.FC = () => {
   return (
     <>
       <div className={`md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 py-4 z-50 shadow-lg ${isRTL ? 'font-arabic' : ''}`}>
-        <div className="flex items-center justify-around px-6">
+        <div className="flex items-center justify-around px-4">
           {/* Search */}
           <Button
             variant="ghost"
             size="lg"
-            className={`p-4 min-w-0 rounded-xl transition-colors ${
+            className={`p-3 min-w-0 rounded-xl transition-colors ${
               location.pathname === '/search' ? 'text-blue-500 bg-blue-50' : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
             }`}
             onClick={() => handleNavClick('/search')}
           >
-            <Search className="w-8 h-8" />
+            <Search className="w-7 h-7" />
           </Button>
 
           {/* Notifications */}
           <Button
             variant="ghost"
             size="lg"
-            className={`p-4 min-w-0 rounded-xl transition-colors relative ${
+            className={`p-3 min-w-0 rounded-xl transition-colors relative ${
               location.pathname === '/notifications' ? 'text-blue-500 bg-blue-50' : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
             }`}
             onClick={() => handleNavClick('/notifications')}
           >
-            <Bell className="w-8 h-8" />
+            <Bell className="w-7 h-7" />
             {unreadCount > 0 && (
-              <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-6 w-6 flex items-center justify-center">
+              <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
                 {unreadCount > 99 ? '99+' : unreadCount}
               </span>
             )}
@@ -81,31 +72,26 @@ export const MobileNavigation: React.FC = () => {
           <Button
             variant="default"
             size="lg"
-            className={`rounded-full p-6 shadow-lg transform hover:scale-105 transition-all duration-200 ${
+            className={`rounded-full p-5 shadow-lg transform hover:scale-105 transition-all duration-200 ${
               location.pathname === '/' 
                 ? 'bg-blue-600 hover:bg-blue-700 text-white' 
                 : 'bg-blue-500 hover:bg-blue-600 text-white'
             }`}
             onClick={() => handleNavClick('/')}
           >
-            <Home className="w-9 h-9" />
+            <Home className="w-8 h-8" />
           </Button>
 
-          {/* Messages */}
+          {/* Profile */}
           <Button
             variant="ghost"
             size="lg"
-            className={`p-4 min-w-0 rounded-xl transition-colors relative ${
-              location.pathname === '/messages' ? 'text-blue-500 bg-blue-50' : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
+            className={`p-3 min-w-0 rounded-xl transition-colors ${
+              location.pathname === '/profile' ? 'text-blue-500 bg-blue-50' : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
             }`}
-            onClick={() => handleNavClick('/messages')}
+            onClick={() => handleNavClick('/profile')}
           >
-            <Mail className="w-8 h-8" />
-            {unreadMessagesCount > 0 && (
-              <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-6 w-6 flex items-center justify-center">
-                {unreadMessagesCount > 99 ? '99+' : unreadMessagesCount}
-              </span>
-            )}
+            <User className="w-7 h-7" />
           </Button>
 
           {/* Settings - Using dropdown menu */}
@@ -114,9 +100,9 @@ export const MobileNavigation: React.FC = () => {
               <Button
                 variant="ghost"
                 size="lg"
-                className="p-4 min-w-0 rounded-xl transition-colors text-gray-500 hover:text-gray-700 hover:bg-gray-50"
+                className="p-3 min-w-0 rounded-xl transition-colors text-gray-500 hover:text-gray-700 hover:bg-gray-50"
               >
-                <Settings className="w-8 h-8" />
+                <Settings className="w-7 h-7" />
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent 

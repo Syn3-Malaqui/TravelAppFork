@@ -104,14 +104,7 @@ function App() {
                     </LazyLoadWrapper>
                   } 
                 />
-                <Route 
-                  path="/messages" 
-                  element={
-                    <LazyLoadWrapper>
-                      <LazyMessagesPage />
-                    </LazyLoadWrapper>
-                  } 
-                />
+                {/* Messages route removed per user request */}
                 <Route 
                   path="/profile/:username" 
                   element={
