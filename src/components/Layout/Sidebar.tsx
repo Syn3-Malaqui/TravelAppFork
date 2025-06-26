@@ -128,13 +128,13 @@ export const Sidebar: React.FC = () => {
                 <Button
                   variant="ghost"
                   onClick={() => handleNavClick(item.path)}
-                  className={`w-full ${isRTL ? 'justify-between text-right' : 'justify-start text-left'} text-xl py-3 px-4 h-auto relative ${
+                  className={`w-full ${isRTL ? 'justify-end text-right' : 'justify-start text-left'} text-xl py-3 px-4 h-auto relative ${
                     isActive ? 'font-bold text-blue-500' : 'font-normal text-gray-700 hover:bg-gray-100'
                   }`}
                 >
                   {isRTL ? (
                     <>
-                      <div className="relative">
+                      <div className="relative ml-3">
                         <item.icon className="h-6 w-6" />
                         {isNotifications && unreadCount > 0 && (
                           <span className="absolute -top-2 -left-2 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
@@ -142,7 +142,7 @@ export const Sidebar: React.FC = () => {
                           </span>
                         )}
                       </div>
-                      <span className="flex-1 text-right">{item.label}</span>
+                      <span>{item.label}</span>
                     </>
                   ) : (
                     <>
@@ -179,12 +179,12 @@ export const Sidebar: React.FC = () => {
           <DropdownMenuTrigger asChild>
             <Button 
               variant="ghost"
-              className={`w-full ${isRTL ? 'justify-between text-right' : 'justify-start text-left'} text-lg py-3 px-4 h-auto text-gray-700 hover:bg-gray-100`}
+              className={`w-full ${isRTL ? 'justify-end text-right' : 'justify-start text-left'} text-lg py-3 px-4 h-auto text-gray-700 hover:bg-gray-100`}
             >
               {isRTL ? (
                 <>
-                  <Settings className="h-5 w-5" />
-                  <span className="flex-1 text-right">{language === 'en' ? 'Settings' : 'الإعدادات'}</span>
+                  <Settings className="h-5 w-5 ml-3" />
+                  <span>{language === 'en' ? 'Settings' : 'الإعدادات'}</span>
                 </>
               ) : (
                 <>
@@ -222,20 +222,37 @@ export const Sidebar: React.FC = () => {
         {/* User Profile */}
         <div 
           className={`flex items-center p-3 hover:bg-gray-50 rounded-lg cursor-pointer transition-colors ${
-            isRTL ? 'flex-row-reverse' : ''
+            isRTL ? 'justify-end' : ''
           }`}
           onClick={handleProfileClick}
         >
-          <Avatar className={`w-10 h-10 ${isRTL ? 'ml-3' : 'mr-3'}`}>
-            <AvatarImage 
-              src={userProfile?.avatar ? storageService.getOptimizedImageUrl(userProfile.avatar, { width: 80, quality: 80 }) : undefined} 
-            />
-            <AvatarFallback>{userProfile?.displayName[0]?.toUpperCase() || 'U'}</AvatarFallback>
-          </Avatar>
-          <div className={`flex-1 min-w-0 ${isRTL ? 'text-right' : 'text-left'}`}>
-            <div className="font-bold text-sm truncate">{userProfile?.displayName || 'User'}</div>
-            <div className="text-gray-500 text-sm truncate">@{userProfile?.username || 'user'}</div>
-          </div>
+          {isRTL ? (
+            <>
+              <Avatar className="w-10 h-10 ml-3">
+                <AvatarImage 
+                  src={userProfile?.avatar ? storageService.getOptimizedImageUrl(userProfile.avatar, { width: 80, quality: 80 }) : undefined} 
+                />
+                <AvatarFallback>{userProfile?.displayName[0]?.toUpperCase() || 'U'}</AvatarFallback>
+              </Avatar>
+              <div className="min-w-0 text-right">
+                <div className="font-bold text-sm truncate">{userProfile?.displayName || 'User'}</div>
+                <div className="text-gray-500 text-sm truncate">@{userProfile?.username || 'user'}</div>
+              </div>
+            </>
+          ) : (
+            <>
+              <Avatar className="w-10 h-10 mr-3">
+                <AvatarImage 
+                  src={userProfile?.avatar ? storageService.getOptimizedImageUrl(userProfile.avatar, { width: 80, quality: 80 }) : undefined} 
+                />
+                <AvatarFallback>{userProfile?.displayName[0]?.toUpperCase() || 'U'}</AvatarFallback>
+              </Avatar>
+              <div className="flex-1 min-w-0 text-left">
+                <div className="font-bold text-sm truncate">{userProfile?.displayName || 'User'}</div>
+                <div className="text-gray-500 text-sm truncate">@{userProfile?.username || 'user'}</div>
+              </div>
+            </>
+          )}
         </div>
       </div>
 
