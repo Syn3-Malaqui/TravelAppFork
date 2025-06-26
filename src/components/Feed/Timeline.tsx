@@ -34,10 +34,19 @@ export const Timeline: React.FC = () => {
     avatar: string;
   } | null>(null);
 
-  // Handle window resize with responsive breakpoints
+  // Handle window resize with dynamic space calculation
   useEffect(() => {
     const handleResize = () => {
       const width = window.innerWidth;
+      
+      // Calculate required space dynamically
+      const leftSidebarWidth = 256; // w-64 = 256px
+      const minMainContentWidth = 400; // minimum for readable content
+      const trendingSidebarWidth = 280; // average trending sidebar width
+      const margins = 60; // padding and margins
+      const minRequiredWidth = leftSidebarWidth + minMainContentWidth + trendingSidebarWidth + margins;
+      
+      console.log(`Screen width: ${width}px, Required: ${minRequiredWidth}px`);
       
       // Mobile view: < 768px
       if (width < 768) {
@@ -45,20 +54,18 @@ export const Timeline: React.FC = () => {
         setShowSidebar(false);
         setShowFilterNavigation(true);
       }
-      // Tablet view: 768px - 1024px (show sidebar if there's space for it)
-      else if (width < 1024) {
-        setIsMobileView(false);
-        // Show sidebar on larger tablets that have enough space
-        // Account for left sidebar (256px) + main content (min 400px) + trending sidebar (320px) = ~976px
-        setShowSidebar(width >= 976);
-        setShowFilterNavigation(true);
-      }
-      // Desktop view: >= 1024px (always show sidebar)
+      // Tablet/Desktop: >= 768px
       else {
         setIsMobileView(false);
-        setShowSidebar(true);
-        // Show filter navigation only on very large screens where there's plenty of space
-        setShowFilterNavigation(width >= 1280);
+        
+        // Show trending sidebar only if there's enough actual space
+        const hasEnoughSpace = width >= minRequiredWidth;
+        setShowSidebar(hasEnoughSpace);
+        
+        // Show filter navigation only on very large screens
+        setShowFilterNavigation(width >= 1400);
+        
+        console.log(`Trending sidebar: ${hasEnoughSpace ? 'SHOWN' : 'HIDDEN'}`);
       }
     };
 
@@ -101,7 +108,7 @@ export const Timeline: React.FC = () => {
       } catch (error) {
         console.error('Error fetching countries:', error);
         // Fallback to predefined countries
-        setAvailableCountries(FILTER_COUNTRIES);
+        setAvailableCountries([...FILTER_COUNTRIES]);
       }
     };
 
@@ -273,11 +280,13 @@ export const Timeline: React.FC = () => {
     <div className="h-full flex">
       <div className="hidden md:flex flex-1">
         {/* Main Content */}
-        <div className={`flex-1 border-r border-gray-200 flex flex-col ${showSidebar ? '' : 'border-r-0'}`}>
-          {/* Desktop Header with Tabs - Fixed */}
+        <div className={`flex-1 border-r border-gray-200 flex flex-col max-w-[600px] ${showSidebar ? '' : 'border-r-0'}`}>
+          {/* Desktop Header with Tabs - Fixed (Full Width) */}
           <div className="bg-white/95 backdrop-blur-md border-b border-gray-200 z-50 flex-shrink-0">
+            {/* Content wrapper with max-width for header content */}
+            <div className="w-full px-4">
             {/* Top section with country filter */}
-            <div className="flex items-center justify-between p-4 border-b border-gray-100">
+            <div className="flex items-center justify-between border-b border-gray-100 py-4">
               {/* Country Filter Dropdown */}
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
@@ -320,7 +329,7 @@ export const Timeline: React.FC = () => {
               <Button
                 variant="ghost"
                 onClick={() => handleTabChange('for-you')}
-                className={`flex-1 py-4 px-4 font-bold text-base rounded-none border-b-2 transition-colors ${
+                className={`flex-1 py-4 font-bold text-base rounded-none border-b-2 transition-colors ${
                   activeTab === 'for-you'
                     ? 'border-blue-500 text-black'
                     : 'border-transparent text-gray-500 hover:bg-gray-50'
@@ -331,7 +340,7 @@ export const Timeline: React.FC = () => {
               <Button
                 variant="ghost"
                 onClick={() => handleTabChange('following')}
-                className={`flex-1 py-4 px-4 font-bold text-base rounded-none border-b-2 transition-colors ${
+                className={`flex-1 py-4 font-bold text-base rounded-none border-b-2 transition-colors ${
                   activeTab === 'following'
                     ? 'border-blue-500 text-black'
                     : 'border-transparent text-gray-500 hover:bg-gray-50'
@@ -341,21 +350,22 @@ export const Timeline: React.FC = () => {
               </Button>
             </div>
 
-            {/* Conditional Filter Navigation */}
-            {showFilterNavigation && (
-              <FilterNavigation 
-                selectedFilter={selectedFilter}
-                onFilterChange={handleFilterChange}
-              />
-            )}
+              {/* Conditional Filter Navigation */}
+              {showFilterNavigation && (
+                <FilterNavigation 
+                  selectedFilter={selectedFilter}
+                  onFilterChange={handleFilterChange}
+                />
+              )}
+            </div>
           </div>
 
           {/* Timeline - Scrollable container */}
           <div className="flex-1 overflow-y-auto">
             <div className="flex flex-col">
               {/* Desktop Tweet Composer - Now inside scrollable area */}
-              <div className="border-b border-gray-200 p-4 bg-white">
-                <div className="flex space-x-4">
+              <div className="border-b border-gray-200 bg-white px-4">
+                <div className="flex space-x-4 py-4">
                   <LazyAvatar
                     src={userProfile?.avatar}
                     fallback={userProfile?.displayName[0]?.toUpperCase() || 'U'}

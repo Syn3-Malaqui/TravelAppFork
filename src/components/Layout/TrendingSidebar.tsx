@@ -25,21 +25,36 @@ export const TrendingSidebar: React.FC = () => {
     return () => clearTimeout(timer);
   }, [trendingHashtags]);
 
-  // Adjust sidebar width based on screen size
+  // Adjust sidebar width based on available space
   useEffect(() => {
     const handleResize = () => {
       const width = window.innerWidth;
       
-      // Adjust sidebar width based on available space
-      if (width >= 1400) {
-        setSidebarWidth('w-80'); // 320px - full width on large screens
-      } else if (width >= 1200) {
-        setSidebarWidth('w-72'); // 288px - slightly smaller on medium screens
-      } else if (width >= 1000) {
-        setSidebarWidth('w-64'); // 256px - compact on smaller screens
+      // Calculate available space after left sidebar and main content
+      const leftSidebarWidth = 256;
+      const minMainContentWidth = 400;
+      const margins = 60;
+      const availableForTrending = width - leftSidebarWidth - minMainContentWidth - margins;
+      
+      // Adjust trending sidebar width based on available space
+      if (availableForTrending >= 320) {
+        setSidebarWidth('w-80'); // 320px - full width when plenty of space
+      } else if (availableForTrending >= 288) {
+        setSidebarWidth('w-72'); // 288px - medium width
+      } else if (availableForTrending >= 256) {
+        setSidebarWidth('w-64'); // 256px - compact width
       } else {
-        setSidebarWidth('w-60'); // 240px - minimum width
+        setSidebarWidth('w-56'); // 224px - minimum width
       }
+      
+      console.log(`Available for trending: ${availableForTrending}px, Using: ${getSidebarWidthPx(availableForTrending)}px`);
+    };
+
+    const getSidebarWidthPx = (available: number) => {
+      if (available >= 320) return 320;
+      if (available >= 288) return 288;
+      if (available >= 256) return 256;
+      return 224;
     };
 
     handleResize();

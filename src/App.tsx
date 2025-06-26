@@ -45,89 +45,92 @@ function App() {
   return (
     <Router>
       <div className="min-h-screen bg-white">
-        <div className="flex h-screen overflow-hidden">
-          {/* Desktop Sidebar */}
-          <div className="hidden md:block">
-            <Sidebar />
-          </div>
-          
-          {/* Main Content - Takes remaining space, accounting for sidebar on desktop */}
-          <div className="flex-1 md:ml-64 flex flex-col overflow-hidden">
-            <Routes>
-              <Route path="/" element={<Timeline />} />
-              <Route 
-                path="/compose" 
-                element={
-                  <LazyLoadWrapper>
-                    <LazyComposePage />
-                  </LazyLoadWrapper>
-                } 
-              />
-              <Route 
-                path="/tweet/:tweetId" 
-                element={
-                  <LazyLoadWrapper>
-                    <LazyTweetDetailPage />
-                  </LazyLoadWrapper>
-                } 
-              />
-              <Route 
-                path="/search" 
-                element={
-                  <LazyLoadWrapper>
-                    <LazyOptimizedSearchPage />
-                  </LazyLoadWrapper>
-                } 
-              />
-              <Route 
-                path="/hashtag/:hashtag" 
-                element={
-                  <LazyLoadWrapper>
-                    <LazyHashtagPage />
-                  </LazyLoadWrapper>
-                } 
-              />
-              <Route 
-                path="/notifications" 
-                element={
-                  <LazyLoadWrapper>
-                    <LazyNotificationsPage />
-                  </LazyLoadWrapper>
-                } 
-              />
-              <Route 
-                path="/messages" 
-                element={
-                  <LazyLoadWrapper>
-                    <LazyMessagesPage />
-                  </LazyLoadWrapper>
-                } 
-              />
-              <Route 
-                path="/profile/:username" 
-                element={
-                  <LazyLoadWrapper>
-                    <LazyProfilePage />
-                  </LazyLoadWrapper>
-                } 
-              />
-              <Route 
-                path="/profile" 
-                element={
-                  <LazyLoadWrapper>
-                    <LazyUserProfilePage />
-                  </LazyLoadWrapper>
-                } 
-              />
-              <Route 
-                path="/explore" 
-                element={
-                  <div className="p-8 text-center text-gray-500">Explore Page</div>
-                } 
-              />
-              {/* Catch-all route for direct links */}
-              <Route path="*" element={<Navigate to="/" replace />} />
-            </Routes>
+        <div className="flex h-screen overflow-hidden justify-center">
+          {/* Centered container with max-width */}
+          <div className="flex flex-1 max-w-[1200px]">
+            {/* Desktop Sidebar */}
+            <div className="hidden md:block">
+              <Sidebar />
+            </div>
+            
+            {/* Main Content - Takes remaining space */}
+            <div className="flex-1 flex flex-col overflow-hidden">
+              <Routes>
+                <Route path="/" element={<Timeline />} />
+                <Route 
+                  path="/compose" 
+                  element={
+                    <LazyLoadWrapper>
+                      <LazyComposePage />
+                    </LazyLoadWrapper>
+                  } 
+                />
+                <Route 
+                  path="/tweet/:tweetId" 
+                  element={
+                    <LazyLoadWrapper>
+                      <LazyTweetDetailPage />
+                    </LazyLoadWrapper>
+                  } 
+                />
+                <Route 
+                  path="/search" 
+                  element={
+                    <LazyLoadWrapper>
+                      <LazyOptimizedSearchPage />
+                    </LazyLoadWrapper>
+                  } 
+                />
+                <Route 
+                  path="/hashtag/:hashtag" 
+                  element={
+                    <LazyLoadWrapper>
+                      <LazyHashtagPage />
+                    </LazyLoadWrapper>
+                  } 
+                />
+                <Route 
+                  path="/notifications" 
+                  element={
+                    <LazyLoadWrapper>
+                      <LazyNotificationsPage />
+                    </LazyLoadWrapper>
+                  } 
+                />
+                <Route 
+                  path="/messages" 
+                  element={
+                    <LazyLoadWrapper>
+                      <LazyMessagesPage />
+                    </LazyLoadWrapper>
+                  } 
+                />
+                <Route 
+                  path="/profile/:username" 
+                  element={
+                    <LazyLoadWrapper>
+                      <LazyProfilePage />
+                    </LazyLoadWrapper>
+                  } 
+                />
+                <Route 
+                  path="/profile" 
+                  element={
+                    <LazyLoadWrapper>
+                      <LazyUserProfilePage />
+                    </LazyLoadWrapper>
+                  } 
+                />
+                <Route 
+                  path="/explore" 
+                  element={
+                    <div className="p-8 text-center text-gray-500">Explore Page</div>
+                  } 
+                />
+                {/* Catch-all route for direct links */}
+                <Route path="*" element={<Navigate to="/" replace />} />
+              </Routes>
+            </div>
           </div>
         </div>
         

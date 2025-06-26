@@ -99,7 +99,7 @@ export const Sidebar: React.FC = () => {
   };
 
   return (
-    <div className="w-64 h-screen fixed left-0 top-0 border-r border-gray-200 bg-white p-4 flex flex-col z-40">
+    <div className="w-64 h-full border-r border-gray-200 bg-white p-4 flex flex-col">
       {/* Logo */}
       <div className="mb-8">
         <div className="w-12 h-12">

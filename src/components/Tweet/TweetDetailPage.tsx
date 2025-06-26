@@ -35,13 +35,16 @@ export const TweetDetailPage: React.FC = () => {
     const handleResize = () => {
       const width = window.innerWidth;
       
-      // Show sidebar if there's enough space
-      // Account for left sidebar (256px) + main content (min 400px) + trending sidebar (320px) = ~976px
-      if (width >= 976) {
-        setShowSidebar(true);
-      } else {
-        setShowSidebar(false);
-      }
+      // Calculate required space dynamically
+      const leftSidebarWidth = 256; // w-64 = 256px
+      const minMainContentWidth = 400; // minimum for readable content
+      const trendingSidebarWidth = 280; // average trending sidebar width
+      const margins = 60; // padding and margins
+      const minRequiredWidth = leftSidebarWidth + minMainContentWidth + trendingSidebarWidth + margins;
+      
+      // Show trending sidebar only if there's enough actual space
+      const hasEnoughSpace = width >= minRequiredWidth;
+      setShowSidebar(hasEnoughSpace);
     };
 
     // Set initial state

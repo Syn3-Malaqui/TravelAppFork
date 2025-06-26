@@ -104,6 +104,16 @@ export const ComposePage: React.FC = () => {
       return;
     }
 
+    if (selectedCategories.length === 0) {
+      setError('Please select at least one category');
+      return;
+    }
+
+    if (selectedCountries.length === 0) {
+      setError('Please select at least one country');
+      return;
+    }
+
     setLoading(true);
     setError('');
     
@@ -332,7 +342,7 @@ export const ComposePage: React.FC = () => {
           
           <Button
             onClick={handleSubmit}
-            disabled={!content.trim() || isOverLimit || loading || uploadingImage}
+            disabled={!content.trim() || isOverLimit || loading || uploadingImage || selectedCategories.length === 0 || selectedCountries.length === 0}
             className={`bg-blue-500 hover:bg-blue-600 text-white font-bold rounded-full disabled:opacity-50 ${
               isMobile ? 'px-4 py-2 text-sm' : 'px-6 py-2'
             }`}
@@ -553,14 +563,20 @@ export const ComposePage: React.FC = () => {
               <div className={`${isMobile ? 'mt-4' : 'mt-6'}`}>
                 <div className={`flex items-center space-x-2 mb-2 ${isMobile ? 'mb-2' : 'mb-3'}`}>
                   <Tag className={`text-gray-500 ${isMobile ? 'h-4 w-4' : 'h-5 w-5'}`} />
-                  <span className={`font-medium text-gray-700 ${isMobile ? 'text-sm' : 'text-sm'}`}>Categories:</span>
+                  <span className={`font-medium text-gray-700 ${isMobile ? 'text-sm' : 'text-sm'}`}>
+                    Categories: <span className="text-red-500">*</span>
+                  </span>
                 </div>
                 
                 <DropdownMenu open={categoriesDropdownOpen} onOpenChange={setCategoriesDropdownOpen}>
                   <DropdownMenuTrigger asChild>
                     <Button 
                       variant="outline" 
-                      className={`flex items-center justify-between border-gray-300 hover:bg-gray-50 rounded-full ${
+                      className={`flex items-center justify-between hover:bg-gray-50 rounded-full ${
+                        selectedCategories.length === 0 
+                          ? 'border-red-300 bg-red-50' 
+                          : 'border-gray-300'
+                      } ${
                         isMobile 
                           ? 'text-xs py-2 px-3 h-8 w-full max-w-[200px]' 
                           : 'text-sm py-2 px-4 h-9 w-full max-w-[250px]'
@@ -608,14 +624,20 @@ export const ComposePage: React.FC = () => {
               <div className="mt-3">
                 <div className={`flex items-center space-x-2 mb-2 ${isMobile ? 'mb-2' : 'mb-3'}`}>
                   <Globe className={`text-gray-500 ${isMobile ? 'h-4 w-4' : 'h-5 w-5'}`} />
-                  <span className={`font-medium text-gray-700 ${isMobile ? 'text-sm' : 'text-sm'}`}>Countries:</span>
+                  <span className={`font-medium text-gray-700 ${isMobile ? 'text-sm' : 'text-sm'}`}>
+                    Countries: <span className="text-red-500">*</span>
+                  </span>
                 </div>
                 
                 <DropdownMenu open={countriesDropdownOpen} onOpenChange={setCountriesDropdownOpen}>
                   <DropdownMenuTrigger asChild>
                     <Button 
                       variant="outline" 
-                      className={`flex items-center justify-between border-gray-300 hover:bg-gray-50 rounded-full ${
+                      className={`flex items-center justify-between hover:bg-gray-50 rounded-full ${
+                        selectedCountries.length === 0 
+                          ? 'border-red-300 bg-red-50' 
+                          : 'border-gray-300'
+                      } ${
                         isMobile 
                           ? 'text-xs py-2 px-3 h-8 w-full max-w-[200px]' 
                           : 'text-sm py-2 px-4 h-9 w-full max-w-[250px]'
@@ -658,6 +680,15 @@ export const ComposePage: React.FC = () => {
                   </DropdownMenuContent>
                 </DropdownMenu>
               </div>
+
+              {/* Required Fields Reminder */}
+              {(selectedCategories.length === 0 || selectedCountries.length === 0) && (
+                <div className="mt-4 p-3 bg-amber-50 border border-amber-200 rounded-lg">
+                  <p className="text-amber-700 text-sm font-medium">
+                    📝 Please select at least one category and one country before posting your tweet.
+                  </p>
+                </div>
+              )}
 
               {/* Selected Tags Display */}
               {(selectedCategories.length > 0 || selectedCountries.length > 0) && (

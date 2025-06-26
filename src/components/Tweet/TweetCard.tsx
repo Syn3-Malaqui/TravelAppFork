@@ -403,7 +403,7 @@ export const TweetCard: React.FC<TweetCardProps> = ({
       >
         {/* Retweet indicator */}
         {tweet.isRetweet && tweet.retweetedBy && (
-          <div className="px-4 pt-3 pb-1">
+          <div className="px-4 pt-2 pb-0.5">
             <div className="flex items-center space-x-2 text-gray-500 text-sm">
               <Repeat2 className="w-4 h-4" />
               <span 
@@ -423,7 +423,7 @@ export const TweetCard: React.FC<TweetCardProps> = ({
 
         {/* Reply indicator */}
         {tweet.replyTo && (
-          <div className="px-4 pt-3 pb-1">
+          <div className="px-4 pt-2 pb-0.5">
             <div className="flex items-center space-x-2 text-gray-500 text-sm">
               <CornerUpLeft className="w-4 h-4" />
               <span>Replying to</span>
@@ -438,15 +438,15 @@ export const TweetCard: React.FC<TweetCardProps> = ({
         )}
 
         <div 
-          className="p-4"
+          className="px-4 py-2"
           onClick={handleTweetClick}
         >
-          <div className="flex gap-4">
+          <div className="flex gap-3">
             {/* Avatar */}
             <LazyAvatar
               src={tweet.author.avatar}
               fallback={tweet.author.displayName[0]}
-              className="w-12 h-12 flex-shrink-0 cursor-pointer"
+              className="w-10 h-10 flex-shrink-0 cursor-pointer"
               onClick={handleProfileClick}
               size={80}
             />
@@ -454,9 +454,9 @@ export const TweetCard: React.FC<TweetCardProps> = ({
             {/* Tweet Content */}
             <div className="flex-1 min-w-0">
               {/* Header */}
-              <div className="flex items-center justify-between mb-1">
+              <div className="flex items-center justify-between mb-0.5">
                 {/* User info and timestamp */}
-                <div className="flex items-center space-x-2 min-w-0">
+                <div className="flex items-center space-x-1 min-w-0">
                   <span 
                     className="font-bold text-gray-900 hover:underline cursor-pointer truncate"
                     onClick={handleProfileClick}
@@ -522,7 +522,7 @@ export const TweetCard: React.FC<TweetCardProps> = ({
               </div>
 
               {/* Tweet Text with Enhanced Link Parsing */}
-              <div className="text-gray-900 mb-3 text-[15px] leading-5">
+              <div className="text-gray-900 mb-2 text-[15px] leading-5">
                 {parseTextWithLinks(displayContent)}
                 {tweet.content.length > 200 && (
                   <span className="text-gray-500 text-sm italic"> (truncated)</span>
@@ -531,7 +531,7 @@ export const TweetCard: React.FC<TweetCardProps> = ({
 
               {/* Original Tweet Preview (for replies) */}
               {originalTweet && (
-                <div className="mb-3 border border-gray-200 rounded-xl p-3 bg-gray-50 hover:bg-gray-100 transition-colors cursor-pointer"
+                <div className="mb-2 border border-gray-200 rounded-xl p-3 bg-gray-50 hover:bg-gray-100 transition-colors cursor-pointer"
                      onClick={(e) => {
                        e.stopPropagation();
                        // Navigate to the original tweet's author profile or tweet detail
@@ -570,7 +570,7 @@ export const TweetCard: React.FC<TweetCardProps> = ({
 
               {/* Images */}
               {tweet.images && tweet.images.length > 0 && (
-                <div className="mb-3 rounded-2xl overflow-hidden border border-gray-200">
+                <div className="mb-2 rounded-2xl overflow-hidden border border-gray-200">
                   {tweet.images.length === 1 ? (
                     // Single image - centered and fills container
                     <div className="w-full aspect-[16/9] cursor-pointer" onClick={(e) => handleImageClick(0, e)}>
@@ -656,23 +656,23 @@ export const TweetCard: React.FC<TweetCardProps> = ({
               )}
 
               {/* Actions */}
-              <div className="flex items-center justify-between space-x-4 mt-3">
+              <div className="flex items-center justify-between mt-1">
                 {/* Reply */}
                 <Button 
                   variant="ghost" 
                   size="sm" 
-                  className="text-gray-500 hover:text-blue-500 hover:bg-blue-50 p-2 flex items-center"
+                  className="text-gray-500 hover:text-blue-500 hover:bg-blue-50 px-3 py-2 flex items-center gap-1 -ml-2"
                   onClick={(e) => handleReplyClick(e)}
                 >
                   <MessageCircle className="w-5 h-5" />
-                  <span className="text-sm ml-1">{formatNumber(tweet.replies)}</span>
+                  <span className="text-sm">{formatNumber(tweet.replies)}</span>
                 </Button>
 
                 {/* Retweet */}
                 <Button 
                   variant="ghost" 
                   size="sm" 
-                  className={`p-2 flex items-center ${
+                  className={`px-3 py-2 flex items-center gap-1 ${
                     tweet.isRetweeted 
                       ? 'text-green-500 hover:text-green-600 hover:bg-green-50' 
                       : 'text-gray-500 hover:text-green-500 hover:bg-green-50'
@@ -680,14 +680,14 @@ export const TweetCard: React.FC<TweetCardProps> = ({
                   onClick={handleRetweetClick}
                 >
                   <Repeat2 className="w-5 h-5" />
-                  <span className="text-sm ml-1">{formatNumber(tweet.retweets)}</span>
+                  <span className="text-sm">{formatNumber(tweet.retweets)}</span>
                 </Button>
 
                 {/* Like */}
                 <Button 
                   variant="ghost" 
                   size="sm" 
-                  className={`p-2 flex items-center ${
+                  className={`px-3 py-2 flex items-center gap-1 ${
                     tweet.isLiked 
                       ? 'text-red-500 hover:text-red-600 hover:bg-red-50' 
                       : 'text-gray-500 hover:text-red-500 hover:bg-red-50'
@@ -695,26 +695,26 @@ export const TweetCard: React.FC<TweetCardProps> = ({
                   onClick={handleLikeClick}
                 >
                   <Heart className={`w-5 h-5 ${tweet.isLiked ? 'fill-current' : ''}`} />
-                  <span className="text-sm ml-1">{formatNumber(tweet.likes)}</span>
+                  <span className="text-sm">{formatNumber(tweet.likes)}</span>
                 </Button>
 
                 {/* Views */}
                 <Button 
                   variant="ghost" 
                   size="sm" 
-                  className="text-gray-500 hover:text-blue-500 hover:bg-blue-50 p-2 flex items-center"
+                  className="text-gray-500 hover:text-blue-500 hover:bg-blue-50 px-3 py-2 flex items-center gap-1"
                   onClick={handleViewsClick}
                 >
                   <Eye className="w-5 h-5" />
-                  <span className="text-sm ml-1">{formatNumber(tweet.views)}</span>
+                  <span className="text-sm">{formatNumber(tweet.views)}</span>
                 </Button>
 
                 {/* Share & Bookmark */}
-                <div className="flex space-x-1">
+                <div className="flex">
                   <Button 
                     variant="ghost" 
                     size="sm" 
-                    className={`p-2 ${
+                    className={`px-2 py-2 ${
                       tweet.isBookmarked 
                         ? 'text-blue-500 hover:text-blue-600 hover:bg-blue-50' 
                         : 'text-gray-500 hover:text-blue-500 hover:bg-blue-50'
@@ -726,7 +726,7 @@ export const TweetCard: React.FC<TweetCardProps> = ({
                   <Button 
                     variant="ghost" 
                     size="sm" 
-                    className="text-gray-500 hover:text-blue-500 hover:bg-blue-50 p-2"
+                    className="text-gray-500 hover:text-blue-500 hover:bg-blue-50 px-2 py-2"
                     onClick={handleShareClick}
                   >
                     <Share className="w-5 h-5" />
