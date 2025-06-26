@@ -246,27 +246,34 @@ export const InfiniteScrollTweets: React.FC<InfiniteScrollTweetsProps> = ({
       )}
 
       {/* Tweets */}
-      {filteredTweets.map((tweet, index) => (
-        <div key={`${tweet.id}-${tweet.retweetedAt || tweet.createdAt}-${index}`} className="w-full">
-          {isMobile ? (
-            <MobileTweetCard 
-              tweet={tweet}
-              onLike={() => handleLike(tweet.id, tweet.isLiked)}
-              onRetweet={() => handleRetweet(tweet.id, tweet.isRetweeted)}
-              onBookmark={() => handleBookmark(tweet.id, tweet.isBookmarked)}
-              currentUserId={user?.id}
-            />
-          ) : (
-            <TweetCard 
-              tweet={tweet} 
-              onLike={() => handleLike(tweet.id, tweet.isLiked)}
-              onRetweet={() => handleRetweet(tweet.id, tweet.isRetweeted)}
-              onBookmark={() => handleBookmark(tweet.id, tweet.isBookmarked)}
-              currentUserId={user?.id}
-            />
-          )}
-        </div>
-      ))}
+      {filteredTweets.map((tweet, index) => {
+        // Debug logging
+        if (index === 0) {
+          console.log(`📱 InfiniteScrollTweets: isMobile=${isMobile}, using ${isMobile ? 'MobileTweetCard' : 'TweetCard'}`);
+        }
+        
+        return (
+          <div key={`${tweet.id}-${tweet.retweetedAt || tweet.createdAt}-${index}`} className="w-full">
+            {isMobile ? (
+              <MobileTweetCard 
+                tweet={tweet}
+                onLike={() => handleLike(tweet.id, tweet.isLiked)}
+                onRetweet={() => handleRetweet(tweet.id, tweet.isRetweeted)}
+                onBookmark={() => handleBookmark(tweet.id, tweet.isBookmarked)}
+                currentUserId={user?.id}
+              />
+            ) : (
+              <TweetCard 
+                tweet={tweet} 
+                onLike={() => handleLike(tweet.id, tweet.isLiked)}
+                onRetweet={() => handleRetweet(tweet.id, tweet.isRetweeted)}
+                onBookmark={() => handleBookmark(tweet.id, tweet.isBookmarked)}
+                currentUserId={user?.id}
+              />
+            )}
+          </div>
+        );
+      })}
 
       {/* Load more trigger */}
       <div ref={loadMoreRef} className="w-full">

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useLanguageStore } from '../../store/useLanguageStore';
+import { useWindowSize } from '../../hooks/useWindowSize';
 import { InfiniteScrollTweets } from './InfiniteScrollTweets';
 import { MobileTabs } from '../Layout/MobileTabs';
 import { FilterNavigation } from '../Layout/FilterNavigation';
@@ -21,13 +22,13 @@ import { X, ChevronDown, Check } from 'lucide-react';
 export const Timeline: React.FC = () => {
   const navigate = useNavigate();
   const { language, isRTL } = useLanguageStore();
+  const { width, isMobile: windowIsMobile } = useWindowSize();
   const [activeTab, setActiveTab] = useState<'for-you' | 'following'>('for-you');
   const [categoryFilter, setCategoryFilter] = useState<string | null>(null);
   const [countryFilter, setCountryFilter] = useState<string>('ALL');
   const [selectedFilter, setSelectedFilter] = useState<string>('all');
   const [showSidebar, setShowSidebar] = useState(true);
   const [showFilterNavigation, setShowFilterNavigation] = useState(true);
-  const [isMobileView, setIsMobileView] = useState(false);
   const [availableCountries, setAvailableCountries] = useState<Array<{code: string, name: string}>>([]);
   const { user } = useAuth();
   const [userProfile, setUserProfile] = useState<{
@@ -36,50 +37,33 @@ export const Timeline: React.FC = () => {
     avatar: string;
   } | null>(null);
 
-  // Handle window resize with dynamic space calculation
+  // Update sidebar and filter navigation based on window size
   useEffect(() => {
-    const handleResize = () => {
-      const width = window.innerWidth;
+    // Calculate required space dynamically
+    const leftSidebarWidth = 256; // w-64 = 256px
+    const minMainContentWidth = 400; // minimum for readable content
+    const trendingSidebarWidth = 280; // average trending sidebar width
+    const margins = 60; // padding and margins
+    const minRequiredWidth = leftSidebarWidth + minMainContentWidth + trendingSidebarWidth + margins;
+    
+    console.log(`📏 Screen width: ${width}px, Required: ${minRequiredWidth}px, isMobile: ${windowIsMobile}`);
+    
+    if (windowIsMobile) {
+      console.log('🔥 MOBILE MODE - Using MobileTweetCard');
+      setShowSidebar(false);
+      setShowFilterNavigation(true);
+    } else {
+      console.log('💻 DESKTOP MODE - Using TweetCard');
+      // Show trending sidebar only if there's enough actual space
+      const hasEnoughSpace = width >= minRequiredWidth;
+      setShowSidebar(hasEnoughSpace);
       
-      // Calculate required space dynamically
-      const leftSidebarWidth = 256; // w-64 = 256px
-      const minMainContentWidth = 400; // minimum for readable content
-      const trendingSidebarWidth = 280; // average trending sidebar width
-      const margins = 60; // padding and margins
-      const minRequiredWidth = leftSidebarWidth + minMainContentWidth + trendingSidebarWidth + margins;
+      // Show filter navigation only on very large screens
+      setShowFilterNavigation(width >= 1400);
       
-      console.log(`Screen width: ${width}px, Required: ${minRequiredWidth}px`);
-      
-      // Mobile view: < 768px
-      if (width < 768) {
-        setIsMobileView(true);
-        setShowSidebar(false);
-        setShowFilterNavigation(true);
-      }
-      // Tablet/Desktop: >= 768px
-      else {
-        setIsMobileView(false);
-        
-        // Show trending sidebar only if there's enough actual space
-        const hasEnoughSpace = width >= minRequiredWidth;
-        setShowSidebar(hasEnoughSpace);
-        
-        // Show filter navigation only on very large screens
-        setShowFilterNavigation(width >= 1400);
-        
-        console.log(`Trending sidebar: ${hasEnoughSpace ? 'SHOWN' : 'HIDDEN'}`);
-      }
-    };
-
-    // Set initial state
-    handleResize();
-
-    // Add event listener
-    window.addEventListener('resize', handleResize);
-
-    // Cleanup
-    return () => window.removeEventListener('resize', handleResize);
-  }, []);
+      console.log(`Trending sidebar: ${hasEnoughSpace ? 'SHOWN' : 'HIDDEN'}`);
+    }
+  }, [width, windowIsMobile]);
 
   // Fetch available countries from the database
   useEffect(() => {
@@ -220,7 +204,7 @@ export const Timeline: React.FC = () => {
   const selectedCountryData = availableCountries.find(c => c.code === countryFilter) || availableCountries[0];
 
   // Mobile view
-  if (isMobileView) {
+  if (windowIsMobile) {
     return (
       <div className={`md:hidden w-full ${isRTL ? '' : 'border-r border-gray-200'} overflow-hidden flex flex-col ${language === 'ar' ? 'font-arabic' : ''}`}>
         {/* Mobile Tabs */}
@@ -266,7 +250,7 @@ export const Timeline: React.FC = () => {
 
             {/* Infinite Scroll Tweets */}
             <InfiniteScrollTweets 
-              isMobile={true} 
+              isMobile={windowIsMobile} 
               feedType={activeTab}
               categoryFilter={categoryFilter}
               countryFilter={countryFilter}
@@ -420,7 +404,7 @@ export const Timeline: React.FC = () => {
 
               {/* Infinite Scroll Tweets */}
               <InfiniteScrollTweets 
-                isMobile={false} 
+                isMobile={windowIsMobile} 
                 feedType={activeTab}
                 categoryFilter={categoryFilter}
                 countryFilter={countryFilter}
