@@ -128,7 +128,7 @@ export const Sidebar: React.FC = () => {
                 <Button
                   variant="ghost"
                   onClick={() => handleNavClick(item.path)}
-                  className={`w-full ${isRTL ? 'justify-end text-right' : 'justify-start text-left'} text-xl py-3 px-4 h-auto relative ${
+                  className={`w-full ${isRTL ? 'justify-end text-right pr-2' : 'justify-start text-left'} text-xl py-3 px-4 h-auto relative ${
                     isActive ? 'font-bold text-blue-500' : 'font-normal text-gray-700 hover:bg-gray-100'
                   }`}
                 >
@@ -179,7 +179,7 @@ export const Sidebar: React.FC = () => {
           <DropdownMenuTrigger asChild>
             <Button 
               variant="ghost"
-              className={`w-full ${isRTL ? 'justify-end text-right' : 'justify-start text-left'} text-lg py-3 px-4 h-auto text-gray-700 hover:bg-gray-100`}
+              className={`w-full ${isRTL ? 'justify-end text-right pr-2' : 'justify-start text-left'} text-lg py-3 px-4 h-auto text-gray-700 hover:bg-gray-100`}
             >
               {isRTL ? (
                 <>
@@ -221,7 +221,7 @@ export const Sidebar: React.FC = () => {
 
         {/* User Profile */}
         <div 
-          className={`flex items-center p-3 hover:bg-gray-50 rounded-lg cursor-pointer transition-colors ${
+          className={`flex items-center ${isRTL ? 'p-3 pr-2' : 'p-3'} hover:bg-gray-50 rounded-lg cursor-pointer transition-colors ${
             isRTL ? 'justify-end' : 'justify-start'
           }`}
           onClick={handleProfileClick}
