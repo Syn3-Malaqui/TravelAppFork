@@ -437,17 +437,17 @@ export const MobileTweetCard: React.FC<MobileTweetCardProps> = ({
         )}
 
         <div 
-          className="p-4 cursor-pointer"
+          className="p-3 cursor-pointer"
           onClick={handleTweetClick}
         >
-          <div className="flex gap-3">
+          <div className="flex gap-2">
             {/* Avatar */}
             <LazyAvatar
               src={tweet.author.avatar}
               fallback={tweet.author.displayName[0]}
-              className="w-10 h-10 flex-shrink-0 cursor-pointer"
+              className="w-8 h-8 flex-shrink-0 cursor-pointer"
               onClick={handleProfileClick}
-              size={80}
+              size={64}
             />
 
             {/* Content */}
@@ -457,22 +457,22 @@ export const MobileTweetCard: React.FC<MobileTweetCardProps> = ({
                 {/* User info and timestamp */}
                 <div className="flex items-center space-x-1 min-w-0">
                   <span 
-                    className="font-bold text-gray-900 text-sm truncate cursor-pointer hover:underline"
+                    className="font-bold text-gray-900 text-xs truncate cursor-pointer hover:underline"
                     onClick={handleProfileClick}
                   >
                     {tweet.author.displayName}
                   </span>
                   {tweet.author.verified && (
-                    <CheckCircle className="w-4 h-4 text-blue-500 fill-current flex-shrink-0" />
+                    <CheckCircle className="w-3 h-3 text-blue-500 fill-current flex-shrink-0" />
                   )}
                   <span 
-                    className="text-gray-500 text-sm truncate cursor-pointer hover:underline"
+                    className="text-gray-500 text-xs truncate cursor-pointer hover:underline"
                     onClick={handleProfileClick}
                   >
                     @{tweet.author.username}
                   </span>
-                  <span className="text-gray-500 text-sm">·</span>
-                  <span className="text-gray-500 text-sm flex-shrink-0">
+                  <span className="text-gray-500 text-xs">·</span>
+                  <span className="text-gray-500 text-xs flex-shrink-0">
                     {formatDistanceToNow(tweet.createdAt, { addSuffix: true }).replace('about ', '')}
                   </span>
                 </div>
@@ -484,10 +484,10 @@ export const MobileTweetCard: React.FC<MobileTweetCardProps> = ({
                       <Button 
                         variant="ghost" 
                         size="sm" 
-                        className="h-6 w-6 p-0 hover:bg-gray-100 flex-shrink-0"
+                        className="h-5 w-5 p-0 hover:bg-gray-100 flex-shrink-0"
                         onClick={(e) => e.stopPropagation()}
                       >
-                        <MoreHorizontal className="h-4 w-4 text-gray-500" />
+                        <MoreHorizontal className="h-3 w-3 text-gray-500" />
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent 
@@ -521,7 +521,7 @@ export const MobileTweetCard: React.FC<MobileTweetCardProps> = ({
               </div>
 
               {/* Tweet Text with Enhanced Link Parsing */}
-              <div className="text-gray-900 mb-3 text-sm leading-5">
+              <div className="text-gray-900 mb-2 text-xs leading-4">
                 {parseTextWithLinks(displayContent)}
                 {tweet.content.length > 200 && (
                   <span className="text-gray-500 text-xs italic"> (truncated)</span>
@@ -530,7 +530,7 @@ export const MobileTweetCard: React.FC<MobileTweetCardProps> = ({
 
               {/* Original Tweet Preview (for replies) */}
               {originalTweet && (
-                <div className="mb-3 border border-gray-200 rounded-xl p-3 bg-gray-50 hover:bg-gray-100 transition-colors cursor-pointer"
+                <div className="mb-2 border border-gray-200 rounded-lg p-2 bg-gray-50 hover:bg-gray-100 transition-colors cursor-pointer"
                      onClick={(e) => {
                        e.stopPropagation();
                        // Navigate to the original tweet's author profile or tweet detail
@@ -540,8 +540,8 @@ export const MobileTweetCard: React.FC<MobileTweetCardProps> = ({
                     <LazyAvatar
                       src={originalTweet.author.avatar}
                       fallback={originalTweet.author.displayName[0]}
-                      className="w-6 h-6 flex-shrink-0"
-                      size={48}
+                      className="w-5 h-5 flex-shrink-0"
+                      size={40}
                     />
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center space-x-1 mb-1">
@@ -549,7 +549,7 @@ export const MobileTweetCard: React.FC<MobileTweetCardProps> = ({
                           {originalTweet.author.displayName}
                         </span>
                         {originalTweet.author.verified && (
-                          <CheckCircle className="w-3 h-3 text-blue-500 fill-current flex-shrink-0" />
+                          <CheckCircle className="w-2 h-2 text-blue-500 fill-current flex-shrink-0" />
                         )}
                         <span className="text-gray-500 text-xs truncate">
                           @{originalTweet.author.username}
@@ -569,7 +569,7 @@ export const MobileTweetCard: React.FC<MobileTweetCardProps> = ({
 
               {/* Images */}
               {tweet.images && tweet.images.length > 0 && (
-                <div className="mb-3 rounded-xl overflow-hidden">
+                <div className="mb-2 rounded-lg overflow-hidden">
                   {tweet.images.length === 1 ? (
                     // Single image - centered and fills container
                     <div className="w-full aspect-[16/9] cursor-pointer" onClick={(e) => handleImageClick(0, e)}>
@@ -577,8 +577,8 @@ export const MobileTweetCard: React.FC<MobileTweetCardProps> = ({
                         src={tweet.images[0]} 
                         alt="Tweet image" 
                         className="w-full h-full hover:opacity-95 transition-opacity"
-                        width={400}
-                        quality={80}
+                        width={320}
+                        quality={75}
                       />
                     </div>
                   ) : tweet.images.length === 2 ? (
@@ -587,57 +587,7 @@ export const MobileTweetCard: React.FC<MobileTweetCardProps> = ({
                       {tweet.images.map((image, index) => (
                         <div 
                           key={index} 
-                          className="aspect-[16/9] cursor-pointer"
-                          onClick={(e) => handleImageClick(index, e)}
-                        >
-                          <LazyImage 
-                            src={image} 
-                            alt={`Tweet image ${index + 1}`} 
-                            className="w-full h-full hover:opacity-95 transition-opacity"
-                            width={300}
-                            quality={80}
-                          />
-                        </div>
-                      ))}
-                    </div>
-                  ) : tweet.images.length === 3 ? (
-                    // Three images - first takes full left side, two small on right, all centered
-                    <div className="grid grid-cols-2 grid-rows-2 gap-1 h-64">
-                      <div className="row-span-2 cursor-pointer" onClick={(e) => handleImageClick(0, e)}>
-                        <LazyImage 
-                          src={tweet.images[0]} 
-                          alt="Tweet image 1" 
-                          className="w-full h-full hover:opacity-95 transition-opacity"
-                          width={300}
-                          quality={80}
-                        />
-                      </div>
-                      <div className="cursor-pointer" onClick={(e) => handleImageClick(1, e)}>
-                        <LazyImage 
-                          src={tweet.images[1]} 
-                          alt="Tweet image 2" 
-                          className="w-full h-full hover:opacity-95 transition-opacity"
-                          width={200}
-                          quality={80}
-                        />
-                      </div>
-                      <div className="cursor-pointer" onClick={(e) => handleImageClick(2, e)}>
-                        <LazyImage 
-                          src={tweet.images[2]} 
-                          alt="Tweet image 3" 
-                          className="w-full h-full hover:opacity-95 transition-opacity"
-                          width={200}
-                          quality={80}
-                        />
-                      </div>
-                    </div>
-                  ) : (
-                    // Four images - 2x2 grid, all centered and fills container
-                    <div className="grid grid-cols-2 gap-1">
-                      {tweet.images.map((image, index) => (
-                        <div 
-                          key={index} 
-                          className="aspect-[16/9] cursor-pointer"
+                          className="aspect-[4/3] cursor-pointer"
                           onClick={(e) => handleImageClick(index, e)}
                         >
                           <LazyImage 
@@ -645,8 +595,34 @@ export const MobileTweetCard: React.FC<MobileTweetCardProps> = ({
                             alt={`Tweet image ${index + 1}`} 
                             className="w-full h-full hover:opacity-95 transition-opacity"
                             width={200}
-                            quality={80}
+                            quality={75}
                           />
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    // Three or more images - custom grid
+                    <div className="grid grid-cols-2 gap-1">
+                      {tweet.images.slice(0, 4).map((image, index) => (
+                        <div 
+                          key={index} 
+                          className={`cursor-pointer relative ${
+                            index === 0 && tweet.images!.length === 3 ? 'row-span-2' : 'aspect-[4/3]'
+                          }`}
+                          onClick={(e) => handleImageClick(index, e)}
+                        >
+                          <LazyImage 
+                            src={image} 
+                            alt={`Tweet image ${index + 1}`} 
+                            className="w-full h-full hover:opacity-95 transition-opacity"
+                            width={200}
+                            quality={75}
+                          />
+                          {index === 3 && tweet.images!.length > 4 && (
+                            <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
+                              <span className="text-white font-bold text-sm">+{tweet.images!.length - 4}</span>
+                            </div>
+                          )}
                         </div>
                       ))}
                     </div>
@@ -654,16 +630,16 @@ export const MobileTweetCard: React.FC<MobileTweetCardProps> = ({
                 </div>
               )}
 
-              {/* Actions */}
-              <div className="flex items-center justify-between space-x-4 mt-2">
+              {/* Action Buttons */}
+              <div className="flex items-center justify-between space-x-2 mt-2">
                 {/* Reply */}
                 <Button 
                   variant="ghost" 
                   size="sm" 
-                  className="text-gray-500 p-1 h-8 flex items-center"
+                  className="text-gray-500 p-1 h-6 flex items-center"
                   onClick={(e) => handleReplyClick(e)}
                 >
-                  <MessageCircle className="w-4 h-4" />
+                  <MessageCircle className="w-3 h-3" />
                   <span className="text-xs ml-1">{formatNumber(tweet.replies)}</span>
                 </Button>
 
@@ -671,14 +647,14 @@ export const MobileTweetCard: React.FC<MobileTweetCardProps> = ({
                 <Button 
                   variant="ghost" 
                   size="sm" 
-                  className={`p-1 h-8 flex items-center ${
+                  className={`p-1 h-6 flex items-center ${
                     tweet.isRetweeted 
                       ? 'text-green-500' 
                       : 'text-gray-500'
                   }`}
                   onClick={handleRetweetClick}
                 >
-                  <Repeat2 className="w-4 h-4" />
+                  <Repeat2 className="w-3 h-3" />
                   <span className="text-xs ml-1">{formatNumber(tweet.retweets)}</span>
                 </Button>
 
@@ -686,14 +662,14 @@ export const MobileTweetCard: React.FC<MobileTweetCardProps> = ({
                 <Button 
                   variant="ghost" 
                   size="sm" 
-                  className={`p-1 h-8 flex items-center ${
+                  className={`p-1 h-6 flex items-center ${
                     tweet.isLiked 
                       ? 'text-red-500' 
                       : 'text-gray-500'
                   }`}
                   onClick={handleLikeClick}
                 >
-                  <Heart className={`w-4 h-4 ${tweet.isLiked ? 'fill-current' : ''}`} />
+                  <Heart className={`w-3 h-3 ${tweet.isLiked ? 'fill-current' : ''}`} />
                   <span className="text-xs ml-1">{formatNumber(tweet.likes)}</span>
                 </Button>
 
@@ -701,39 +677,58 @@ export const MobileTweetCard: React.FC<MobileTweetCardProps> = ({
                 <Button 
                   variant="ghost" 
                   size="sm" 
-                  className="text-gray-500 p-1 h-8 flex items-center"
+                  className="text-gray-500 p-1 h-6 flex items-center"
                   onClick={handleViewsClick}
                 >
-                  <Eye className="w-4 h-4" />
+                  <Eye className="w-3 h-3" />
                   <span className="text-xs ml-1">{formatNumber(tweet.views)}</span>
                 </Button>
 
                 {/* Share */}
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
-                  className="text-gray-500 p-1 h-8"
-                  onClick={handleShareClick}
-                >
-                  <Share className="w-4 h-4" />
-                </Button>
+                <DropdownMenu modal={false}>
+                  <DropdownMenuTrigger asChild>
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      className="text-gray-500 p-1 h-6"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <Share className="w-3 h-3" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent 
+                    align="end" 
+                    side="top"
+                    className="w-48 z-50"
+                    sideOffset={4}
+                    avoidCollisions={true}
+                    collisionPadding={8}
+                  >
+                    <DropdownMenuItem onClick={handleShareClick} className="hover:bg-gray-50">
+                      Copy link to post
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={handleBookmarkClick} className="hover:bg-gray-50">
+                      {tweet.isBookmarked ? 'Remove bookmark' : 'Bookmark'}
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
               </div>
             </div>
           </div>
-
-          {/* Reply Composer */}
-          {showReplyComposer && (
-            <ReplyComposer
-              tweet={replyingToTweetId === tweet.id ? tweet : { ...tweet, id: replyingToTweetId! }}
-              onCancel={() => {
-                setShowReplyComposer(false);
-                setReplyingToTweetId(null);
-              }}
-              onReplySuccess={handleReplySuccess}
-              replyingToReply={isReply && replyingToTweetId !== tweet.id}
-            />
-          )}
         </div>
+
+        {/* Reply Composer */}
+        {showReplyComposer && (
+          <ReplyComposer
+            tweet={replyingToTweetId === tweet.id ? tweet : { ...tweet, id: replyingToTweetId! }}
+            onCancel={() => {
+              setShowReplyComposer(false);
+              setReplyingToTweetId(null);
+            }}
+            onReplySuccess={handleReplySuccess}
+            replyingToReply={isReply && replyingToTweetId !== tweet.id}
+          />
+        )}
 
         {/* Replies */}
         {showReplies && tweetReplies.length > 0 && (

@@ -482,18 +482,18 @@ export const UserProfilePage: React.FC = () => {
       {/* Mobile Layout */}
       <div className="md:hidden w-full border-r border-gray-200 overflow-hidden flex flex-col">
         {/* Header */}
-        <div className="bg-white/80 backdrop-blur-md border-b border-gray-200 px-4 py-3 flex items-center z-10 flex-shrink-0">
+        <div className="bg-white/80 backdrop-blur-md border-b border-gray-200 px-3 py-2.5 flex items-center z-10 flex-shrink-0">
           <Button
             variant="ghost"
             size="sm"
             onClick={() => navigate('/')}
-            className="p-2"
+            className="p-1.5"
           >
-            <ArrowLeft className="h-5 w-5" />
+            <ArrowLeft className="h-4 w-4" />
           </Button>
-          <div className="ml-4">
-            <h1 className="text-lg font-bold">{profile.displayName}</h1>
-            <p className="text-sm text-gray-500">{tweets.length} tweets</p>
+          <div className="ml-3">
+            <h1 className="text-base font-bold">{profile.displayName}</h1>
+            <p className="text-xs text-gray-500">{tweets.length} tweets</p>
           </div>
         </div>
 
@@ -502,10 +502,10 @@ export const UserProfilePage: React.FC = () => {
           {/* Profile Header */}
           <div className="relative">
             {/* Cover Image */}
-            <div className="h-48 bg-gradient-to-r from-blue-400 to-purple-500 relative">
+            <div className="h-32 bg-gradient-to-r from-blue-400 to-purple-500 relative">
               {profile.coverImage && (
                 <img
-                  src={storageService.getOptimizedImageUrl(profile.coverImage, { width: 800, quality: 80 })}
+                  src={storageService.getOptimizedImageUrl(profile.coverImage, { width: 600, quality: 75 })}
                   alt="Cover"
                   className="w-full h-full object-cover"
                 />
@@ -514,78 +514,78 @@ export const UserProfilePage: React.FC = () => {
                 variant="ghost"
                 size="sm"
                 onClick={() => setShowEditModal(true)}
-                className="absolute top-4 right-4 bg-black/50 text-white hover:bg-black/70 p-2 rounded-full"
+                className="absolute top-2 right-2 bg-black/50 text-white hover:bg-black/70 p-1.5 rounded-full"
               >
-                <Camera className="h-4 w-4" />
+                <Camera className="h-3 w-3" />
               </Button>
             </div>
             
             {/* Profile Info */}
-            <div className="px-4 pb-4">
+            <div className="px-3 pb-3">
               {/* Avatar and Edit Button */}
-              <div className="flex items-end justify-between -mt-16 mb-4">
+              <div className="flex items-end justify-between -mt-10 mb-3">
                 <div className="relative">
-                  <Avatar className="w-32 h-32 border-4 border-white bg-white">
+                  <Avatar className="w-20 h-20 border-3 border-white bg-white">
                     <AvatarImage 
-                      src={profile.avatar ? storageService.getOptimizedImageUrl(profile.avatar, { width: 200, quality: 80 }) : undefined} 
+                      src={profile.avatar ? storageService.getOptimizedImageUrl(profile.avatar, { width: 160, quality: 80 }) : undefined} 
                     />
-                    <AvatarFallback className="text-2xl">{profile.displayName[0]}</AvatarFallback>
+                    <AvatarFallback className="text-lg">{profile.displayName[0]}</AvatarFallback>
                   </Avatar>
                   <Button
                     variant="ghost"
                     size="sm"
                     onClick={() => setShowEditModal(true)}
-                    className="absolute bottom-2 right-2 bg-black/50 text-white hover:bg-black/70 p-2 rounded-full"
+                    className="absolute bottom-1 right-1 bg-black/50 text-white hover:bg-black/70 p-1 rounded-full"
                   >
-                    <Camera className="h-3 w-3" />
+                    <Camera className="h-2.5 w-2.5" />
                   </Button>
                 </div>
                 
                 <Button 
                   variant="outline" 
                   onClick={() => setShowEditModal(true)}
-                  className="mt-16 px-6 py-2 font-bold rounded-full border-gray-300 hover:bg-gray-50"
+                  className="mt-10 px-4 py-1.5 font-medium rounded-full border-gray-300 hover:bg-gray-50 text-sm"
                 >
-                  <Edit3 className="w-4 h-4 mr-2" />
+                  <Edit3 className="w-3 h-3 mr-1" />
                   Edit profile
                 </Button>
               </div>
 
               {/* User Info */}
               <div>
-                <div className="flex items-center space-x-2 mb-1">
-                  <h1 className="text-xl font-bold text-gray-900">{profile.displayName}</h1>
+                <div className="flex items-center space-x-1.5 mb-1">
+                  <h1 className="text-lg font-bold text-gray-900">{profile.displayName}</h1>
                   {profile.verified && (
-                    <div className="w-5 h-5 bg-blue-500 rounded-full flex items-center justify-center">
+                    <div className="w-4 h-4 bg-blue-500 rounded-full flex items-center justify-center">
                       <span className="text-white text-xs">✓</span>
                     </div>
                   )}
                 </div>
-                <p className="text-gray-500 mb-3">@{profile.username}</p>
+                <p className="text-gray-500 mb-2 text-sm">@{profile.username}</p>
                 
                 {profile.bio ? (
-                  <p className="text-gray-900 mb-3">{profile.bio}</p>
+                  <p className="text-gray-900 mb-2 text-sm">{profile.bio}</p>
                 ) : (
-                  <p className="text-gray-500 mb-3 italic">No bio yet</p>
+                  <p className="text-gray-500 mb-2 italic text-sm">No bio yet</p>
                 )}
 
                 {/* Join Date */}
-                <div className="flex items-center space-x-4 text-gray-500 text-sm mb-3">
+                <div className="flex items-center space-x-3 text-gray-500 text-xs mb-2">
                   <div className="flex items-center space-x-1">
-                    <Calendar className="w-4 h-4" />
+                    <Calendar className="w-3 h-3" />
                     <span>Joined {profile.joinedDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}</span>
                   </div>
                 </div>
 
                 {/* Follow Stats */}
-                <div className="flex space-x-6">
+                <div className="flex space-x-4">
                   <div className="flex items-center space-x-1 cursor-pointer hover:underline">
-                    <span className="font-bold text-gray-900">{profile.following.toLocaleString()}</span>
-                    <span className="text-gray-500">Following</span>
+                    <span className="font-bold text-gray-900 text-sm">{profile.following.toLocaleString()}</span>
+                    <span className="text-gray-500 text-xs">Following</span>
                   </div>
                   <div className="flex items-center space-x-1 cursor-pointer hover:underline">
-                    <span className="font-bold text-gray-900">{profile.followers.toLocaleString()}</span>
-                    <span className="text-gray-500">Followers</span>
+                    <span className="font-bold text-gray-900 text-sm">{profile.followers.toLocaleString()}</span>
+                    <span className="text-gray-500 text-xs">Followers</span>
                   </div>
                 </div>
               </div>
@@ -605,16 +605,16 @@ export const UserProfilePage: React.FC = () => {
                   key={tab.id}
                   variant="ghost"
                   onClick={() => setActiveTab(tab.id as any)}
-                  className={`flex-1 py-4 px-4 font-bold text-base rounded-none border-b-2 transition-colors ${
+                  className={`flex-1 py-3 px-2 font-medium text-sm rounded-none border-b-2 transition-colors ${
                     activeTab === tab.id
                       ? 'border-blue-500 text-black'
                       : 'border-transparent text-gray-500 hover:bg-gray-50'
                   }`}
                 >
-                  <span className="flex items-center space-x-2">
+                  <span className="flex items-center space-x-1">
                     <span>{tab.label}</span>
                     {tab.count > 0 && (
-                      <span className="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded-full">
+                      <span className="text-xs bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded-full">
                         {tab.count}
                       </span>
                     )}

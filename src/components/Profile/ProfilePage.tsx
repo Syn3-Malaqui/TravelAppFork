@@ -560,18 +560,18 @@ export const ProfilePage: React.FC = () => {
       {/* Mobile Layout */}
       <div className="md:hidden w-full border-r border-gray-200 overflow-hidden flex flex-col">
         {/* Header */}
-        <div className="bg-white/80 backdrop-blur-md border-b border-gray-200 px-4 py-3 flex items-center z-10 flex-shrink-0">
+        <div className="bg-white/80 backdrop-blur-md border-b border-gray-200 px-3 py-2.5 flex items-center z-10 flex-shrink-0">
           <Button
             variant="ghost"
             size="sm"
             onClick={() => navigate('/')}
-            className="p-2"
+            className="p-1.5"
           >
-            <ArrowLeft className="h-5 w-5" />
+            <ArrowLeft className="h-4 w-4" />
           </Button>
-          <div className="ml-4">
-            <h1 className="text-lg font-bold">{profile.displayName}</h1>
-            <p className="text-sm text-gray-500">{tweets.length} tweets</p>
+          <div className="ml-3">
+            <h1 className="text-base font-bold">{profile.displayName}</h1>
+            <p className="text-xs text-gray-500">{tweets.length} tweets</p>
           </div>
         </div>
 
@@ -580,10 +580,10 @@ export const ProfilePage: React.FC = () => {
           {/* Profile Header */}
           <div className="relative">
             {/* Cover Image */}
-            <div className="h-48 bg-gradient-to-r from-blue-400 to-purple-500">
+            <div className="h-32 bg-gradient-to-r from-blue-400 to-purple-500">
               {profile.coverImage && (
                 <img
-                  src={storageService.getOptimizedImageUrl(profile.coverImage, { width: 800, quality: 80 })}
+                  src={storageService.getOptimizedImageUrl(profile.coverImage, { width: 600, quality: 75 })}
                   alt="Cover"
                   className="w-full h-full object-cover"
                 />
@@ -591,46 +591,29 @@ export const ProfilePage: React.FC = () => {
             </div>
             
             {/* Profile Info */}
-            <div className="px-4 pb-4">
+            <div className="px-3 pb-3">
               {/* Avatar and Action Buttons */}
-              <div className="flex items-end justify-between -mt-16 mb-4">
-                <Avatar className="w-32 h-32 border-4 border-white bg-white">
+              <div className="flex items-end justify-between -mt-10 mb-3">
+                <Avatar className="w-20 h-20 border-3 border-white bg-white">
                   <AvatarImage 
-                    src={profile.avatar ? storageService.getOptimizedImageUrl(profile.avatar, { width: 200, quality: 80 }) : undefined} 
+                    src={profile.avatar ? storageService.getOptimizedImageUrl(profile.avatar, { width: 160, quality: 80 }) : undefined} 
                   />
-                  <AvatarFallback className="text-2xl">{profile.displayName[0]}</AvatarFallback>
+                  <AvatarFallback className="text-lg">{profile.displayName[0]}</AvatarFallback>
                 </Avatar>
                 
                 {isOwnProfile ? (
-                  <Button variant="outline" className="mt-16 px-6 py-2 font-bold rounded-full">
-                    <Settings className="w-4 h-4 mr-2" />
+                  <Button variant="outline" className="mt-10 px-4 py-1.5 font-medium rounded-full text-sm">
+                    <Settings className="w-3 h-3 mr-1" />
                     Edit profile
                   </Button>
                 ) : (
-                  <div className="flex flex-col space-y-2 mt-16">
-                    {/* Message Button */}
-                    <Button
-                      variant="outline"
-                      onClick={handleMessage}
-                      disabled={messageLoading}
-                      className="px-4 py-2 font-bold rounded-full border-gray-300 text-gray-700 hover:bg-gray-50 transition-colors text-sm"
-                    >
-                      {messageLoading ? (
-                        '...'
-                      ) : (
-                        <>
-                          <MessageCircle className="w-4 h-4 mr-2" />
-                          Message
-                        </>
-                      )}
-                    </Button>
-
+                  <div className="flex flex-col space-y-1.5 mt-10">
                     {/* Follow Button */}
                     <Button
                       variant={userIsFollowing ? "outline" : "default"}
                       onClick={handleFollow}
                       disabled={followLoading}
-                      className={`px-4 py-2 font-bold rounded-full transition-colors text-sm ${
+                      className={`px-3 py-1.5 font-medium rounded-full transition-colors text-xs ${
                         userIsFollowing 
                           ? 'border-gray-300 text-gray-700 hover:bg-red-50 hover:text-red-600 hover:border-red-300' 
                           : 'bg-blue-500 text-white hover:bg-blue-600'
@@ -640,12 +623,12 @@ export const ProfilePage: React.FC = () => {
                         '...'
                       ) : userIsFollowing ? (
                         <>
-                          <UserMinus className="w-4 h-4 mr-2" />
+                          <UserMinus className="w-3 h-3 mr-1" />
                           Following
                         </>
                       ) : (
                         <>
-                          <UserPlus className="w-4 h-4 mr-2" />
+                          <UserPlus className="w-3 h-3 mr-1" />
                           Follow
                         </>
                       )}
@@ -656,37 +639,37 @@ export const ProfilePage: React.FC = () => {
 
               {/* User Info */}
               <div>
-                <div className="flex items-center space-x-2 mb-1">
-                  <h1 className="text-xl font-bold text-gray-900">{profile.displayName}</h1>
+                <div className="flex items-center space-x-1.5 mb-1">
+                  <h1 className="text-lg font-bold text-gray-900">{profile.displayName}</h1>
                   {profile.verified && (
-                    <div className="w-5 h-5 bg-blue-500 rounded-full flex items-center justify-center">
+                    <div className="w-4 h-4 bg-blue-500 rounded-full flex items-center justify-center">
                       <span className="text-white text-xs">✓</span>
                     </div>
                   )}
                 </div>
-                <p className="text-gray-500 mb-3">@{profile.username}</p>
+                <p className="text-gray-500 mb-2 text-sm">@{profile.username}</p>
                 
                 {profile.bio && (
-                  <p className="text-gray-900 mb-3">{profile.bio}</p>
+                  <p className="text-gray-900 mb-2 text-sm">{profile.bio}</p>
                 )}
 
                 {/* Join Date */}
-                <div className="flex items-center space-x-4 text-gray-500 text-sm mb-3">
+                <div className="flex items-center space-x-3 text-gray-500 text-xs mb-2">
                   <div className="flex items-center space-x-1">
-                    <Calendar className="w-4 h-4" />
+                    <Calendar className="w-3 h-3" />
                     <span>Joined {profile.joinedDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}</span>
                   </div>
                 </div>
 
                 {/* Follow Stats */}
-                <div className="flex space-x-6">
+                <div className="flex space-x-4">
                   <div className="flex items-center space-x-1">
-                    <span className="font-bold text-gray-900">{profile.following.toLocaleString()}</span>
-                    <span className="text-gray-500">Following</span>
+                    <span className="font-bold text-gray-900 text-sm">{profile.following.toLocaleString()}</span>
+                    <span className="text-gray-500 text-xs">Following</span>
                   </div>
                   <div className="flex items-center space-x-1">
-                    <span className="font-bold text-gray-900">{profile.followers.toLocaleString()}</span>
-                    <span className="text-gray-500">Followers</span>
+                    <span className="font-bold text-gray-900 text-sm">{profile.followers.toLocaleString()}</span>
+                    <span className="text-gray-500 text-xs">Followers</span>
                   </div>
                 </div>
               </div>
@@ -706,16 +689,16 @@ export const ProfilePage: React.FC = () => {
                   key={tab.id}
                   variant="ghost"
                   onClick={() => setActiveTab(tab.id as any)}
-                  className={`flex-1 py-4 px-4 font-bold text-base rounded-none border-b-2 transition-colors ${
+                  className={`flex-1 py-3 px-2 font-medium text-sm rounded-none border-b-2 transition-colors ${
                     activeTab === tab.id
                       ? 'border-blue-500 text-black'
                       : 'border-transparent text-gray-500 hover:bg-gray-50'
                   }`}
                 >
-                  <span className="flex items-center space-x-2">
+                  <span className="flex items-center space-x-1">
                     <span>{tab.label}</span>
                     {tab.count > 0 && (
-                      <span className="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded-full">
+                      <span className="text-xs bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded-full">
                         {tab.count}
                       </span>
                     )}
