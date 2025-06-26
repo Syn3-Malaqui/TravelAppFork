@@ -687,14 +687,14 @@ export const MobileTweetCard: React.FC<MobileTweetCardProps> = ({
                 {/* Share */}
                 <DropdownMenu modal={false}>
                   <DropdownMenuTrigger asChild>
-                    <Button 
-                      variant="ghost" 
-                      size="sm" 
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
                       className="text-gray-500 p-1 h-6"
                       onClick={(e) => e.stopPropagation()}
-                    >
+                >
                       <Share className="w-3 h-3" />
-                    </Button>
+                </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent 
                     align="end" 
@@ -713,22 +713,22 @@ export const MobileTweetCard: React.FC<MobileTweetCardProps> = ({
                   </DropdownMenuContent>
                 </DropdownMenu>
               </div>
+              </div>
             </div>
           </div>
-        </div>
 
-        {/* Reply Composer */}
-        {showReplyComposer && (
-          <ReplyComposer
-            tweet={replyingToTweetId === tweet.id ? tweet : { ...tweet, id: replyingToTweetId! }}
-            onCancel={() => {
-              setShowReplyComposer(false);
-              setReplyingToTweetId(null);
-            }}
-            onReplySuccess={handleReplySuccess}
-            replyingToReply={isReply && replyingToTweetId !== tweet.id}
-          />
-        )}
+          {/* Reply Composer */}
+          {showReplyComposer && (
+            <ReplyComposer
+              tweet={replyingToTweetId === tweet.id ? tweet : { ...tweet, id: replyingToTweetId! }}
+              onCancel={() => {
+                setShowReplyComposer(false);
+                setReplyingToTweetId(null);
+              }}
+              onReplySuccess={handleReplySuccess}
+              replyingToReply={isReply && replyingToTweetId !== tweet.id}
+            />
+          )}
 
         {/* Replies */}
         {showReplies && tweetReplies.length > 0 && (

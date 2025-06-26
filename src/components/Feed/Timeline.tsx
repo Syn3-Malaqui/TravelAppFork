@@ -24,6 +24,9 @@ export const Timeline: React.FC = () => {
   const { language, isRTL } = useLanguageStore();
   const { width, isMobile: windowIsMobile } = useWindowSize();
   const [activeTab, setActiveTab] = useState<'for-you' | 'following'>('for-you');
+  
+  // Additional mobile detection logging
+  console.log('🔍 Timeline render - windowIsMobile:', windowIsMobile, 'width:', width);
   const [categoryFilter, setCategoryFilter] = useState<string | null>(null);
   const [countryFilter, setCountryFilter] = useState<string>('ALL');
   const [selectedFilter, setSelectedFilter] = useState<string>('all');
@@ -206,7 +209,7 @@ export const Timeline: React.FC = () => {
   // Mobile view
   if (windowIsMobile) {
     return (
-      <div className={`md:hidden w-full ${isRTL ? '' : 'border-r border-gray-200'} overflow-hidden flex flex-col ${language === 'ar' ? 'font-arabic' : ''}`}>
+      <div className={`w-full ${isRTL ? '' : 'border-r border-gray-200'} overflow-hidden flex flex-col ${language === 'ar' ? 'font-arabic' : ''}`}>
         {/* Mobile Tabs */}
         <MobileTabs activeTab={activeTab} onTabChange={handleTabChange} />
 
@@ -264,7 +267,7 @@ export const Timeline: React.FC = () => {
   // Desktop view
   return (
     <div className="h-full flex">
-      <div className="hidden md:flex flex-1">
+      <div className="flex-1">
         {/* Main Content */}
         <div className={`flex-1 ${isRTL ? '' : 'border-r border-gray-200'} flex flex-col max-w-[600px] ${showSidebar && !isRTL ? '' : 'border-r-0 border-l-0'} ${language === 'ar' ? 'font-arabic' : ''}`}>
           {/* Desktop Header with Tabs - Fixed (Full Width) */}
