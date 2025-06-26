@@ -25,8 +25,26 @@ export const Timeline: React.FC = () => {
   const { width, isMobile: windowIsMobile } = useWindowSize();
   const [activeTab, setActiveTab] = useState<'for-you' | 'following'>('for-you');
   
+  // Force mobile detection for testing - check current window size directly
+  const [forcedMobile, setForcedMobile] = useState(false);
+  
+  useEffect(() => {
+    const checkMobile = () => {
+      const isMobileNow = window.innerWidth < 768;
+      setForcedMobile(isMobileNow);
+      console.log('🔍 Timeline direct check - window.innerWidth:', window.innerWidth, 'isMobileNow:', isMobileNow);
+    };
+    
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
+  
+  // Use either the hook or forced detection
+  const isMobileMode = forcedMobile || windowIsMobile;
+  
   // Additional mobile detection logging
-  console.log('🔍 Timeline render - windowIsMobile:', windowIsMobile, 'width:', width);
+  console.log('🔍 Timeline render - windowIsMobile:', windowIsMobile, 'forcedMobile:', forcedMobile, 'isMobileMode:', isMobileMode, 'width:', width);
   const [categoryFilter, setCategoryFilter] = useState<string | null>(null);
   const [countryFilter, setCountryFilter] = useState<string>('ALL');
   const [selectedFilter, setSelectedFilter] = useState<string>('all');
@@ -51,7 +69,7 @@ export const Timeline: React.FC = () => {
     
     console.log(`📏 Screen width: ${width}px, Required: ${minRequiredWidth}px, isMobile: ${windowIsMobile}`);
     
-    if (windowIsMobile) {
+    if (isMobileMode) {
       console.log('🔥 MOBILE MODE - Using MobileTweetCard');
       setShowSidebar(false);
       setShowFilterNavigation(true);
@@ -206,8 +224,17 @@ export const Timeline: React.FC = () => {
 
   const selectedCountryData = availableCountries.find(c => c.code === countryFilter) || availableCountries[0];
 
+  // Debug logging at render time
+  console.log('🔥 TIMELINE RENDER DECISION:', {
+    windowIsMobile,
+    forcedMobile,
+    isMobileMode,
+    width,
+    windowInnerWidth: window.innerWidth
+  });
+
   // Mobile view
-  if (windowIsMobile) {
+  if (isMobileMode) {
     return (
       <div className={`w-full ${isRTL ? '' : 'border-r border-gray-200'} overflow-hidden flex flex-col ${language === 'ar' ? 'font-arabic' : ''}`}>
         {/* Mobile Tabs */}
@@ -253,7 +280,7 @@ export const Timeline: React.FC = () => {
 
             {/* Infinite Scroll Tweets */}
             <InfiniteScrollTweets 
-              isMobile={windowIsMobile} 
+              isMobile={isMobileMode} 
               feedType={activeTab}
               categoryFilter={categoryFilter}
               countryFilter={countryFilter}
@@ -407,7 +434,7 @@ export const Timeline: React.FC = () => {
 
               {/* Infinite Scroll Tweets */}
               <InfiniteScrollTweets 
-                isMobile={windowIsMobile} 
+                isMobile={isMobileMode} 
                 feedType={activeTab}
                 categoryFilter={categoryFilter}
                 countryFilter={countryFilter}

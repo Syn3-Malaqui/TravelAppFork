@@ -9,13 +9,33 @@ interface WindowSize {
 }
 
 export const useWindowSize = (): WindowSize => {
-  const [windowSize, setWindowSize] = useState<WindowSize>({
-    width: typeof window !== 'undefined' ? window.innerWidth : 1200,
-    height: typeof window !== 'undefined' ? window.innerHeight : 800,
-    isMobile: typeof window !== 'undefined' ? window.innerWidth < 768 : false,
-    isTablet: typeof window !== 'undefined' ? window.innerWidth >= 768 && window.innerWidth < 1024 : false,
-    isDesktop: typeof window !== 'undefined' ? window.innerWidth >= 1024 : true,
-  });
+  const getInitialSize = () => {
+    if (typeof window === 'undefined') {
+      return {
+        width: 1200,
+        height: 800,
+        isMobile: false,
+        isTablet: false,
+        isDesktop: true,
+      };
+    }
+    
+    const width = window.innerWidth;
+    const height = window.innerHeight;
+    const isMobile = width < 768;
+    
+    console.log('🔍 Initial window size:', { width, height, isMobile });
+    
+    return {
+      width,
+      height,
+      isMobile,
+      isTablet: width >= 768 && width < 1024,
+      isDesktop: width >= 1024,
+    };
+  };
+
+  const [windowSize, setWindowSize] = useState<WindowSize>(getInitialSize);
 
   useEffect(() => {
     function handleResize() {
@@ -31,6 +51,7 @@ export const useWindowSize = (): WindowSize => {
       });
       
       console.log(`📏 Window resize: ${width}x${height}, isMobile: ${width < 768}`);
+      console.log('🎯 Setting window size state:', { width, height, isMobile: width < 768 });
     }
 
     // Set initial size
