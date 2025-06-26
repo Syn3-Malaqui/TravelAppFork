@@ -106,7 +106,7 @@ export const Sidebar: React.FC = () => {
   return (
     <div className={`w-64 h-full ${isRTL ? '' : 'border-r'} border-gray-200 bg-white p-4 flex flex-col`}>
       {/* Logo */}
-      <div className={`mb-8 ${isRTL ? 'flex justify-end' : 'flex justify-end'}`}>
+      <div className={`mb-8 ${isRTL ? 'flex justify-end' : 'flex justify-start'}`}>
         <div className="w-12 h-12">
           <img 
             src="https://i.ibb.co/3YPVCWX2/Website-Logo.jpg" 
@@ -128,12 +128,12 @@ export const Sidebar: React.FC = () => {
                 <Button
                   variant="ghost"
                   onClick={() => handleNavClick(item.path)}
-                  className={`w-full ${isRTL ? 'justify-end text-right' : 'justify-end text-right'} text-xl py-3 px-4 h-auto relative ${
+                  className={`w-full ${isRTL ? 'justify-start text-left px-2' : 'justify-end text-right'} text-xl py-3 px-4 h-auto relative ${
                     isActive ? 'font-bold text-blue-500' : 'font-normal text-gray-700 hover:bg-gray-100'
                   }`}
                 >
                   {isRTL ? (
-                    <>
+                    <div className="flex items-center justify-end w-full">
                       <span className="mr-3">{item.label}</span>
                       <div className="relative">
                         <item.icon className="h-6 w-6" />
@@ -143,7 +143,7 @@ export const Sidebar: React.FC = () => {
                           </span>
                         )}
                       </div>
-                    </>
+                    </div>
                   ) : (
                     <>
                       <span className="mr-3">{item.label}</span>
@@ -179,13 +179,13 @@ export const Sidebar: React.FC = () => {
           <DropdownMenuTrigger asChild>
             <Button 
               variant="ghost"
-              className={`w-full ${isRTL ? 'justify-end text-right' : 'justify-end text-right'} text-lg py-3 px-4 h-auto text-gray-700 hover:bg-gray-100`}
+              className={`w-full ${isRTL ? 'justify-start text-left px-2' : 'justify-end text-right'} text-lg py-3 px-4 h-auto text-gray-700 hover:bg-gray-100`}
             >
               {isRTL ? (
-                <>
+                <div className="flex items-center justify-end w-full">
                   <span className="mr-3">{language === 'en' ? 'Settings' : 'الإعدادات'}</span>
                   <Settings className="h-5 w-5" />
-                </>
+                </div>
               ) : (
                 <>
                   <span className="mr-3">{language === 'en' ? 'Settings' : 'الإعدادات'}</span>
@@ -226,33 +226,35 @@ export const Sidebar: React.FC = () => {
           }`}
           onClick={handleProfileClick}
         >
-          {isRTL ? (
-            <>
-              <div className="min-w-0 text-right mr-3">
-                <div className="font-bold text-sm truncate">{userProfile?.displayName || 'User'}</div>
-                <div className="text-gray-500 text-sm truncate">@{userProfile?.username || 'user'}</div>
-              </div>
-              <Avatar className="w-10 h-10">
-                <AvatarImage 
-                  src={userProfile?.avatar ? storageService.getOptimizedImageUrl(userProfile.avatar, { width: 80, quality: 80 }) : undefined} 
-                />
-                <AvatarFallback>{userProfile?.displayName[0]?.toUpperCase() || 'U'}</AvatarFallback>
-              </Avatar>
-            </>
-          ) : (
-            <>
-              <div className="min-w-0 text-right mr-3">
-                <div className="font-bold text-sm truncate">{userProfile?.displayName || 'User'}</div>
-                <div className="text-gray-500 text-sm truncate">@{userProfile?.username || 'user'}</div>
-              </div>
-              <Avatar className="w-10 h-10">
-                <AvatarImage 
-                  src={userProfile?.avatar ? storageService.getOptimizedImageUrl(userProfile.avatar, { width: 80, quality: 80 }) : undefined} 
-                />
-                <AvatarFallback>{userProfile?.displayName[0]?.toUpperCase() || 'U'}</AvatarFallback>
-              </Avatar>
-            </>
-          )}
+          <div className={`flex items-center w-full ${isRTL ? 'justify-end' : 'justify-end'}`}>
+            {isRTL ? (
+              <>
+                <div className="min-w-0 text-left mr-3">
+                  <div className="font-bold text-sm truncate">{userProfile?.displayName || 'User'}</div>
+                  <div className="text-gray-500 text-sm truncate">@{userProfile?.username || 'user'}</div>
+                </div>
+                <Avatar className="w-10 h-10">
+                  <AvatarImage 
+                    src={userProfile?.avatar ? storageService.getOptimizedImageUrl(userProfile.avatar, { width: 80, quality: 80 }) : undefined} 
+                  />
+                  <AvatarFallback>{userProfile?.displayName[0]?.toUpperCase() || 'U'}</AvatarFallback>
+                </Avatar>
+              </>
+            ) : (
+              <>
+                <div className="min-w-0 text-right mr-3">
+                  <div className="font-bold text-sm truncate">{userProfile?.displayName || 'User'}</div>
+                  <div className="text-gray-500 text-sm truncate">@{userProfile?.username || 'user'}</div>
+                </div>
+                <Avatar className="w-10 h-10">
+                  <AvatarImage 
+                    src={userProfile?.avatar ? storageService.getOptimizedImageUrl(userProfile.avatar, { width: 80, quality: 80 }) : undefined} 
+                  />
+                  <AvatarFallback>{userProfile?.displayName[0]?.toUpperCase() || 'U'}</AvatarFallback>
+                </Avatar>
+              </>
+            )}
+          </div>
         </div>
       </div>
 
