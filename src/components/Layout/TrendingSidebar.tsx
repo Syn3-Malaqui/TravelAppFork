@@ -144,7 +144,7 @@ export const TrendingSidebar: React.FC = () => {
         </div>
 
         {/* Footer */}
-        <div className="p-4 border-t border-gray-100 mt-8">
+        <div className="p-4 border-t border-gray-100 mt-4">
           <div className="text-xs text-gray-400 space-y-1">
             <p>Trends are based on activity from the past 48 hours</p>
             <div className="flex flex-wrap gap-2 mt-2">
