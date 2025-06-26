@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useLanguageStore } from '../../store/useLanguageStore';
 import { InfiniteScrollTweets } from './InfiniteScrollTweets';
 import { MobileTabs } from '../Layout/MobileTabs';
 import { FilterNavigation } from '../Layout/FilterNavigation';
@@ -19,6 +20,7 @@ import { X, ChevronDown, Check } from 'lucide-react';
 
 export const Timeline: React.FC = () => {
   const navigate = useNavigate();
+  const { language, isRTL } = useLanguageStore();
   const [activeTab, setActiveTab] = useState<'for-you' | 'following'>('for-you');
   const [categoryFilter, setCategoryFilter] = useState<string | null>(null);
   const [countryFilter, setCountryFilter] = useState<string>('ALL');
@@ -220,7 +222,7 @@ export const Timeline: React.FC = () => {
   // Mobile view
   if (isMobileView) {
     return (
-      <div className="md:hidden w-full border-r border-gray-200 overflow-hidden flex flex-col">
+      <div className={`md:hidden w-full ${isRTL ? 'border-l' : 'border-r'} border-gray-200 overflow-hidden flex flex-col ${language === 'ar' ? 'font-arabic' : ''}`}>
         {/* Mobile Tabs */}
         <MobileTabs activeTab={activeTab} onTabChange={handleTabChange} />
 
@@ -280,7 +282,7 @@ export const Timeline: React.FC = () => {
     <div className="h-full flex">
       <div className="hidden md:flex flex-1">
         {/* Main Content */}
-        <div className={`flex-1 border-r border-gray-200 flex flex-col max-w-[600px] ${showSidebar ? '' : 'border-r-0'}`}>
+        <div className={`flex-1 ${isRTL ? 'border-l' : 'border-r'} border-gray-200 flex flex-col max-w-[600px] ${showSidebar ? '' : 'border-r-0 border-l-0'} ${language === 'ar' ? 'font-arabic' : ''}`}>
           {/* Desktop Header with Tabs - Fixed (Full Width) */}
           <div className="bg-white/95 backdrop-blur-md border-b border-gray-200 z-50 flex-shrink-0">
             {/* Content wrapper with max-width for header content */}
@@ -304,7 +306,9 @@ export const Timeline: React.FC = () => {
                   sideOffset={4}
                 >
                   <div className="p-2">
-                    <div className="text-sm font-medium text-gray-700 mb-2 px-2">Select Country</div>
+                    <div className="text-sm font-medium text-gray-700 mb-2 px-2">
+                      {language === 'en' ? 'Select Country' : 'اختر البلد'}
+                    </div>
                     {availableCountries.map((country) => (
                       <DropdownMenuItem
                         key={country.code}
@@ -335,7 +339,7 @@ export const Timeline: React.FC = () => {
                     : 'border-transparent text-gray-500 hover:bg-gray-50'
                 }`}
               >
-                For you
+{language === 'en' ? 'For you' : 'لك'}
               </Button>
               <Button
                 variant="ghost"
@@ -346,7 +350,7 @@ export const Timeline: React.FC = () => {
                     : 'border-transparent text-gray-500 hover:bg-gray-50'
                 }`}
               >
-                Following
+{language === 'en' ? 'Following' : 'المتابعة'}
               </Button>
             </div>
 
@@ -377,7 +381,7 @@ export const Timeline: React.FC = () => {
                       className="text-xl text-gray-500 py-3 cursor-pointer hover:bg-gray-50 rounded-lg px-4 transition-colors"
                       onClick={handleComposeClick}
                     >
-                      What's happening?
+{language === 'en' ? "What's happening?" : 'ما الذي يحدث؟'}
                     </div>
                   </div>
                 </div>

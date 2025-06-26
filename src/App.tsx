@@ -1,5 +1,6 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { useLanguageStore } from './store/useLanguageStore';
 import { Sidebar } from './components/Layout/Sidebar';
 import { MobileNavigation } from './components/Layout/MobileNavigation';
 import { Timeline } from './components/Feed/Timeline';
@@ -23,6 +24,12 @@ import {
 
 function App() {
   const { user, loading } = useAuth();
+  const { language, isRTL } = useLanguageStore();
+
+  // Apply RTL class to body on language change
+  useEffect(() => {
+    document.body.className = language === 'ar' ? 'font-arabic' : '';
+  }, [language]);
   
   // Initialize preloader when user is authenticated
   usePreloader();
@@ -44,7 +51,7 @@ function App() {
   // Show main app if user is logged in
   return (
     <Router>
-      <div className="min-h-screen bg-white">
+      <div className={`min-h-screen bg-white ${language === 'ar' ? 'font-arabic' : ''}`}>
         <div className="flex h-screen overflow-hidden justify-center">
           {/* Centered container with max-width */}
           <div className="flex flex-1 max-w-[1200px]">
