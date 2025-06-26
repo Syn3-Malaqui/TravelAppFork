@@ -156,7 +156,12 @@ export const NotificationsPage: React.FC = () => {
                   <MoreHorizontal className="h-5 w-5" />
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
+              <DropdownMenuContent 
+                align="end"
+                avoidCollisions={true}
+                collisionPadding={8}
+                sideOffset={4}
+              >
                 <DropdownMenuItem onClick={markAllAsRead} disabled={unreadCount === 0}>
                   <CheckCheck className="mr-2 h-4 w-4" />
                   Mark all as read

@@ -84,6 +84,8 @@ export const CategoriesFilter: React.FC<CategoriesFilterProps> = ({
         align="start" 
         className="w-72 max-h-96 overflow-y-auto rounded-xl"
         sideOffset={4}
+        avoidCollisions={true}
+        collisionPadding={8}
       >
         <div className="max-h-80 overflow-y-auto">
           {/* All Categories Option */}

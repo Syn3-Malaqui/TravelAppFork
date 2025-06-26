@@ -120,10 +120,12 @@ export const MobileNavigation: React.FC = () => {
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent 
-              align="end" 
+              align={isRTL ? "start" : "end"}
               side="top"
-              className="w-56 mb-2"
+              className="w-56"
               sideOffset={8}
+              avoidCollisions={true}
+              collisionPadding={8}
             >
               <DropdownMenuItem 
                 onClick={() => {

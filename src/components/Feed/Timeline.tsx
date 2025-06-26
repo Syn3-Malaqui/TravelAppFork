@@ -301,9 +301,11 @@ export const Timeline: React.FC = () => {
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent 
-                  align="start" 
+                  align={isRTL ? "end" : "start"}
                   className="w-72 max-h-80 overflow-y-auto rounded-xl"
                   sideOffset={4}
+                  avoidCollisions={true}
+                  collisionPadding={8}
                 >
                   <div className="p-2">
                     <div className="text-sm font-medium text-gray-700 mb-2 px-2">

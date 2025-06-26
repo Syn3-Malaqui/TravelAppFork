@@ -600,6 +600,8 @@ export const ComposePage: React.FC = () => {
                     }`}
                     align="start"
                     sideOffset={4}
+                    avoidCollisions={true}
+                    collisionPadding={8}
                   >
                     {TWEET_CATEGORIES.map((category) => (
                       <DropdownMenuItem
@@ -661,6 +663,8 @@ export const ComposePage: React.FC = () => {
                     }`}
                     align="start"
                     sideOffset={4}
+                    avoidCollisions={true}
+                    collisionPadding={8}
                   >
                     {selectableCountries.map((country) => (
                       <DropdownMenuItem

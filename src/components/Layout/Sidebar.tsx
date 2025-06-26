@@ -170,10 +170,12 @@ export const Sidebar: React.FC = () => {
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent 
-            align="start" 
+            align={isRTL ? "end" : "start"}
             side="top"
-            className="w-56 mb-2"
+            className="w-56"
             sideOffset={8}
+            avoidCollisions={true}
+            collisionPadding={8}
           >
             <DropdownMenuItem 
               onClick={() => {

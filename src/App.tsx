@@ -51,7 +51,7 @@ function App() {
   // Show main app if user is logged in
   return (
     <Router>
-      <div className={`min-h-screen bg-white ${language === 'ar' ? 'font-arabic' : ''}`}>
+      <div className={`min-h-screen bg-white ${language === 'ar' ? 'font-arabic' : ''}`} style={{ position: 'relative', zIndex: 0 }}>
         <div className="flex h-screen overflow-hidden justify-center">
           {/* Centered container with max-width */}
           <div className="flex flex-1 max-w-[1200px]">
