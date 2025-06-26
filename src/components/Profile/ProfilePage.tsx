@@ -36,7 +36,15 @@ export const ProfilePage: React.FC = () => {
   // Handle window resize to show/hide sidebar
   useEffect(() => {
     const handleResize = () => {
-      setShowSidebar(window.innerWidth >= 1280);
+      const width = window.innerWidth;
+      
+      // Show sidebar if there's enough space
+      // Account for left sidebar (256px) + main content (min 400px) + trending sidebar (320px) = ~976px
+      if (width >= 976) {
+        setShowSidebar(true);
+      } else {
+        setShowSidebar(false);
+      }
     };
 
     handleResize();

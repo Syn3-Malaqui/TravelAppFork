@@ -45,23 +45,20 @@ export const Timeline: React.FC = () => {
         setShowSidebar(false);
         setShowFilterNavigation(true);
       }
-      // Tablet view: 768px - 1024px (hide sidebar, show filter navigation)
+      // Tablet view: 768px - 1024px (show sidebar if there's space for it)
       else if (width < 1024) {
         setIsMobileView(false);
-        setShowSidebar(false);
+        // Show sidebar on larger tablets that have enough space
+        // Account for left sidebar (256px) + main content (min 400px) + trending sidebar (320px) = ~976px
+        setShowSidebar(width >= 976);
         setShowFilterNavigation(true);
       }
-      // Small desktop: 1024px - 1280px (show sidebar, hide filter navigation)
-      else if (width < 1280) {
-        setIsMobileView(false);
-        setShowSidebar(true);
-        setShowFilterNavigation(false);
-      }
-      // Large desktop: >= 1280px (show both)
+      // Desktop view: >= 1024px (always show sidebar)
       else {
         setIsMobileView(false);
         setShowSidebar(true);
-        setShowFilterNavigation(true);
+        // Show filter navigation only on very large screens where there's plenty of space
+        setShowFilterNavigation(width >= 1280);
       }
     };
 

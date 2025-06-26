@@ -33,8 +33,15 @@ export const TweetDetailPage: React.FC = () => {
   // Handle window resize to show/hide sidebar
   useEffect(() => {
     const handleResize = () => {
-      // Hide sidebar when window width is less than 1280px (xl breakpoint)
-      setShowSidebar(window.innerWidth >= 1280);
+      const width = window.innerWidth;
+      
+      // Show sidebar if there's enough space
+      // Account for left sidebar (256px) + main content (min 400px) + trending sidebar (320px) = ~976px
+      if (width >= 976) {
+        setShowSidebar(true);
+      } else {
+        setShowSidebar(false);
+      }
     };
 
     // Set initial state

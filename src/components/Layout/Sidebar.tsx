@@ -4,7 +4,7 @@ import {
   Home, 
   Search, 
   Bell, 
-  Mail,
+  // Mail, // Removed since Messages is hidden
   User, 
   Settings,
   LogOut
@@ -19,7 +19,7 @@ import {
 } from '../ui/dropdown-menu';
 import { useAuth } from '../../hooks/useAuth';
 import { useNotifications } from '../../hooks/useNotifications';
-import { useMessages } from '../../hooks/useMessages';
+// import { useMessages } from '../../hooks/useMessages'; // Removed since Messages is hidden
 import { storageService } from '../../lib/storage';
 import { supabase } from '../../lib/supabase';
 
@@ -27,7 +27,7 @@ const sidebarItems = [
   { icon: Home, label: 'Home', path: '/' },
   { icon: Search, label: 'Explore', path: '/search' },
   { icon: Bell, label: 'Notifications', path: '/notifications' },
-  { icon: Mail, label: 'Messages', path: '/messages' },
+  // { icon: Mail, label: 'Messages', path: '/messages' }, // Hidden per user request
   { icon: User, label: 'Profile', path: '/profile' },
 ];
 
@@ -36,7 +36,7 @@ export const Sidebar: React.FC = () => {
   const location = useLocation();
   const { user, signOut } = useAuth();
   const { unreadCount } = useNotifications();
-  const { totalUnreadCount: unreadMessagesCount } = useMessages();
+  // const { totalUnreadCount: unreadMessagesCount } = useMessages(); // Removed since Messages is hidden
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [userProfile, setUserProfile] = useState<{
     displayName: string;
@@ -117,7 +117,6 @@ export const Sidebar: React.FC = () => {
           {sidebarItems.map((item) => {
             const isActive = location.pathname === item.path;
             const isNotifications = item.path === '/notifications';
-            const isMessages = item.path === '/messages';
             
             return (
               <li key={item.label}>
@@ -133,11 +132,6 @@ export const Sidebar: React.FC = () => {
                     {isNotifications && unreadCount > 0 && (
                       <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
                         {unreadCount > 99 ? '99+' : unreadCount}
-                      </span>
-                    )}
-                    {isMessages && unreadMessagesCount > 0 && (
-                      <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
-                        {unreadMessagesCount > 99 ? '99+' : unreadMessagesCount}
                       </span>
                     )}
                   </div>

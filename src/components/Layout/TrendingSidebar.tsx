@@ -8,6 +8,7 @@ export const TrendingSidebar: React.FC = () => {
   const navigate = useNavigate();
   const { trendingHashtags, loading } = useHashtags();
   const [visibleHashtags, setVisibleHashtags] = useState<typeof trendingHashtags>([]);
+  const [sidebarWidth, setSidebarWidth] = useState('w-80');
 
   // Implement progressive loading for trending hashtags
   useEffect(() => {
@@ -24,13 +25,35 @@ export const TrendingSidebar: React.FC = () => {
     return () => clearTimeout(timer);
   }, [trendingHashtags]);
 
+  // Adjust sidebar width based on screen size
+  useEffect(() => {
+    const handleResize = () => {
+      const width = window.innerWidth;
+      
+      // Adjust sidebar width based on available space
+      if (width >= 1400) {
+        setSidebarWidth('w-80'); // 320px - full width on large screens
+      } else if (width >= 1200) {
+        setSidebarWidth('w-72'); // 288px - slightly smaller on medium screens
+      } else if (width >= 1000) {
+        setSidebarWidth('w-64'); // 256px - compact on smaller screens
+      } else {
+        setSidebarWidth('w-60'); // 240px - minimum width
+      }
+    };
+
+    handleResize();
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
   const handleHashtagClick = (hashtag: string) => {
     const cleanHashtag = hashtag.replace('#', '');
     navigate(`/hashtag/${cleanHashtag}`);
   };
 
   return (
-    <div className="w-80 bg-white border-l border-gray-200 flex flex-col h-full">
+    <div className={`${sidebarWidth} bg-white border-l border-gray-200 flex flex-col h-full flex-shrink-0`}>
       {/* Fixed Header */}
       <div className="bg-white/95 backdrop-blur-md border-b border-gray-200 z-40 flex-shrink-0">
         <div className="p-4">
@@ -51,7 +74,7 @@ export const TrendingSidebar: React.FC = () => {
                 <div key={index} className="p-3 rounded-lg">
                   <div className="flex items-center space-x-3">
                     <div className="w-10 h-10 bg-gray-200 rounded-full animate-shimmer"></div>
-                    <div className="flex-1">
+                    <div className="flex-1 min-w-0">
                       <div className="h-4 bg-gray-200 rounded animate-shimmer w-3/4 mb-2"></div>
                       <div className="h-3 bg-gray-200 rounded animate-shimmer w-1/2"></div>
                     </div>
@@ -68,15 +91,15 @@ export const TrendingSidebar: React.FC = () => {
                   className="p-3 hover:bg-gray-50 rounded-lg cursor-pointer transition-colors group"
                 >
                   <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-3">
-                      <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
+                    <div className="flex items-center space-x-3 min-w-0 flex-1">
+                      <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0">
                         <Hash className="w-5 h-5 text-blue-500" />
                       </div>
-                      <div>
+                      <div className="min-w-0 flex-1">
                         <p className="font-bold text-gray-900 text-sm truncate group-hover:text-blue-600 transition-colors">
                           {item.hashtag}
                         </p>
-                        <p className="text-xs text-gray-500">
+                        <p className="text-xs text-gray-500 truncate">
                           {item.count.toLocaleString()} posts
                           {item.recent_tweets > 0 && (
                             <span className="ml-2 text-blue-500">
@@ -86,7 +109,7 @@ export const TrendingSidebar: React.FC = () => {
                         </p>
                       </div>
                     </div>
-                    <div className="flex items-center space-x-1 text-gray-400">
+                    <div className="flex items-center space-x-1 text-gray-400 flex-shrink-0 ml-2">
                       <TrendingUp className="w-3 h-3" />
                       <span className="text-xs">#{index + 1}</span>
                     </div>
