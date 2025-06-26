@@ -222,7 +222,7 @@ export const Timeline: React.FC = () => {
   // Mobile view
   if (isMobileView) {
     return (
-      <div className={`md:hidden w-full ${isRTL ? 'border-l' : 'border-r'} border-gray-200 overflow-hidden flex flex-col ${language === 'ar' ? 'font-arabic' : ''}`}>
+      <div className={`md:hidden w-full ${isRTL ? '' : 'border-r border-gray-200'} overflow-hidden flex flex-col ${language === 'ar' ? 'font-arabic' : ''}`}>
         {/* Mobile Tabs */}
         <MobileTabs activeTab={activeTab} onTabChange={handleTabChange} />
 
@@ -282,7 +282,7 @@ export const Timeline: React.FC = () => {
     <div className="h-full flex">
       <div className="hidden md:flex flex-1">
         {/* Main Content */}
-        <div className={`flex-1 ${isRTL ? 'border-l' : 'border-r'} border-gray-200 flex flex-col max-w-[600px] ${showSidebar ? '' : 'border-r-0 border-l-0'} ${language === 'ar' ? 'font-arabic' : ''}`}>
+        <div className={`flex-1 ${isRTL ? '' : 'border-r border-gray-200'} flex flex-col max-w-[600px] ${showSidebar && !isRTL ? '' : 'border-r-0 border-l-0'} ${language === 'ar' ? 'font-arabic' : ''}`}>
           {/* Desktop Header with Tabs - Fixed (Full Width) */}
           <div className="bg-white/95 backdrop-blur-md border-b border-gray-200 z-50 flex-shrink-0">
             {/* Content wrapper with max-width for header content */}

@@ -3,10 +3,12 @@ import { useNavigate } from 'react-router-dom';
 import { TrendingUp, Hash, MoreHorizontal } from 'lucide-react';
 import { Button } from '../ui/button';
 import { useHashtags } from '../../hooks/useHashtags';
+import { useLanguageStore } from '../../store/useLanguageStore';
 
 export const TrendingSidebar: React.FC = () => {
   const navigate = useNavigate();
   const { trendingHashtags, loading } = useHashtags();
+  const { isRTL } = useLanguageStore();
   const [visibleHashtags, setVisibleHashtags] = useState<typeof trendingHashtags>([]);
   const [sidebarWidth, setSidebarWidth] = useState('w-80');
 
@@ -68,7 +70,7 @@ export const TrendingSidebar: React.FC = () => {
   };
 
   return (
-    <div className={`${sidebarWidth} bg-white border-l border-gray-200 flex flex-col h-full flex-shrink-0`}>
+    <div className={`${sidebarWidth} bg-white ${isRTL ? '' : 'border-l border-gray-200'} flex flex-col h-full flex-shrink-0`}>
       {/* Fixed Header */}
       <div className="bg-white/95 backdrop-blur-md border-b border-gray-200 z-40 flex-shrink-0">
         <div className="p-4">
