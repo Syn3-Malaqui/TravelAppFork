@@ -87,7 +87,7 @@ export const HashtagPage: React.FC = () => {
 
   if (!hashtag) {
     return (
-      <div className="min-h-screen bg-white flex items-center justify-center">
+      <div className="h-full bg-white flex items-center justify-center">
         <p className="text-gray-500">Invalid hashtag</p>
       </div>
     );
@@ -104,9 +104,9 @@ export const HashtagPage: React.FC = () => {
   const recentPosts = hashtagStats?.recent_tweets || 0;
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="h-full bg-white flex flex-col overflow-hidden">
       {/* Header */}
-      <div className="sticky top-0 bg-white/95 backdrop-blur-md border-b border-gray-200 z-10">
+      <div className="sticky top-0 bg-white/95 backdrop-blur-md border-b border-gray-200 z-10 flex-shrink-0">
         <div className="flex items-center justify-between p-4">
           <div className="flex items-center space-x-4">
             <Button
@@ -186,8 +186,8 @@ export const HashtagPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Content */}
-      <div className="pb-20 md:pb-0">
+      {/* Content - Scrollable */}
+      <div className="flex-1 overflow-y-auto pb-20 md:pb-0">
         {loading ? (
           <div>
             {/* Sort indicator skeleton */}
