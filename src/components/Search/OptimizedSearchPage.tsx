@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Search, X, TrendingUp, Hash, User, Filter, ChevronDown, ChevronUp, Tag, Globe } from 'lucide-react';
+import { Search, X, TrendingUp, Hash, User, Filter, ChevronDown, ChevronUp, Tag, Globe, ArrowLeft } from 'lucide-react';
 import { Button } from '../ui/button';
 import { Avatar, AvatarImage, AvatarFallback } from '../ui/avatar';
 import { 
@@ -18,7 +18,7 @@ import { useTweets } from '../../hooks/useTweets';
 import { supabase } from '../../lib/supabase';
 import { storageService } from '../../lib/storage';
 import { User as UserType } from '../../types';
-import { TWEET_CATEGORIES, FILTER_COUNTRIES } from '../../types';
+import { TWEET_CATEGORIES, FILTER_COUNTRIES, getLocalizedCountryName } from '../../types';
 import { getPreloadedData } from '../../hooks/usePreloader';
 import { useLanguageStore } from '../../store/useLanguageStore';
 
@@ -251,307 +251,73 @@ export const OptimizedSearchPage: React.FC = () => {
 
   const selectableCountries = FILTER_COUNTRIES.filter(country => country.code !== 'ALL');
 
+  const getTabLabel = (tab: 'top' | 'people' | 'hashtags' | 'tweets') => {
+    switch (tab) {
+      case 'top': return language === 'en' ? 'Top' : 'الأفضل';
+      case 'people': return language === 'en' ? 'People' : 'الأشخاص';
+      case 'hashtags': return language === 'en' ? 'Hashtags' : 'الهاشتاجات';
+      case 'tweets': return language === 'en' ? 'Tweets' : 'التغريدات';
+      default: return tab;
+    }
+  };
+
   return (
-    <div className="min-h-screen bg-white flex flex-col h-screen overflow-hidden">
-      {/* Header - Fixed */}
-      <div className="bg-white/80 backdrop-blur-md border-b border-gray-200 z-10 flex-shrink-0">
-        <div className="px-4 py-3">
-          <div className="relative">
-            <Search className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
+    <div className={`w-full h-screen bg-gray-50 flex flex-col overflow-hidden ${language === 'ar' ? 'font-arabic' : ''}`}>
+      {/* Header */}
+      <div className="bg-white border-b border-gray-200 px-4 py-3 flex-shrink-0">
+        <div className={`flex items-center gap-3 ${isRTL ? 'flex-row-reverse' : ''}`}>
+          <button 
+            onClick={() => navigate('/')}
+            className="p-2 hover:bg-gray-100 rounded-full transition-colors flex-shrink-0"
+            aria-label={language === 'en' ? 'Go back' : 'العودة'}
+          >
+            <ArrowLeft className={`h-5 w-5 ${isRTL ? 'rotate-180' : ''}`} />
+          </button>
+          
+          <div className="relative flex-1 max-w-xl">
+            <Search className={`absolute top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400 ${isRTL ? 'right-4' : 'left-4'}`} />
             <input
               type="text"
+              placeholder={language === 'en' ? 'Search for people, hashtags, or tweets...' : 'البحث عن أشخاص أو هاشتاجات أو تغريدات...'}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder={isRTL ? 'البحث عن المنشورات والأشخاص والهاشتاغات' : 'Search posts, people, and hashtags'}
-              className="w-full pl-10 pr-10 py-3 bg-gray-100 rounded-full focus:bg-white focus:ring-2 focus:ring-blue-500 focus:outline-none transition-all"
+              className={`w-full bg-gray-100 rounded-full py-3 text-gray-900 placeholder-gray-500 border-none focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all ${
+                isRTL ? 'pr-12 pl-12 text-right' : 'pl-12 pr-12 text-left'
+              }`}
+              dir={isRTL ? 'rtl' : 'ltr'}
             />
             {searchQuery && (
-              <Button
-                variant="ghost"
-                size="sm"
+              <button
                 onClick={clearSearch}
-                className="absolute right-2 top-2 p-2 hover:bg-gray-100 rounded-full"
+                className={`absolute top-1/2 transform -translate-y-1/2 p-2 hover:bg-gray-200 rounded-full transition-colors ${isRTL ? 'left-2' : 'right-2'}`}
+                aria-label={language === 'en' ? 'Clear search' : 'مسح البحث'}
               >
-                <X className="h-4 w-4" />
-              </Button>
+                <X className="h-4 w-4 text-gray-400" />
+              </button>
             )}
-          </div>
-
-          {/* Filter Buttons Row - Mobile Optimized */}
-          <div className="mt-3">
-            {/* Mobile Layout - Stacked */}
-            <div className="md:hidden space-y-2">
-              <div className="flex items-center space-x-2 w-full">
-                {/* Categories Dropdown - Mobile */}
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className={`flex items-center space-x-1 px-3 py-2 rounded-full text-xs flex-1 min-w-0 ${
-                        selectedTags.length > 0 
-                          ? 'border-blue-500 text-blue-600 bg-blue-50' 
-                          : 'border-gray-300 hover:bg-gray-50'
-                      }`}
-                    >
-                      <Tag className="h-3 w-3 flex-shrink-0" />
-                      <span className="truncate">
-                        {selectedTags.length === 0 
-                          ? 'Categories' 
-                          : `Categories (${selectedTags.length})`
-                        }
-                      </span>
-                      <ChevronDown className="h-3 w-3 flex-shrink-0" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent 
-                    className="w-72 max-h-80 overflow-y-auto rounded-xl"
-                    align="start"
-                    sideOffset={4}
-                  >
-                    <div className="p-2">
-                      <div className="text-sm font-medium text-gray-700 mb-2 px-2">Select Categories</div>
-                      {TWEET_CATEGORIES.map((tag) => (
-                        <DropdownMenuItem
-                          key={tag}
-                          onClick={() => toggleTag(tag)}
-                          className={`flex items-center space-x-3 px-3 py-2 cursor-pointer rounded-lg mx-1 my-0.5 ${
-                            selectedTags.includes(tag) ? 'bg-blue-50 text-blue-700' : 'hover:bg-gray-50'
-                          }`}
-                        >
-                          <div className="w-6 h-6 rounded-full bg-gray-100 flex items-center justify-center flex-shrink-0">
-                            <Hash className="w-3 h-3 text-gray-600" />
-                          </div>
-                          <span className="flex-1 text-sm font-medium truncate">{tag}</span>
-                          {selectedTags.includes(tag) && (
-                            <div className="w-4 h-4 bg-blue-500 rounded-full flex items-center justify-center">
-                              <span className="text-white text-xs">✓</span>
-                            </div>
-                          )}
-                        </DropdownMenuItem>
-                      ))}
-                    </div>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-
-                {/* Countries Dropdown - Mobile */}
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className={`flex items-center space-x-1 px-3 py-2 rounded-full text-xs flex-1 min-w-0 ${
-                        selectedCountries.length > 0 
-                          ? 'border-green-500 text-green-600 bg-green-50' 
-                          : 'border-gray-300 hover:bg-gray-50'
-                      }`}
-                    >
-                      <Globe className="h-3 w-3 flex-shrink-0" />
-                      <span className="truncate">
-                        {selectedCountries.length === 0 
-                          ? 'Countries' 
-                          : `Countries (${selectedCountries.length})`
-                        }
-                      </span>
-                      <ChevronDown className="h-3 w-3 flex-shrink-0" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent 
-                    className="w-72 max-h-80 overflow-y-auto rounded-xl"
-                    align="start"
-                    sideOffset={4}
-                  >
-                    <div className="p-2">
-                      <div className="text-sm font-medium text-gray-700 mb-2 px-2">Select Countries</div>
-                      {selectableCountries.map((country) => (
-                        <DropdownMenuItem
-                          key={country.code}
-                          onClick={() => toggleCountry(country.code)}
-                          className={`flex items-center space-x-3 px-3 py-2 cursor-pointer rounded-lg mx-1 my-0.5 ${
-                            selectedCountries.includes(country.code) ? 'bg-green-50 text-green-700' : 'hover:bg-gray-50'
-                          }`}
-                        >
-                          <div className="w-6 h-6 rounded-full bg-gray-100 flex items-center justify-center flex-shrink-0">
-                            <span className="text-sm">{country.flag}</span>
-                          </div>
-                          <span className="flex-1 text-sm font-medium truncate">{country.name}</span>
-                          {selectedCountries.includes(country.code) && (
-                            <div className="w-4 h-4 bg-green-500 rounded-full flex items-center justify-center">
-                              <span className="text-white text-xs">✓</span>
-                            </div>
-                          )}
-                        </DropdownMenuItem>
-                      ))}
-                    </div>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              </div>
-
-              {/* Clear All Filters Button - Mobile */}
-              {hasActiveFilters && (
-                <div className="flex justify-center">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={clearAllFilters}
-                    className="text-red-600 hover:text-red-700 hover:bg-red-50 px-4 py-2 rounded-full text-xs"
-                  >
-                    Clear all filters
-                  </Button>
-                </div>
-              )}
-            </div>
-
-            {/* Desktop Layout - Horizontal */}
-            <div className="hidden md:flex items-center justify-between">
-              <div className="flex items-center space-x-3">
-                {/* Categories Dropdown - Desktop */}
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className={`flex items-center space-x-2 px-3 py-2 rounded-full text-sm ${
-                        selectedTags.length > 0 
-                          ? 'border-blue-500 text-blue-600 bg-blue-50' 
-                          : 'border-gray-300 hover:bg-gray-50'
-                      }`}
-                    >
-                      <Tag className="h-4 w-4" />
-                      <span>
-                        {selectedTags.length === 0 
-                          ? 'Categories' 
-                          : `Categories (${selectedTags.length})`
-                        }
-                      </span>
-                      <ChevronDown className="h-4 w-4" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent 
-                    className="w-72 max-h-80 overflow-y-auto rounded-xl"
-                    align="start"
-                    sideOffset={4}
-                  >
-                    <div className="p-2">
-                      <div className="text-sm font-medium text-gray-700 mb-2 px-2">Select Categories</div>
-                      {TWEET_CATEGORIES.map((tag) => (
-                        <DropdownMenuItem
-                          key={tag}
-                          onClick={() => toggleTag(tag)}
-                          className={`flex items-center space-x-3 px-3 py-2 cursor-pointer rounded-lg mx-1 my-0.5 ${
-                            selectedTags.includes(tag) ? 'bg-blue-50 text-blue-700' : 'hover:bg-gray-50'
-                          }`}
-                        >
-                          <div className="w-6 h-6 rounded-full bg-gray-100 flex items-center justify-center flex-shrink-0">
-                            <Hash className="w-3 h-3 text-gray-600" />
-                          </div>
-                          <span className="flex-1 text-sm font-medium truncate">{tag}</span>
-                          {selectedTags.includes(tag) && (
-                            <div className="w-4 h-4 bg-blue-500 rounded-full flex items-center justify-center">
-                              <span className="text-white text-xs">✓</span>
-                            </div>
-                          )}
-                        </DropdownMenuItem>
-                      ))}
-                    </div>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-
-                {/* Countries Dropdown - Desktop */}
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className={`flex items-center space-x-2 px-3 py-2 rounded-full text-sm ${
-                        selectedCountries.length > 0 
-                          ? 'border-green-500 text-green-600 bg-green-50' 
-                          : 'border-gray-300 hover:bg-gray-50'
-                      }`}
-                    >
-                      <Globe className="h-4 w-4" />
-                      <span>
-                        {selectedCountries.length === 0 
-                          ? 'Countries' 
-                          : `Countries (${selectedCountries.length})`
-                        }
-                      </span>
-                      <ChevronDown className="h-4 w-4" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent 
-                    className="w-72 max-h-80 overflow-y-auto rounded-xl"
-                    align="start"
-                    sideOffset={4}
-                  >
-                    <div className="p-2">
-                      <div className="text-sm font-medium text-gray-700 mb-2 px-2">Select Countries</div>
-                      {selectableCountries.map((country) => (
-                        <DropdownMenuItem
-                          key={country.code}
-                          onClick={() => toggleCountry(country.code)}
-                          className={`flex items-center space-x-3 px-3 py-2 cursor-pointer rounded-lg mx-1 my-0.5 ${
-                            selectedCountries.includes(country.code) ? 'bg-green-50 text-green-700' : 'hover:bg-gray-50'
-                          }`}
-                        >
-                          <div className="w-6 h-6 rounded-full bg-gray-100 flex items-center justify-center flex-shrink-0">
-                            <span className="text-sm">{country.flag}</span>
-                          </div>
-                          <span className="flex-1 text-sm font-medium truncate">{country.name}</span>
-                          {selectedCountries.includes(country.code) && (
-                            <div className="w-4 h-4 bg-green-500 rounded-full flex items-center justify-center">
-                              <span className="text-white text-xs">✓</span>
-                            </div>
-                          )}
-                        </DropdownMenuItem>
-                      ))}
-                    </div>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              </div>
-
-              {/* Clear All Filters Button - Desktop */}
-              {hasActiveFilters && (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={clearAllFilters}
-                  className="text-red-600 hover:text-red-700 hover:bg-red-50 px-3 py-2 rounded-full text-sm"
-                >
-                  Clear all
-                </Button>
-              )}
-            </div>
           </div>
         </div>
       </div>
 
-      {/* Search Tabs - Fixed */}
-      {searchQuery && (
-        <div className="border-b border-gray-200 flex-shrink-0">
-          <div className="flex">
-            {[
-              { id: 'top', label: isRTL ? 'الأعلى' : 'Top' },
-              { id: 'tweets', label: isRTL ? 'التغريدات' : 'Tweets' },
-              { id: 'people', label: isRTL ? 'الأشخاص' : 'People' },
-              { id: 'hashtags', label: isRTL ? 'الهاشتاغات' : 'Hashtags' },
-            ].map((tab) => (
-              <Button
-                key={tab.id}
-                variant="ghost"
-                onClick={() => setActiveTab(tab.id as any)}
-                className={`flex-1 py-4 px-4 font-bold text-base rounded-none border-b-2 transition-colors ${
-                  activeTab === tab.id
-                    ? 'border-blue-500 text-black'
-                    : 'border-transparent text-gray-500 hover:bg-gray-50'
-                }`}
-              >
-                {tab.label}
-              </Button>
-            ))}
-          </div>
+      {/* Search Tabs */}
+      <div className="bg-white border-b border-gray-100 px-4 flex-shrink-0">
+        <div className="flex">
+          {(['top', 'people', 'hashtags', 'tweets'] as const).map((tab) => (
+            <Button
+              key={tab}
+              variant="ghost"
+              className={`flex-1 py-4 px-4 font-bold text-lg rounded-none border-b-2 transition-colors ${
+                activeTab === tab
+                  ? 'border-blue-500 text-blue-600 bg-blue-50/50'
+                  : 'border-transparent text-gray-600 hover:bg-gray-50 hover:text-gray-800'
+              }`}
+              onClick={() => setActiveTab(tab)}
+            >
+              {getTabLabel(tab)}
+            </Button>
+          ))}
         </div>
-      )}
+      </div>
 
       {/* Content - Scrollable */}
       <div className="flex-1 overflow-y-auto">
@@ -692,8 +458,8 @@ export const OptimizedSearchPage: React.FC = () => {
                         const country = selectableCountries.find(c => c.code === countryCode);
                         return (
                           <span key={countryCode} className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-green-100 text-green-700 border border-green-200">
-                            <span className="mr-1">{country?.flag}</span>
-                            {country?.name}
+                            <Globe className="w-3 h-3 mr-1" />
+                            {country ? getLocalizedCountryName(country, language) : ''}
                           </span>
                         );
                       })}
@@ -751,8 +517,8 @@ export const OptimizedSearchPage: React.FC = () => {
                                   </div>
                                 )}
                                 {(result.data as UserType).country && (
-                                  <span className="text-sm">
-                                    {selectableCountries.find(c => c.code === (result.data as UserType).country)?.flag}
+                                  <span className="text-sm flex items-center">
+                                    <Globe className="w-3 h-3" />
                                   </span>
                                 )}
                               </div>

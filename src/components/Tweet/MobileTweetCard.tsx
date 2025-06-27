@@ -328,60 +328,122 @@ export const MobileTweetCard: React.FC<MobileTweetCardProps> = ({
     }
   };
 
-  // Enhanced text parsing function for mobile
+  // Enhanced text parsing function with better hashtag handling for Arabic
   const parseTextWithLinks = (text: string) => {
-    const words = text.split(' ');
-    return words.map((word, index) => {
-      const key = `${index}-${word}`;
+    const parts: JSX.Element[] = [];
+    let currentIndex = 0;
+
+    // Improved regex patterns for better text parsing
+    const patterns = [
+      // Hashtag pattern: # followed by word characters (including Arabic), numbers, underscores
+      // Stops at whitespace, punctuation, or other special characters
+      { 
+        regex: /#[\w\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF]+/g, 
+        type: 'hashtag' 
+      },
+      // Mention pattern: @ followed by word characters, numbers, underscores
+      { 
+        regex: /@[a-zA-Z0-9_]+/g, 
+        type: 'mention' 
+      },
+      // URL pattern: http(s) URLs
+      { 
+        regex: /https?:\/\/[^\s]+/g, 
+        type: 'url' 
+      }
+    ];
+
+    // Find all matches for all patterns
+    const allMatches: Array<{
+      match: string;
+      index: number;
+      endIndex: number;
+      type: string;
+    }> = [];
+
+    patterns.forEach(pattern => {
+      let match;
+      while ((match = pattern.regex.exec(text)) !== null) {
+        allMatches.push({
+          match: match[0],
+          index: match.index,
+          endIndex: match.index + match[0].length,
+          type: pattern.type
+        });
+      }
+    });
+
+    // Sort matches by index
+    allMatches.sort((a, b) => a.index - b.index);
+
+    // Build the JSX elements
+    allMatches.forEach((matchObj, i) => {
+      const key = `${i}-${matchObj.type}-${matchObj.match}`;
       
-      if (word.startsWith('#') && word.length > 1) {
-        return (
+      // Add text before this match (if any)
+      if (matchObj.index > currentIndex) {
+        const beforeText = text.slice(currentIndex, matchObj.index);
+        if (beforeText) {
+          parts.push(<span key={`text-${currentIndex}`}>{beforeText}</span>);
+        }
+      }
+
+      // Add the matched element
+      if (matchObj.type === 'hashtag') {
+        parts.push(
           <span key={key}>
             <span 
               className="text-blue-500 hover:text-blue-600 hover:underline cursor-pointer font-medium transition-colors"
-              onClick={(e) => handleHashtagClick(word, e)}
+              onClick={(e) => handleHashtagClick(matchObj.match, e)}
             >
-              {word}
+              {matchObj.match}
             </span>
-            {index < words.length - 1 ? ' ' : ''}
           </span>
         );
-      }
-      
-      if (word.startsWith('@') && word.length > 1) {
-        return (
+      } else if (matchObj.type === 'mention') {
+        parts.push(
           <span key={key}>
             <span 
               className="text-blue-500 hover:text-blue-600 hover:underline cursor-pointer font-medium transition-colors"
-              onClick={(e) => handleMentionClick(word, e)}
+              onClick={(e) => handleMentionClick(matchObj.match, e)}
             >
-              {word}
+              {matchObj.match}
             </span>
-            {index < words.length - 1 ? ' ' : ''}
           </span>
         );
-      }
-      
-      // Check for URLs
-      if (word.match(/^https?:\/\/.+/)) {
-        return (
+      } else if (matchObj.type === 'url') {
+        parts.push(
           <span key={key}>
             <a 
-              href={word}
+              href={matchObj.match}
               target="_blank"
               rel="noopener noreferrer"
               className="text-blue-500 hover:text-blue-600 hover:underline transition-colors"
               onClick={(e) => e.stopPropagation()}
             >
-              {word}
+              {matchObj.match}
             </a>
-            {index < words.length - 1 ? ' ' : ''}
           </span>
         );
       }
-      
-      return word + (index < words.length - 1 ? ' ' : '');
+
+      currentIndex = matchObj.endIndex;
     });
+
+    // Add any remaining text
+    if (currentIndex < text.length) {
+      const remainingText = text.slice(currentIndex);
+      if (remainingText) {
+        parts.push(<span key={`text-${currentIndex}`}>{remainingText}</span>);
+      }
+    }
+
+    // If no matches found, return the original text
+    if (parts.length === 0) {
+      return text;
+    }
+
+    return parts;
   };
 
   const isOwnTweet = currentUserId === tweet.author.id;

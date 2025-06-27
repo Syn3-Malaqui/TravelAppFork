@@ -9,15 +9,17 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '../ui/dropdown-menu';
-import { TWEET_CATEGORIES, TweetCategory, FILTER_COUNTRIES } from '../../types';
+import { TWEET_CATEGORIES, TweetCategory, FILTER_COUNTRIES, getLocalizedCountryName } from '../../types';
 import { useTweets } from '../../hooks/useTweets';
 import { useAuth } from '../../hooks/useAuth';
 import { storageService } from '../../lib/storage';
 import { supabase } from '../../lib/supabase';
+import { useLanguageStore } from '../../store/useLanguageStore';
 
 export const ComposePage: React.FC = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { language, isRTL } = useLanguageStore();
   const [content, setContent] = useState('');
   const [images, setImages] = useState<string[]>([]);
   const [selectedCategories, setSelectedCategories] = useState<TweetCategory[]>([]);
@@ -288,7 +290,7 @@ export const ComposePage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-white flex flex-col">
+    <div className={`min-h-screen bg-white flex flex-col ${language === 'ar' ? 'font-arabic' : ''}`}>
       {/* Hidden File Inputs */}
       <input
         ref={fileInputRef}
@@ -314,22 +316,26 @@ export const ComposePage: React.FC = () => {
 
       {/* Header */}
       <div className="bg-white border-b border-gray-200 px-4 py-3 flex items-center justify-between z-10 flex-shrink-0">
-        <div className="flex items-center space-x-4">
+        <div className={`flex items-center ${isRTL ? 'space-x-reverse space-x-4' : 'space-x-4'}`}>
           <Button
             variant="ghost"
             size="sm"
             onClick={() => navigate('/')}
             className="p-2"
+            aria-label={language === 'en' ? 'Go back' : 'العودة'}
           >
-            <ArrowLeft className="h-5 w-5" />
+            <ArrowLeft className={`h-5 w-5 ${isRTL ? 'rotate-180' : ''}`} />
           </Button>
-          <h1 className={`font-semibold ${isMobile ? 'text-lg' : 'text-lg'}`}>
-            {isMobile ? 'New Tweet' : 'Compose Tweet'}
+          <h1 className={`font-semibold ${isMobile ? 'text-lg' : 'text-lg'} ${isRTL ? 'text-right' : 'text-left'}`}>
+            {language === 'en' 
+              ? (isMobile ? 'New Tweet' : 'Compose Tweet')
+              : (isMobile ? 'تغريدة جديدة' : 'إنشاء تغريدة')
+            }
           </h1>
         </div>
         
         {/* Character Count and Tweet Button */}
-        <div className="flex items-center space-x-3">
+        <div className={`flex items-center ${isRTL ? 'space-x-reverse space-x-3' : 'space-x-3'}`}>
           {!isMobile && (
             <div className={`text-sm font-bold ${
               isOverLimit ? 'text-red-500' : 
@@ -347,7 +353,10 @@ export const ComposePage: React.FC = () => {
               isMobile ? 'px-4 py-2 text-sm' : 'px-6 py-2'
             }`}
           >
-            {loading ? 'Posting...' : 'Tweet'}
+            {loading 
+              ? (language === 'en' ? 'Posting...' : 'جاري النشر...')
+              : (language === 'en' ? 'Tweet' : 'تغريد')
+            }
           </Button>
         </div>
       </div>
@@ -430,10 +439,11 @@ export const ComposePage: React.FC = () => {
               <textarea
                 value={content}
                 onChange={(e) => setContent(e.target.value)}
-                placeholder="What's happening?"
+                placeholder={language === 'en' ? "What's happening?" : "ما الذي يحدث؟"}
                 className={`w-full placeholder-gray-500 border-none outline-none resize-none bg-transparent focus:ring-0 focus:border-none focus:outline-none ${
                   isOverLimit ? 'text-red-600' : ''
-                } ${isMobile ? 'text-lg min-h-[120px]' : 'text-xl min-h-[200px]'}`}
+                } ${isMobile ? 'text-lg min-h-[120px]' : 'text-xl min-h-[200px]'} ${isRTL ? 'text-right' : 'text-left'}`}
+                dir={isRTL ? 'rtl' : 'ltr'}
                 autoFocus
               />
 
@@ -673,9 +683,9 @@ export const ComposePage: React.FC = () => {
                         className="flex items-center space-x-2 px-3 py-2 hover:bg-gray-50 cursor-pointer rounded-xl mx-1 my-0.5"
                       >
                         <div className="w-6 h-6 rounded-full bg-gray-100 flex items-center justify-center flex-shrink-0">
-                          <span className="text-sm">{country.flag}</span>
+                                                          <Globe className="w-3 h-3" />
                         </div>
-                        <span className="flex-1 text-sm font-medium truncate">{country.name}</span>
+                                                  <span className="flex-1 text-sm font-medium truncate">{getLocalizedCountryName(country, language)}</span>
                         {selectedCountries.includes(country.code) && (
                           <Check className="h-4 w-4 text-green-600 flex-shrink-0" />
                         )}
@@ -732,8 +742,8 @@ export const ComposePage: React.FC = () => {
                           }`}
                         >
                           <Globe className={`mr-1 ${isMobile ? 'w-2 h-2' : 'w-3 h-3'}`} />
-                          <span className="mr-1">{country?.flag}</span>
-                          {country?.name}
+                                                      <Globe className="w-3 h-3 mr-1" />
+                                                      {country ? getLocalizedCountryName(country, language) : ''}
                           <Button
                             variant="ghost"
                             size="sm"

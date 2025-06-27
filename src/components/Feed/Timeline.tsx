@@ -16,7 +16,7 @@ import {
 } from '../ui/dropdown-menu';
 import { useAuth } from '../../hooks/useAuth';
 import { supabase } from '../../lib/supabase';
-import { FILTER_COUNTRIES } from '../../types';
+import { FILTER_COUNTRIES, getLocalizedCountryName } from '../../types';
 import { X, ChevronDown, Check } from 'lucide-react';
 
 export const Timeline: React.FC = () => {
@@ -32,7 +32,23 @@ export const Timeline: React.FC = () => {
   const [selectedFilter, setSelectedFilter] = useState<string>('all');
   const [showSidebar, setShowSidebar] = useState(true);
   const [showFilterNavigation, setShowFilterNavigation] = useState(true);
-  const [availableCountries, setAvailableCountries] = useState<Array<{code: string, name: string}>>([]);
+  const [availableCountries, setAvailableCountries] = useState<Array<{code: string, name: string}>>(
+    // Preload popular travel destinations so the UI isn't empty - use a function to get preloaded data
+    () => {
+      const popularCountries = [
+        'ALL', 'US', 'GB', 'AE', 'SA', 'DE', 'FR', 'IT', 'ES', 'JP', 
+        'AU', 'CA', 'EG', 'TR', 'TH', 'SG'
+      ];
+      
+      return popularCountries
+        .map(code => FILTER_COUNTRIES.find(c => c.code === code))
+        .filter(Boolean)
+        .map(country => ({
+          code: country!.code,
+          name: getLocalizedCountryName(country!, language)
+        }));
+    }
+  );
   const { user } = useAuth();
   const [userProfile, setUserProfile] = useState<{
     displayName: string;
@@ -62,6 +78,24 @@ export const Timeline: React.FC = () => {
     }
   }, [width, isMobile]);
 
+  // Update country names when language changes
+  useEffect(() => {
+    const popularCountries = [
+      'ALL', 'US', 'GB', 'AE', 'SA', 'DE', 'FR', 'IT', 'ES', 'JP', 
+      'AU', 'CA', 'EG', 'TR', 'TH', 'SG'
+    ];
+    
+    const localizedCountries = popularCountries
+      .map(code => FILTER_COUNTRIES.find(c => c.code === code))
+      .filter(Boolean)
+      .map(country => ({
+        code: country!.code,
+        name: getLocalizedCountryName(country!, language)
+      }));
+    
+    setAvailableCountries(localizedCountries);
+  }, [language]);
+
   // Fetch available countries from the database
   useEffect(() => {
     const fetchAvailableCountries = async () => {
@@ -83,15 +117,35 @@ export const Timeline: React.FC = () => {
           .filter(Boolean) // Remove undefined entries
           .sort((a, b) => a!.name.localeCompare(b!.name)); // Sort alphabetically
 
-        // Always include "All" at the beginning
-        setAvailableCountries([
+        // Merge preloaded countries with database countries (avoid duplicates)
+        const preloadedCodes = new Set(availableCountries.map(c => c.code));
+        const newCountries = mappedCountries.filter(country => !preloadedCodes.has(country!.code));
+        
+        // Always include "All" at the beginning, then preloaded, then new ones
+        const allCountries = [
           { code: 'ALL', name: 'All Countries' },
-          ...mappedCountries as Array<{code: string, name: string}>
-        ]);
+          ...availableCountries.slice(1), // Remove the old "All" entry
+          ...(newCountries as Array<{code: string, name: string}>)
+        ];
+
+        // Remove duplicates and sort (keeping "All" first)
+        const uniqueCountriesMap = new Map();
+        allCountries.forEach(country => {
+          if (!uniqueCountriesMap.has(country.code)) {
+            uniqueCountriesMap.set(country.code, country);
+          }
+        });
+
+        const finalCountries = Array.from(uniqueCountriesMap.values());
+        // Keep "All" first, sort the rest
+        const allFirst = finalCountries.filter(c => c.code === 'ALL');
+        const others = finalCountries.filter(c => c.code !== 'ALL').sort((a, b) => a.name.localeCompare(b.name));
+        
+        setAvailableCountries([...allFirst, ...others]);
       } catch (error) {
         console.error('Error fetching countries:', error);
-        // Fallback to predefined countries
-        setAvailableCountries([...FILTER_COUNTRIES]);
+        // Keep the preloaded countries if database fetch fails
+        console.log('Using preloaded countries as fallback');
       }
     };
 
