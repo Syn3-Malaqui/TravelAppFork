@@ -132,7 +132,7 @@ export const FilterNavigation: React.FC<FilterNavigationProps> = ({
   };
 
   return (
-    <div className={`bg-white border-b border-gray-100 w-full relative h-14 flex-shrink-0 flex items-center ${isRTL ? 'font-arabic' : ''}`}>
+    <div className={`bg-white w-full relative flex-shrink-0 flex items-center ${isRTL ? 'font-arabic' : ''}`}>
       {/* Left scroll button - only show when needed */}
       {isOverflowing && showLeftButton && (
         <button 

@@ -206,15 +206,74 @@ export const Timeline: React.FC = () => {
     <div className="h-full flex">
       {/* Mobile Layout - Only visible on mobile screens */}
       <div className={`md:hidden w-full h-full flex flex-col ${language === 'ar' ? 'font-arabic' : ''}`}>
-        {/* Mobile Header with Tabs - Fixed at top */}
+        {/* Mobile Header with NEW Layout - Fixed at top */}
         <div className="bg-white border-b border-gray-100 sticky top-0 z-10">
-          <MobileTabs activeTab={activeTab} onTabChange={handleTabChange} />
           
-          {/* Mobile Filter Navigation */}
-          <FilterNavigation 
-            selectedFilter={selectedFilter}
-            onFilterChange={handleFilterChange}
-          />
+          {/* 1. Categories at the top */}
+          <div className="py-2 border-b border-gray-100">
+            <FilterNavigation 
+              selectedFilter={selectedFilter}
+              onFilterChange={handleFilterChange}
+            />
+          </div>
+          
+          {/* 2. Countries in the middle as buttons */}
+          <div className="py-2 border-b border-gray-100">
+            <div className="flex items-center gap-1 overflow-x-auto scrollbar-hide px-3">
+              <div className="flex gap-1 min-w-max">
+                {availableCountries.slice(0, 8).map((country) => (
+                  <Button
+                    key={country.code}
+                    variant={countryFilter === country.code ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => handleCountryChange(country.code)}
+                    className={`rounded-full px-2 py-1 text-xs font-medium whitespace-nowrap transition-colors flex-shrink-0 ${
+                      countryFilter === country.code
+                        ? 'bg-blue-500 text-white hover:bg-blue-600'
+                        : 'text-gray-600 hover:bg-gray-100 border border-gray-200'
+                    }`}
+                  >
+                    {country.name.length > 8 ? country.name.substring(0, 8) + '...' : country.name}
+                  </Button>
+                ))}
+                {availableCountries.length > 8 && (
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        className="rounded-full px-2 py-1 text-xs font-medium whitespace-nowrap border border-gray-200 text-gray-600 hover:bg-gray-100"
+                      >
+                        +
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent 
+                      align="end"
+                      className="w-64 max-h-64 overflow-y-auto rounded-xl"
+                      sideOffset={4}
+                    >
+                      <div className="p-2">
+                        {availableCountries.slice(8).map((country) => (
+                          <DropdownMenuItem
+                            key={country.code}
+                            onClick={() => handleCountryChange(country.code)}
+                            className={`flex items-center px-3 py-2 cursor-pointer rounded-lg mx-1 my-0.5 ${
+                              countryFilter === country.code ? 'bg-blue-50 text-blue-700' : 'hover:bg-gray-50'
+                            }`}
+                          >
+                            <span className="text-sm font-medium">{country.name}</span>
+                          </DropdownMenuItem>
+                        ))}
+                      </div>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                )}
+              </div>
+            </div>
+          </div>
+          
+          {/* 3. For you / Following tabs at the bottom */}
+          <MobileTabs activeTab={activeTab} onTabChange={handleTabChange} />
         </div>
 
         {/* Main Content Area - Full height minus header and bottom nav */}
@@ -264,54 +323,83 @@ export const Timeline: React.FC = () => {
       <div className="hidden md:flex flex-1">
         {/* Main Content - Desktop: constrained width, Mobile: full width */}
         <div className={`flex-1 ${isRTL ? '' : 'border-r border-gray-200'} flex flex-col md:max-w-[600px] ${showSidebar && !isRTL ? '' : 'border-r-0 border-l-0'} ${language === 'ar' ? 'font-arabic' : ''}`}>
-          {/* Desktop Header with Tabs - Fixed (Full Width) */}
+          {/* Desktop Header with NEW Layout - Categories → Countries → Tabs */}
           <div className="bg-white/95 backdrop-blur-md border-b border-gray-200 z-50 flex-shrink-0">
             {/* Content wrapper with responsive padding */}
             <div className="w-full px-4 md:px-6">
-            {/* Top section with country filter */}
-            <div className="flex items-center justify-between border-b border-gray-100 py-4">
-              {/* Country Filter Dropdown */}
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button 
-                    variant="ghost" 
-                    className="flex items-center space-x-2 px-3 py-2 hover:bg-gray-50 rounded-lg text-sm font-medium"
-                  >
-                    <span className="font-semibold">{selectedCountryData?.name}</span>
-                    <ChevronDown className="h-4 w-4 text-gray-500" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent 
-                  align={isRTL ? "end" : "start"}
-                  className="w-72 max-h-80 overflow-y-auto rounded-xl"
-                  sideOffset={4}
-                  avoidCollisions={true}
-                  collisionPadding={8}
-                >
-                  <div className="p-2">
-                    <div className="text-sm font-medium text-gray-700 mb-2 px-2">
-                      {language === 'en' ? 'Select Country' : 'اختر البلد'}
-                    </div>
-                    {availableCountries.map((country) => (
-                      <DropdownMenuItem
-                        key={country.code}
-                        onClick={() => handleCountryChange(country.code)}
-                        className={`flex items-center space-x-3 px-3 py-2 cursor-pointer rounded-lg mx-1 my-0.5 ${
-                          countryFilter === country.code ? 'bg-blue-50 text-blue-700' : 'hover:bg-gray-50'
-                        }`}
-                      >
-                        <span className="flex-1 text-sm font-medium truncate">{country.name}</span>
-                        {countryFilter === country.code && (
-                          <Check className="h-4 w-4 text-blue-600 flex-shrink-0" />
-                        )}
-                      </DropdownMenuItem>
-                    ))}
-                  </div>
-                </DropdownMenuContent>
-              </DropdownMenu>
+            
+            {/* 1. Categories at the top */}
+            <div className="py-3 border-b border-gray-100">
+              <FilterNavigation 
+                selectedFilter={selectedFilter}
+                onFilterChange={handleFilterChange}
+              />
             </div>
             
-            {/* Tabs section */}
+            {/* 2. Countries in the middle as buttons */}
+            <div className="py-3 border-b border-gray-100">
+              <div className="flex items-center gap-2 overflow-x-auto scrollbar-hide">
+                <div className="flex gap-2 min-w-max">
+                  {availableCountries.slice(0, 10).map((country) => (
+                    <Button
+                      key={country.code}
+                      variant={countryFilter === country.code ? "default" : "outline"}
+                      size="sm"
+                      onClick={() => handleCountryChange(country.code)}
+                      className={`rounded-full px-3 py-1 text-xs font-medium whitespace-nowrap transition-colors flex-shrink-0 ${
+                        countryFilter === country.code
+                          ? 'bg-blue-500 text-white hover:bg-blue-600'
+                          : 'text-gray-600 hover:bg-gray-100 border border-gray-200'
+                      }`}
+                    >
+                      {country.name}
+                    </Button>
+                  ))}
+                  {availableCountries.length > 10 && (
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          className="rounded-full px-3 py-1 text-xs font-medium whitespace-nowrap border border-gray-200 text-gray-600 hover:bg-gray-100"
+                        >
+                          More...
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent 
+                        align={isRTL ? "end" : "start"}
+                        className="w-72 max-h-80 overflow-y-auto rounded-xl"
+                        sideOffset={4}
+                        avoidCollisions={true}
+                        collisionPadding={8}
+                      >
+                        <div className="p-2">
+                          <div className="text-sm font-medium text-gray-700 mb-2 px-2">
+                            {language === 'en' ? 'More Countries' : 'المزيد من البلدان'}
+                          </div>
+                          {availableCountries.slice(10).map((country) => (
+                            <DropdownMenuItem
+                              key={country.code}
+                              onClick={() => handleCountryChange(country.code)}
+                              className={`flex items-center space-x-3 px-3 py-2 cursor-pointer rounded-lg mx-1 my-0.5 ${
+                                countryFilter === country.code ? 'bg-blue-50 text-blue-700' : 'hover:bg-gray-50'
+                              }`}
+                            >
+                              <span className="flex-1 text-sm font-medium truncate">{country.name}</span>
+                              {countryFilter === country.code && (
+                                <Check className="h-4 w-4 text-blue-600 flex-shrink-0" />
+                              )}
+                            </DropdownMenuItem>
+                          ))}
+                        </div>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  )}
+                </div>
+              </div>
+            </div>
+            
+            {/* 3. For you / Following tabs at the bottom */}
             <div className="flex">
               <Button
                 variant="ghost"
@@ -337,13 +425,6 @@ export const Timeline: React.FC = () => {
               </Button>
             </div>
 
-              {/* Conditional Filter Navigation */}
-              {showFilterNavigation && (
-                <FilterNavigation 
-                  selectedFilter={selectedFilter}
-                  onFilterChange={handleFilterChange}
-                />
-              )}
             </div>
           </div>
 
