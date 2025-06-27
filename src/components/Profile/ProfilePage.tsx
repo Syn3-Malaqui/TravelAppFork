@@ -55,8 +55,26 @@ export const ProfilePage: React.FC = () => {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
+  // Fetch profile data when username changes - with caching
   useEffect(() => {
     if (username) {
+      // Check if we already have this profile cached
+      const cachedProfile = sessionStorage.getItem(`profile_${username}`);
+      if (cachedProfile) {
+        try {
+          const parsed = JSON.parse(cachedProfile);
+          if (Date.now() - parsed.timestamp < 5 * 60 * 1000) { // 5 minute cache
+            setProfile(parsed.profile);
+            setTweets(parsed.tweets || []);
+            setReplies(parsed.replies || []);
+            setLikes(parsed.likes || []);
+            setLoading(false);
+            return;
+          }
+        } catch (error) {
+          console.error('Error parsing cached profile:', error);
+        }
+      }
       fetchProfile();
     }
   }, [username]);
@@ -257,6 +275,19 @@ export const ProfilePage: React.FC = () => {
       setTweets(formattedTweets);
       setReplies(formattedReplies);
       setLikes(formattedLikes);
+
+      // Cache the profile data
+      try {
+        sessionStorage.setItem(`profile_${username}`, JSON.stringify({
+          profile: formattedProfile,
+          tweets: formattedTweets,
+          replies: formattedReplies,
+          likes: formattedLikes,
+          timestamp: Date.now()
+        }));
+      } catch (error) {
+        console.warn('Failed to cache profile data:', error);
+      }
     } catch (err: any) {
       setError(err.message);
       console.error('Error fetching profile:', err);

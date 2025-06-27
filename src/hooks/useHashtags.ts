@@ -100,6 +100,20 @@ export const useHashtags = () => {
 
   const fetchTrendingHashtags = useCallback(async () => {
     try {
+      // Check cache first
+      const cached = sessionStorage.getItem('trending_hashtags_data');
+      if (cached) {
+        try {
+          const parsed = JSON.parse(cached);
+          if (Date.now() - parsed.timestamp < 10 * 60 * 1000) { // 10 minute cache
+            setTrendingHashtags(parsed.hashtags);
+            return;
+          }
+        } catch (error) {
+          console.warn('Failed to parse cached trending data:', error);
+        }
+      }
+
       setLoading(true);
       setError(null);
 
@@ -149,6 +163,16 @@ export const useHashtags = () => {
         .map(({ hashtag, count, recent_tweets }) => ({ hashtag, count, recent_tweets }));
 
       setTrendingHashtags(trending);
+
+      // Cache the results
+      try {
+        sessionStorage.setItem('trending_hashtags_data', JSON.stringify({
+          hashtags: trending,
+          timestamp: Date.now()
+        }));
+      } catch (error) {
+        console.warn('Failed to cache trending hashtags:', error);
+      }
     } catch (err: any) {
       setError(err.message);
       console.error('Error fetching trending hashtags:', err);

@@ -11,21 +11,49 @@ export const TrendingSidebar: React.FC = () => {
   const { isRTL } = useLanguageStore();
   const [visibleHashtags, setVisibleHashtags] = useState<typeof trendingHashtags>([]);
   const [sidebarWidth, setSidebarWidth] = useState('w-80');
+  const [isInitialized, setIsInitialized] = useState(false);
 
-  // Implement progressive loading for trending hashtags
+  // Implement progressive loading for trending hashtags with caching
   useEffect(() => {
     if (trendingHashtags.length === 0) return;
+    
+    // Check if we already have cached hashtags
+    const cachedHashtags = sessionStorage.getItem('trending_hashtags');
+    if (cachedHashtags && !isInitialized) {
+      try {
+        const parsed = JSON.parse(cachedHashtags);
+        if (Date.now() - parsed.timestamp < 10 * 60 * 1000) { // 10 minute cache
+          setVisibleHashtags(parsed.hashtags);
+          setIsInitialized(true);
+          return;
+        }
+      } catch (error) {
+        console.warn('Failed to parse cached hashtags:', error);
+      }
+    }
     
     // Initially show just a few hashtags
     setVisibleHashtags(trendingHashtags.slice(0, 3));
     
     // Then gradually show more
     const timer = setTimeout(() => {
-      setVisibleHashtags(trendingHashtags.slice(0, 10));
+      const fullList = trendingHashtags.slice(0, 10);
+      setVisibleHashtags(fullList);
+      setIsInitialized(true);
+      
+      // Cache the hashtags
+      try {
+        sessionStorage.setItem('trending_hashtags', JSON.stringify({
+          hashtags: fullList,
+          timestamp: Date.now()
+        }));
+      } catch (error) {
+        console.warn('Failed to cache hashtags:', error);
+      }
     }, 500);
     
     return () => clearTimeout(timer);
-  }, [trendingHashtags]);
+  }, [trendingHashtags, isInitialized]);
 
   // Adjust sidebar width based on available space
   useEffect(() => {
