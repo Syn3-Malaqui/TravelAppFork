@@ -39,6 +39,23 @@ export const ComposePage: React.FC = () => {
   const [countriesDropdownOpen, setCountriesDropdownOpen] = useState(false);
   const { createTweet } = useTweets();
 
+  // Helper function to get localized category name
+  const getLocalizedCategoryName = (category: TweetCategory): string => {
+    const categoryTranslations: { [key in TweetCategory]: string } = {
+      'General Discussions': language === 'en' ? 'General Discussions' : 'مناقشات عامة',
+      'Visas': language === 'en' ? 'Visas' : 'التأشيرات',
+      'Hotels': language === 'en' ? 'Hotels' : 'الفنادق',
+      'Car Rental': language === 'en' ? 'Car Rental' : 'تأجير السيارات',
+      'Tourist Schedules': language === 'en' ? 'Tourist Schedules' : 'برامج سياحية',
+      'Flights': language === 'en' ? 'Flights' : 'الطيران',
+      'Restorants and coffees': language === 'en' ? 'Restaurants and Coffees' : 'المطاعم والمقاهي',
+      'Images and creators': language === 'en' ? 'Images and Creators' : 'الصور والمبدعون',
+      'Real estate': language === 'en' ? 'Real Estate' : 'العقارات'
+    };
+    
+    return categoryTranslations[category] || category;
+  };
+
   // Refs for file inputs
   const fileInputRef = useRef<HTMLInputElement>(null);
   const mobileFileInputRef = useRef<HTMLInputElement>(null);
@@ -574,7 +591,7 @@ export const ComposePage: React.FC = () => {
                 <div className={`flex items-center space-x-2 mb-2 ${isMobile ? 'mb-2' : 'mb-3'}`}>
                   <Tag className={`text-gray-500 ${isMobile ? 'h-4 w-4' : 'h-5 w-5'}`} />
                   <span className={`font-medium text-gray-700 ${isMobile ? 'text-sm' : 'text-sm'}`}>
-                    Categories: <span className="text-red-500">*</span>
+                    {language === 'en' ? 'Categories:' : 'الفئات:'} <span className="text-red-500">*</span>
                   </span>
                 </div>
                 
@@ -596,8 +613,8 @@ export const ComposePage: React.FC = () => {
                         <Tag className="h-3 w-3 text-gray-500 flex-shrink-0" />
                         <span className="truncate">
                           {selectedCategories.length === 0 
-                            ? 'Select...' 
-                            : `${selectedCategories.length} selected`
+                            ? (language === 'en' ? 'Select...' : 'اختر...')
+                            : `${selectedCategories.length} ${language === 'en' ? 'selected' : 'مختار'}`
                           }
                         </span>
                       </div>
@@ -622,7 +639,7 @@ export const ComposePage: React.FC = () => {
                         <div className="w-6 h-6 rounded-full bg-gray-100 flex items-center justify-center flex-shrink-0">
                           <span className="text-sm">{categoryIcons[category] || '📝'}</span>
                         </div>
-                        <span className="flex-1 text-sm font-medium truncate">{category}</span>
+                        <span className="flex-1 text-sm font-medium truncate">{getLocalizedCategoryName(category)}</span>
                         {selectedCategories.includes(category) && (
                           <Check className="h-4 w-4 text-blue-600 flex-shrink-0" />
                         )}
@@ -637,7 +654,7 @@ export const ComposePage: React.FC = () => {
                 <div className={`flex items-center space-x-2 mb-2 ${isMobile ? 'mb-2' : 'mb-3'}`}>
                   <Globe className={`text-gray-500 ${isMobile ? 'h-4 w-4' : 'h-5 w-5'}`} />
                   <span className={`font-medium text-gray-700 ${isMobile ? 'text-sm' : 'text-sm'}`}>
-                    Countries: <span className="text-red-500">*</span>
+                    {language === 'en' ? 'Countries:' : 'البلدان:'} <span className="text-red-500">*</span>
                   </span>
                 </div>
                 
@@ -659,8 +676,8 @@ export const ComposePage: React.FC = () => {
                         <Globe className="h-3 w-3 text-gray-500 flex-shrink-0" />
                         <span className="truncate">
                           {selectedCountries.length === 0 
-                            ? 'Select...' 
-                            : `${selectedCountries.length} selected`
+                            ? (language === 'en' ? 'Select...' : 'اختر...')
+                            : `${selectedCountries.length} ${language === 'en' ? 'selected' : 'مختار'}`
                           }
                         </span>
                       </div>
@@ -699,7 +716,10 @@ export const ComposePage: React.FC = () => {
               {(selectedCategories.length === 0 || selectedCountries.length === 0) && (
                 <div className="mt-4 p-3 bg-amber-50 border border-amber-200 rounded-lg">
                   <p className="text-amber-700 text-sm font-medium">
-                    📝 Please select at least one category and one country before posting your tweet.
+                    📝 {language === 'en' 
+                      ? 'Please select at least one category and one country before posting your tweet.'
+                      : 'يرجى اختيار فئة واحدة على الأقل وبلد واحد قبل نشر تغريدتك.'
+                    }
                   </p>
                 </div>
               )}
@@ -707,7 +727,9 @@ export const ComposePage: React.FC = () => {
               {/* Selected Tags Display */}
               {(selectedCategories.length > 0 || selectedCountries.length > 0) && (
                 <div className="mt-4">
-                  <div className={`font-medium text-gray-700 mb-2 ${isMobile ? 'text-sm' : 'text-sm'}`}>Selected tags:</div>
+                  <div className={`font-medium text-gray-700 mb-2 ${isMobile ? 'text-sm' : 'text-sm'}`}>
+                    {language === 'en' ? 'Selected tags:' : 'العلامات المختارة:'}
+                  </div>
                   <div className="flex flex-wrap gap-2">
                     {/* Category Tags */}
                     {selectedCategories.map((category) => (
@@ -719,7 +741,7 @@ export const ComposePage: React.FC = () => {
                       >
                         <Tag className={`mr-1 ${isMobile ? 'w-2 h-2' : 'w-3 h-3'}`} />
                         <span className="mr-1">{categoryIcons[category]}</span>
-                        {category}
+                        {getLocalizedCategoryName(category)}
                         <Button
                           variant="ghost"
                           size="sm"
