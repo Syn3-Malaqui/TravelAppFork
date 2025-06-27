@@ -20,6 +20,7 @@ import { storageService } from '../../lib/storage';
 import { User as UserType } from '../../types';
 import { TWEET_CATEGORIES, FILTER_COUNTRIES } from '../../types';
 import { getPreloadedData } from '../../hooks/usePreloader';
+import { useLanguageStore } from '../../store/useLanguageStore';
 
 interface SearchResult {
   type: 'user' | 'hashtag' | 'tweet';
@@ -38,6 +39,7 @@ export const OptimizedSearchPage: React.FC = () => {
   const [selectedCountries, setSelectedCountries] = useState<string[]>([]);
   
   const { user } = useAuth();
+  const { language, isRTL } = useLanguageStore();
   const { trendingHashtags, hashtagTweets, loading: hashtagsLoading, searchTweetsByKeyword } = useHashtags();
   const { likeTweet, unlikeTweet } = useTweets();
   const navigate = useNavigate();
@@ -260,7 +262,7 @@ export const OptimizedSearchPage: React.FC = () => {
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search posts, people, and hashtags"
+              placeholder={isRTL ? 'البحث عن المنشورات والأشخاص والهاشتاغات' : 'Search posts, people, and hashtags'}
               className="w-full pl-10 pr-10 py-3 bg-gray-100 rounded-full focus:bg-white focus:ring-2 focus:ring-blue-500 focus:outline-none transition-all"
             />
             {searchQuery && (
@@ -529,10 +531,10 @@ export const OptimizedSearchPage: React.FC = () => {
         <div className="border-b border-gray-200 flex-shrink-0">
           <div className="flex">
             {[
-              { id: 'top', label: 'Top' },
-              { id: 'tweets', label: 'Tweets' },
-              { id: 'people', label: 'People' },
-              { id: 'hashtags', label: 'Hashtags' },
+              { id: 'top', label: isRTL ? 'الأعلى' : 'Top' },
+              { id: 'tweets', label: isRTL ? 'التغريدات' : 'Tweets' },
+              { id: 'people', label: isRTL ? 'الأشخاص' : 'People' },
+              { id: 'hashtags', label: isRTL ? 'الهاشتاغات' : 'Hashtags' },
             ].map((tab) => (
               <Button
                 key={tab.id}
@@ -558,9 +560,11 @@ export const OptimizedSearchPage: React.FC = () => {
             /* Trending Section */
             <div className="p-4">
               <h2 className="text-xl font-bold mb-4 flex items-center">
-                <TrendingUp className="w-5 h-5 mr-2 text-blue-500" />
-                Trending hashtags
-                <span className="text-sm font-normal text-gray-500 ml-2">(past 48 hours)</span>
+                <TrendingUp className={`w-5 h-5 ${isRTL ? 'ml-2' : 'mr-2'} text-blue-500`} />
+                {isRTL ? 'الهاشتاغات الرائجة' : 'Trending hashtags'}
+                <span className={`text-sm font-normal text-gray-500 ${isRTL ? 'mr-2' : 'ml-2'}`}>
+                  {isRTL ? '(آخر 48 ساعة)' : '(past 48 hours)'}
+                </span>
               </h2>
               
               {hashtagsLoading ? (
@@ -624,8 +628,8 @@ export const OptimizedSearchPage: React.FC = () => {
               {searchResults.length > 0 && (
                 <div className="mt-8">
                   <h2 className="text-xl font-bold mb-4 flex items-center">
-                    <User className="w-5 h-5 mr-2 text-green-500" />
-                    Suggested for you
+                    <User className={`w-5 h-5 ${isRTL ? 'ml-2' : 'mr-2'} text-green-500`} />
+                    {isRTL ? 'مقترح لك' : 'Suggested for you'}
                   </h2>
                   <div className="space-y-3">
                     {searchResults.slice(0, 5).map((result, index) => (
@@ -659,7 +663,7 @@ export const OptimizedSearchPage: React.FC = () => {
                               </p>
                             )}
                             <p className="text-gray-500 text-xs mt-1">
-                              {(result.data as UserType).followers.toLocaleString()} followers
+                              {(result.data as UserType).followers.toLocaleString()} {isRTL ? 'متابع' : 'followers'}
                             </p>
                           </div>
                         </div>
@@ -712,11 +716,11 @@ export const OptimizedSearchPage: React.FC = () => {
                 </div>
               ) : filteredResults.length === 0 ? (
                 <div className="text-center py-12 text-gray-500">
-                  <p className="text-lg">No results found</p>
+                  <p className="text-lg">{isRTL ? 'لم يتم العثور على نتائج' : 'No results found'}</p>
                   <p className="text-sm mt-2">
                     {hasActiveFilters 
-                      ? 'Try adjusting your filters or search terms'
-                      : 'Try searching for something else'
+                      ? (isRTL ? 'جرب تعديل المرشحات أو مصطلحات البحث' : 'Try adjusting your filters or search terms')
+                      : (isRTL ? 'جرب البحث عن شيء آخر' : 'Try searching for something else')
                     }
                   </p>
                 </div>

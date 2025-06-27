@@ -8,11 +8,13 @@ import { TweetSkeletonList } from '../Tweet/TweetSkeleton';
 import { useHashtags } from '../../hooks/useHashtags';
 import { useAuth } from '../../hooks/useAuth';
 import { useTweets } from '../../hooks/useTweets';
+import { useLanguageStore } from '../../store/useLanguageStore';
 
 export const HashtagPage: React.FC = () => {
   const { hashtag } = useParams<{ hashtag: string }>();
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { language, isRTL } = useLanguageStore();
   const { hashtagTweets, loading, error, searchHashtagTweets, trendingHashtags } = useHashtags();
   const { likeTweet, unlikeTweet, retweetTweet, unretweetTweet, bookmarkTweet, unbookmarkTweet } = useTweets();
   const [sortBy, setSortBy] = useState<'recent' | 'top'>('recent');
@@ -88,7 +90,7 @@ export const HashtagPage: React.FC = () => {
   if (!hashtag) {
     return (
       <div className="h-full bg-white flex items-center justify-center">
-        <p className="text-gray-500">Invalid hashtag</p>
+        <p className="text-gray-500">{isRTL ? 'هاشتاغ غير صالح' : 'Invalid hashtag'}</p>
       </div>
     );
   }
@@ -108,35 +110,35 @@ export const HashtagPage: React.FC = () => {
       {/* Header */}
       <div className="sticky top-0 bg-white/95 backdrop-blur-md border-b border-gray-200 z-10 flex-shrink-0">
         <div className="flex items-center justify-between p-4">
-          <div className="flex items-center space-x-4">
+          <div className={`flex items-center ${isRTL ? 'space-x-reverse space-x-4' : 'space-x-4'}`}>
             <Button
               variant="ghost"
               size="sm"
               onClick={() => navigate('/search')}
               className="p-2"
             >
-              <ArrowLeft className="h-5 w-5" />
+              <ArrowLeft className={`h-5 w-5 ${isRTL ? 'rotate-180' : ''}`} />
             </Button>
             <div>
-              <div className="flex items-center space-x-2">
+              <div className={`flex items-center ${isRTL ? 'space-x-reverse space-x-2' : 'space-x-2'}`}>
                 <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
                   <Hash className="h-4 w-4 text-blue-500" />
                 </div>
                 <h1 className="text-xl font-bold">{displayHashtag}</h1>
                 {hashtagStats && (
-                  <div className="flex items-center space-x-1 text-blue-500">
+                  <div className={`flex items-center ${isRTL ? 'space-x-reverse space-x-1' : 'space-x-1'} text-blue-500`}>
                     <TrendingUp className="h-4 w-4" />
-                    <span className="text-sm font-medium">Trending</span>
+                    <span className="text-sm font-medium">{isRTL ? 'رائج' : 'Trending'}</span>
                   </div>
                 )}
               </div>
-              <div className="flex items-center space-x-4 text-sm text-gray-500 mt-1">
+              <div className={`flex items-center ${isRTL ? 'space-x-reverse space-x-4' : 'space-x-4'} text-sm text-gray-500 mt-1`}>
                 <span>
-                  {totalPosts.toLocaleString()} {totalPosts === 1 ? 'post' : 'posts'}
+                  {totalPosts.toLocaleString()} {totalPosts === 1 ? (isRTL ? 'منشور' : 'post') : (isRTL ? 'منشور' : 'posts')}
                 </span>
                 {recentPosts > 0 && (
                   <span className="text-blue-500">
-                    • {recentPosts} recent
+                    • {recentPosts} {isRTL ? 'حديث' : 'recent'}
                   </span>
                 )}
               </div>
@@ -144,13 +146,13 @@ export const HashtagPage: React.FC = () => {
           </div>
 
           {/* Action Buttons */}
-          <div className="flex items-center space-x-2">
+          <div className={`flex items-center ${isRTL ? 'space-x-reverse space-x-2' : 'space-x-2'}`}>
             <Button
               variant="ghost"
               size="sm"
               onClick={handleShare}
               className="p-2 hover:bg-gray-100"
-              title="Share hashtag"
+              title={isRTL ? 'مشاركة الهاشتاغ' : 'Share hashtag'}
             >
               <Share className="h-5 w-5" />
             </Button>
@@ -168,8 +170,8 @@ export const HashtagPage: React.FC = () => {
                 : 'border-transparent text-gray-500 hover:bg-gray-50'
             }`}
           >
-            <Clock className="w-4 h-4 mr-2" />
-            Recent
+            <Clock className={`w-4 h-4 ${isRTL ? 'ml-2' : 'mr-2'}`} />
+            {isRTL ? 'الأحدث' : 'Recent'}
           </Button>
           <Button
             variant="ghost"
@@ -180,8 +182,8 @@ export const HashtagPage: React.FC = () => {
                 : 'border-transparent text-gray-500 hover:bg-gray-50'
             }`}
           >
-            <BarChart3 className="w-4 h-4 mr-2" />
-            Top
+            <BarChart3 className={`w-4 h-4 ${isRTL ? 'ml-2' : 'mr-2'}`} />
+            {isRTL ? 'الأعلى' : 'Top'}
           </Button>
         </div>
       </div>
@@ -201,14 +203,14 @@ export const HashtagPage: React.FC = () => {
         ) : error ? (
           <div className="flex flex-col items-center justify-center py-12 px-4">
             <div className="text-red-500 text-center">
-              <p className="text-lg font-semibold mb-2">Error loading posts</p>
+              <p className="text-lg font-semibold mb-2">{isRTL ? 'خطأ في تحميل المنشورات' : 'Error loading posts'}</p>
               <p className="text-sm text-gray-600">{error}</p>
               <Button
                 variant="outline"
                 onClick={() => hashtag && searchHashtagTweets(hashtag, sortBy)}
                 className="mt-4"
               >
-                Try again
+                {isRTL ? 'حاول مرة أخرى' : 'Try again'}
               </Button>
             </div>
           </div>
@@ -217,15 +219,17 @@ export const HashtagPage: React.FC = () => {
             <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
               <Hash className="w-8 h-8 text-gray-400" />
             </div>
-            <p className="text-lg mb-2">No posts found for {displayHashtag}</p>
+            <p className="text-lg mb-2">
+              {isRTL ? `لم يتم العثور على منشورات لـ ${displayHashtag}` : `No posts found for ${displayHashtag}`}
+            </p>
             <p className="text-sm text-gray-400 mb-4">
-              Be the first to post with this hashtag!
+              {isRTL ? 'كن أول من ينشر بهذا الهاشتاغ!' : 'Be the first to post with this hashtag!'}
             </p>
             <Button
               onClick={() => navigate('/compose')}
               className="bg-blue-500 hover:bg-blue-600 text-white px-6 py-2 rounded-full font-medium"
             >
-              Create post
+              {isRTL ? 'إنشاء منشور' : 'Create post'}
             </Button>
           </div>
         ) : (
@@ -234,9 +238,13 @@ export const HashtagPage: React.FC = () => {
             <div className="bg-gray-50 border-b border-gray-200 px-4 py-2">
               <p className="text-sm text-gray-600">
                 {sortBy === 'recent' ? (
-                  <>Showing most recent posts with {displayHashtag}</>
+                  isRTL ? 
+                    <>عرض أحدث المنشورات مع {displayHashtag}</> : 
+                    <>Showing most recent posts with {displayHashtag}</>
                 ) : (
-                  <>Showing top posts with {displayHashtag} by engagement</>
+                  isRTL ? 
+                    <>عرض أفضل المنشورات مع {displayHashtag} حسب التفاعل</> : 
+                    <>Showing top posts with {displayHashtag} by engagement</>
                 )}
               </p>
             </div>

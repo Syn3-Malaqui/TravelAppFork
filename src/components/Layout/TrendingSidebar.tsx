@@ -103,10 +103,12 @@ export const TrendingSidebar: React.FC = () => {
       <div className="bg-white/95 backdrop-blur-md border-b border-gray-200 z-40 flex-shrink-0">
         <div className="p-4">
           <h2 className="text-xl font-bold text-gray-900 flex items-center">
-            <TrendingUp className="w-5 h-5 mr-2 text-blue-500" />
-            Trending
+            <TrendingUp className={`w-5 h-5 ${isRTL ? 'ml-2' : 'mr-2'} text-blue-500`} />
+            {isRTL ? 'الرائج' : 'Trending'}
           </h2>
-          <p className="text-sm text-gray-500 mt-1">What's happening now</p>
+          <p className="text-sm text-gray-500 mt-1">
+            {isRTL ? 'ما يحدث الآن' : "What's happening now"}
+          </p>
         </div>
       </div>
 
@@ -145,10 +147,10 @@ export const TrendingSidebar: React.FC = () => {
                           {item.hashtag}
                         </p>
                         <p className="text-xs text-gray-500 truncate">
-                          {item.count.toLocaleString()} posts
+                          {item.count.toLocaleString()} {isRTL ? 'منشور' : 'posts'}
                           {item.recent_tweets > 0 && (
-                            <span className="ml-2 text-blue-500">
-                              • {item.recent_tweets} recent
+                            <span className={`${isRTL ? 'mr-2' : 'ml-2'} text-blue-500`}>
+                              • {item.recent_tweets} {isRTL ? 'حديث' : 'recent'}
                             </span>
                           )}
                         </p>
@@ -165,8 +167,8 @@ export const TrendingSidebar: React.FC = () => {
               {visibleHashtags.length === 0 && !loading && (
                 <div className="text-center py-8 text-gray-500">
                   <Hash className="w-8 h-8 mx-auto mb-2 text-gray-300" />
-                  <p className="text-sm">No trending hashtags yet</p>
-                  <p className="text-xs text-gray-400 mt-1">Check back later!</p>
+                  <p className="text-sm">{isRTL ? 'لا توجد هاشتاغات رائجة بعد' : 'No trending hashtags yet'}</p>
+                  <p className="text-xs text-gray-400 mt-1">{isRTL ? 'تحقق مرة أخرى لاحقاً!' : 'Check back later!'}</p>
                 </div>
               )}
             </div>
@@ -176,11 +178,11 @@ export const TrendingSidebar: React.FC = () => {
         {/* Footer */}
         <div className="p-4 border-t border-gray-100">
           <div className="text-xs text-gray-400 space-y-1">
-            <p>Trends are based on activity from the past 48 hours</p>
+            <p>{isRTL ? 'الاتجاهات مبنية على النشاط من آخر 48 ساعة' : 'Trends are based on activity from the past 48 hours'}</p>
             <div className="flex flex-wrap gap-2 mt-2">
-              <button className="text-blue-500 hover:underline">Terms</button>
-              <button className="text-blue-500 hover:underline">Privacy</button>
-              <button className="text-blue-500 hover:underline">About</button>
+              <button className="text-blue-500 hover:underline">{isRTL ? 'الشروط' : 'Terms'}</button>
+              <button className="text-blue-500 hover:underline">{isRTL ? 'الخصوصية' : 'Privacy'}</button>
+              <button className="text-blue-500 hover:underline">{isRTL ? 'حول' : 'About'}</button>
             </div>
           </div>
         </div>

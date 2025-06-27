@@ -24,9 +24,11 @@ import { NotificationsPageSkeleton } from './NotificationSkeleton';
 import { Notification } from '../../types';
 import { useNavigate } from 'react-router-dom';
 import { storageService } from '../../lib/storage';
+import { useLanguageStore } from '../../store/useLanguageStore';
 
 export const NotificationsPage: React.FC = () => {
   const navigate = useNavigate();
+  const { language, isRTL } = useLanguageStore();
   const { 
     notifications, 
     unreadCount, 
@@ -56,15 +58,15 @@ export const NotificationsPage: React.FC = () => {
   const getNotificationText = (notification: Notification) => {
     switch (notification.type) {
       case 'like':
-        return 'liked your tweet';
+        return isRTL ? 'أعجب بتغريدتك' : 'liked your tweet';
       case 'retweet':
-        return 'retweeted your tweet';
+        return isRTL ? 'أعاد تغريد تغريدتك' : 'retweeted your tweet';
       case 'reply':
-        return 'replied to your tweet';
+        return isRTL ? 'رد على تغريدتك' : 'replied to your tweet';
       case 'follow':
-        return 'started following you';
+        return isRTL ? 'بدأ بمتابعتك' : 'started following you';
       default:
-        return 'interacted with your content';
+        return isRTL ? 'تفاعل مع محتواك' : 'interacted with your content';
     }
   };
 
@@ -105,21 +107,21 @@ export const NotificationsPage: React.FC = () => {
     return (
       <div className="min-h-screen bg-white">
         <div className="sticky top-0 bg-white/80 backdrop-blur-md border-b border-gray-200 px-4 py-3 z-10">
-          <div className="flex items-center space-x-4">
+          <div className={`flex items-center ${isRTL ? 'space-x-reverse space-x-4' : 'space-x-4'}`}>
             <Button
               variant="ghost"
               size="sm"
               onClick={() => navigate('/')}
               className="p-2 md:hidden"
             >
-              <ArrowLeft className="h-5 w-5" />
+              <ArrowLeft className={`h-5 w-5 ${isRTL ? 'rotate-180' : ''}`} />
             </Button>
-            <h1 className="text-xl font-bold">Notifications</h1>
+            <h1 className="text-xl font-bold">{isRTL ? 'الإشعارات' : 'Notifications'}</h1>
           </div>
         </div>
         <div className="flex flex-col items-center justify-center py-12 px-4">
           <div className="text-red-500 text-center">
-            <p className="text-lg font-semibold mb-2">Error loading notifications</p>
+            <p className="text-lg font-semibold mb-2">{isRTL ? 'خطأ في تحميل الإشعارات' : 'Error loading notifications'}</p>
             <p className="text-sm text-gray-600">{error}</p>
           </div>
         </div>
@@ -132,16 +134,16 @@ export const NotificationsPage: React.FC = () => {
       {/* Header */}
       <div className="sticky top-0 bg-white/80 backdrop-blur-md border-b border-gray-200 px-4 py-3 z-10">
         <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-4">
+          <div className={`flex items-center ${isRTL ? 'space-x-reverse space-x-4' : 'space-x-4'}`}>
             <Button
               variant="ghost"
               size="sm"
               onClick={() => navigate('/')}
               className="p-2 md:hidden"
             >
-              <ArrowLeft className="h-5 w-5" />
+              <ArrowLeft className={`h-5 w-5 ${isRTL ? 'rotate-180' : ''}`} />
             </Button>
-            <h1 className="text-xl font-bold">Notifications</h1>
+            <h1 className="text-xl font-bold">{isRTL ? 'الإشعارات' : 'Notifications'}</h1>
             {unreadCount > 0 && (
               <span className="bg-blue-500 text-white text-xs px-2 py-1 rounded-full">
                 {unreadCount}
@@ -163,8 +165,8 @@ export const NotificationsPage: React.FC = () => {
                 sideOffset={4}
               >
                 <DropdownMenuItem onClick={markAllAsRead} disabled={unreadCount === 0}>
-                  <CheckCheck className="mr-2 h-4 w-4" />
-                  Mark all as read
+                  <CheckCheck className={`${isRTL ? 'ml-2' : 'mr-2'} h-4 w-4`} />
+                  {isRTL ? 'تحديد الكل كمقروء' : 'Mark all as read'}
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
@@ -184,7 +186,7 @@ export const NotificationsPage: React.FC = () => {
                 : 'border-transparent text-gray-500 hover:bg-gray-50'
             }`}
           >
-            All
+            {isRTL ? 'الكل' : 'All'}
           </Button>
           <Button
             variant="ghost"
@@ -195,7 +197,7 @@ export const NotificationsPage: React.FC = () => {
                 : 'border-transparent text-gray-500 hover:bg-gray-50'
             }`}
           >
-            Unread {unreadCount > 0 && `(${unreadCount})`}
+            {isRTL ? 'غير مقروء' : 'Unread'} {unreadCount > 0 && `(${unreadCount})`}
           </Button>
         </div>
       </div>
@@ -208,12 +210,15 @@ export const NotificationsPage: React.FC = () => {
               <Heart className="w-8 h-8 text-gray-400" />
             </div>
             <p className="text-lg mb-2">
-              {filter === 'unread' ? 'No unread notifications' : 'No notifications yet'}
+              {filter === 'unread' ? 
+                (isRTL ? 'لا توجد إشعارات غير مقروءة' : 'No unread notifications') : 
+                (isRTL ? 'لا توجد إشعارات بعد' : 'No notifications yet')
+              }
             </p>
             <p className="text-sm text-gray-400">
               {filter === 'unread' 
-                ? 'All caught up! Check back later for new activity.'
-                : 'When someone likes, retweets, or replies to your tweets, you\'ll see it here.'
+                ? (isRTL ? 'كل شيء محدث! تحقق مرة أخرى لاحقاً للنشاط الجديد.' : 'All caught up! Check back later for new activity.')
+                : (isRTL ? 'عندما يعجب شخص ما أو يعيد تغريد أو يرد على تغريداتك، ستراه هنا.' : 'When someone likes, retweets, or replies to your tweets, you\'ll see it here.')
               }
             </p>
           </div>
@@ -227,7 +232,7 @@ export const NotificationsPage: React.FC = () => {
                   !notification.read ? 'bg-blue-50 border-l-4 border-blue-500' : ''
                 }`}
               >
-                <div className="flex space-x-3">
+                <div className={`flex ${isRTL ? 'space-x-reverse space-x-3' : 'space-x-3'}`}>
                   {/* Notification Icon */}
                   <div className="flex-shrink-0 mt-1">
                     {getNotificationIcon(notification.type)}
@@ -266,7 +271,7 @@ export const NotificationsPage: React.FC = () => {
                       </div>
 
                       {/* Actions */}
-                      <div className="flex items-center space-x-2 ml-2">
+                      <div className={`flex items-center ${isRTL ? 'space-x-reverse space-x-2 mr-2' : 'space-x-2 ml-2'}`}>
                         {!notification.read && (
                           <Button
                             variant="ghost"
@@ -276,7 +281,7 @@ export const NotificationsPage: React.FC = () => {
                               markAsRead(notification.id);
                             }}
                             className="p-1 hover:bg-blue-100"
-                            title="Mark as read"
+                            title={isRTL ? 'تحديد كمقروء' : 'Mark as read'}
                           >
                             <Check className="h-4 w-4 text-blue-500" />
                           </Button>
@@ -287,7 +292,7 @@ export const NotificationsPage: React.FC = () => {
                           size="sm"
                           onClick={(e) => handleDeleteNotification(notification.id, e)}
                           className="p-1 hover:bg-red-100"
-                          title="Delete notification"
+                          title={isRTL ? 'حذف الإشعار' : 'Delete notification'}
                         >
                           <Trash2 className="h-4 w-4 text-red-500" />
                         </Button>
