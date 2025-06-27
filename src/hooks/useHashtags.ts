@@ -470,10 +470,10 @@ export const useHashtags = () => {
   useEffect(() => {
     fetchTrendingHashtags();
     
-    // Refresh trending hashtags every 5 minutes
-    const interval = setInterval(fetchTrendingHashtags, 5 * 60 * 1000);
+    // Disabled periodic refresh - only fetch on manual refresh
+    // const interval = setInterval(fetchTrendingHashtags, 5 * 60 * 1000);
     
-    return () => clearInterval(interval);
+    // return () => clearInterval(interval);
   }, [fetchTrendingHashtags]);
 
   return {

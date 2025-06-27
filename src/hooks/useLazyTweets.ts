@@ -383,23 +383,23 @@ export const useLazyTweets = (options: UseLazyTweetsOptions = {}) => {
     }
   }, [followingOnly, fetchUserInteractions, formatTweetData, cacheTweets, fetchFollowingUsers]);
 
-  // Set up polling - more aggressive for deployed environments
-  useEffect(() => {
-    if (!lastFetchTimeRef.current) return;
+  // Disabled polling - only fetch on manual refresh
+  // useEffect(() => {
+  //   if (!lastFetchTimeRef.current) return;
 
-    // More frequent polling for deployed environments
-    const pollingInterval = isDeployedRef.current ? 5000 : 10000; // 5s for deployed, 10s for local
+  //   // More frequent polling for deployed environments
+  //   const pollingInterval = isDeployedRef.current ? 5000 : 10000; // 5s for deployed, 10s for local
     
-    pollingIntervalRef.current = setInterval(() => {
-      checkForNewTweets();
-    }, pollingInterval);
+  //   pollingIntervalRef.current = setInterval(() => {
+  //     checkForNewTweets();
+  //   }, pollingInterval);
 
-    return () => {
-      if (pollingIntervalRef.current) {
-        clearInterval(pollingIntervalRef.current);
-      }
-    };
-  }, [checkForNewTweets]);
+  //   return () => {
+  //     if (pollingIntervalRef.current) {
+  //       clearInterval(pollingIntervalRef.current);
+  //     }
+  //   };
+  // }, [checkForNewTweets]);
 
   // Handle real-time tweet insertions via Supabase realtime
   const handleNewTweet = useCallback(async (payload: any) => {
@@ -506,61 +506,61 @@ export const useLazyTweets = (options: UseLazyTweetsOptions = {}) => {
     }
   }, [followingOnly, fetchUserInteractions, formatTweetData, cacheTweets]);
 
-  // Set up real-time subscription with fallback for deployed environments
-  useEffect(() => {
-    const setupRealtimeSubscription = async () => {
-      try {
-        // Clean up existing subscription
-        if (channelRef.current) {
-          await channelRef.current.unsubscribe();
-          supabase.removeChannel(channelRef.current);
-          channelRef.current = null;
-        }
+  // Disabled real-time subscriptions - only fetch on manual refresh
+  // useEffect(() => {
+  //   const setupRealtimeSubscription = async () => {
+  //     try {
+  //       // Clean up existing subscription
+  //       if (channelRef.current) {
+  //         await channelRef.current.unsubscribe();
+  //         supabase.removeChannel(channelRef.current);
+  //         channelRef.current = null;
+  //       }
 
-        // For following feed, we need to fetch following users first
-        if (followingOnly) {
-          await fetchFollowingUsers();
-        }
+  //       // For following feed, we need to fetch following users first
+  //       if (followingOnly) {
+  //         await fetchFollowingUsers();
+  //       }
 
-        // Only set up real-time for local development or if explicitly enabled
-        if (!isDeployedRef.current) {
-          // Create new subscription
-          const channelName = `tweets_realtime_${followingOnly ? 'following' : 'for_you'}_${Date.now()}`;
+  //       // Only set up real-time for local development or if explicitly enabled
+  //       if (!isDeployedRef.current) {
+  //         // Create new subscription
+  //         const channelName = `tweets_realtime_${followingOnly ? 'following' : 'for_you'}_${Date.now()}`;
           
-          const channel = supabase
-            .channel(channelName)
-            .on(
-              'postgres_changes',
-              {
-                event: 'INSERT',
-                schema: 'public',
-                table: 'tweets',
-                filter: 'reply_to=is.null', // Only listen for main tweets, not replies
-              },
-              handleNewTweet
-            );
+  //         const channel = supabase
+  //           .channel(channelName)
+  //           .on(
+  //             'postgres_changes',
+  //             {
+  //               event: 'INSERT',
+  //               schema: 'public',
+  //               table: 'tweets',
+  //               filter: 'reply_to=is.null', // Only listen for main tweets, not replies
+  //             },
+  //             handleNewTweet
+  //           );
 
-          channelRef.current = channel;
+  //         channelRef.current = channel;
           
-          if (channel.state !== 'joined' && channel.state !== 'joining') {
-            await channel.subscribe();
-          }
-        }
-      } catch (error) {
-        console.error('Error setting up real-time subscription:', error);
-      }
-    };
+  //         if (channel.state !== 'joined' && channel.state !== 'joining') {
+  //           await channel.subscribe();
+  //         }
+  //       }
+  //     } catch (error) {
+  //       console.error('Error setting up real-time subscription:', error);
+  //     }
+  //   };
 
-    setupRealtimeSubscription();
+  //   setupRealtimeSubscription();
 
-    return () => {
-      if (channelRef.current) {
-        channelRef.current.unsubscribe();
-        supabase.removeChannel(channelRef.current);
-        channelRef.current = null;
-      }
-    };
-  }, [followingOnly, handleNewTweet, fetchFollowingUsers]);
+  //   return () => {
+  //     if (channelRef.current) {
+  //       channelRef.current.unsubscribe();
+  //       supabase.removeChannel(channelRef.current);
+  //       channelRef.current = null;
+  //     }
+  //   };
+  // }, [followingOnly, handleNewTweet, fetchFollowingUsers]);
 
   const loadMoreTweets = useCallback(async () => {
     if (loadingRef.current || !hasMore) return;

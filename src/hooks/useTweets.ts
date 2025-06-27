@@ -358,21 +358,21 @@ export const useTweets = () => {
     }
   }, [fetchUserInteractions, formatTweetData]);
 
-  // Set up polling for new tweets
-  useEffect(() => {
-    if (!lastFetchTimeRef.current) return;
+  // Disabled polling - only fetch on manual refresh
+  // useEffect(() => {
+  //   if (!lastFetchTimeRef.current) return;
 
-    // Poll every 15 seconds for new tweets
-    pollingIntervalRef.current = setInterval(() => {
-      checkForNewTweets();
-    }, 15000);
+  //   // Poll every 15 seconds for new tweets
+  //   pollingIntervalRef.current = setInterval(() => {
+  //     checkForNewTweets();
+  //   }, 15000);
 
-    return () => {
-      if (pollingIntervalRef.current) {
-        clearInterval(pollingIntervalRef.current);
-      }
-    };
-  }, [checkForNewTweets]);
+  //   return () => {
+  //     if (pollingIntervalRef.current) {
+  //       clearInterval(pollingIntervalRef.current);
+  //     }
+  //   };
+  // }, [checkForNewTweets]);
 
   // Handle real-time updates for likes, retweets, and other interactions
   const handleRealtimeUpdate = useCallback((payload: any, table: string) => {
@@ -513,69 +513,69 @@ export const useTweets = () => {
     }
   }, [fetchUserInteractions, formatTweetData]);
 
-  // Set up real-time subscriptions for interactions and new tweets
-  useEffect(() => {
-    const setupRealtimeSubscriptions = async () => {
-      try {
-        // Clean up existing subscriptions
-        if (channelRef.current) {
-          await channelRef.current.unsubscribe();
-          supabase.removeChannel(channelRef.current);
-          channelRef.current = null;
-        }
+  // Disabled real-time subscriptions - only fetch on manual refresh
+  // useEffect(() => {
+  //   const setupRealtimeSubscriptions = async () => {
+  //     try {
+  //       // Clean up existing subscriptions
+  //       if (channelRef.current) {
+  //         await channelRef.current.unsubscribe();
+  //         supabase.removeChannel(channelRef.current);
+  //         channelRef.current = null;
+  //       }
 
-        // Create new subscription channel
-        const channel = supabase
-          .channel(`tweet_interactions_and_new_tweets_${Date.now()}`)
-          .on(
-            'postgres_changes',
-            {
-              event: '*',
-              schema: 'public',
-              table: 'likes',
-            },
-            (payload) => handleRealtimeUpdate(payload, 'likes')
-          )
-          .on(
-            'postgres_changes',
-            {
-              event: '*',
-              schema: 'public',
-              table: 'retweets',
-            },
-            (payload) => handleRealtimeUpdate(payload, 'retweets')
-          )
-          .on(
-            'postgres_changes',
-            {
-              event: 'INSERT',
-              schema: 'public',
-              table: 'tweets',
-              filter: 'reply_to=is.null', // Only listen for main tweets, not replies
-            },
-            handleNewTweet
-          );
+  //       // Create new subscription channel
+  //       const channel = supabase
+  //         .channel(`tweet_interactions_and_new_tweets_${Date.now()}`)
+  //         .on(
+  //           'postgres_changes',
+  //           {
+  //             event: '*',
+  //             schema: 'public',
+  //             table: 'likes',
+  //           },
+  //           (payload) => handleRealtimeUpdate(payload, 'likes')
+  //         )
+  //         .on(
+  //           'postgres_changes',
+  //           {
+  //             event: '*',
+  //             schema: 'public',
+  //             table: 'retweets',
+  //           },
+  //           (payload) => handleRealtimeUpdate(payload, 'retweets')
+  //         )
+  //         .on(
+  //           'postgres_changes',
+  //           {
+  //             event: 'INSERT',
+  //             schema: 'public',
+  //             table: 'tweets',
+  //             filter: 'reply_to=is.null', // Only listen for main tweets, not replies
+  //           },
+  //           handleNewTweet
+  //         );
 
-        channelRef.current = channel;
+  //       channelRef.current = channel;
         
-        if (channel.state !== 'joined' && channel.state !== 'joining') {
-          await channel.subscribe();
-        }
-      } catch (error) {
-        console.error('Error setting up real-time subscriptions:', error);
-      }
-    };
+  //       if (channel.state !== 'joined' && channel.state !== 'joining') {
+  //         await channel.subscribe();
+  //       }
+  //     } catch (error) {
+  //       console.error('Error setting up real-time subscriptions:', error);
+  //     }
+  //   };
 
-    setupRealtimeSubscriptions();
+  //   setupRealtimeSubscriptions();
 
-    return () => {
-      if (channelRef.current) {
-        channelRef.current.unsubscribe();
-        supabase.removeChannel(channelRef.current);
-        channelRef.current = null;
-      }
-    };
-  }, [handleRealtimeUpdate, handleNewTweet]);
+  //   return () => {
+  //     if (channelRef.current) {
+  //       channelRef.current.unsubscribe();
+  //       supabase.removeChannel(channelRef.current);
+  //       channelRef.current = null;
+  //     }
+  //   };
+  // }, [handleRealtimeUpdate, handleNewTweet]);
 
   const fetchTweets = useCallback(async () => {
     try {
