@@ -52,9 +52,9 @@ function App() {
   return (
     <Router>
       <div className={`min-h-screen bg-white ${language === 'ar' ? 'font-arabic' : ''}`} style={{ position: 'relative', zIndex: 0 }}>
-        <div className="flex h-screen overflow-hidden">
-          {/* Full width container - responsive */}
-          <div className="flex flex-1 w-full">
+        <div className="flex h-screen overflow-hidden md:justify-center">
+          {/* Mobile: Full width, Desktop: Centered with max-width */}
+          <div className="flex flex-1 w-full md:max-w-[1200px]">
             {/* Desktop Sidebar */}
             <div className="hidden md:block">
               <Sidebar />

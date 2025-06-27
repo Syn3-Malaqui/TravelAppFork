@@ -262,12 +262,12 @@ export const Timeline: React.FC = () => {
 
       {/* Desktop Layout - Only visible on desktop screens */}
       <div className="hidden md:flex flex-1">
-        {/* Main Content - Responsive width */}
-        <div className={`flex-1 ${isRTL ? '' : 'border-r border-gray-200'} flex flex-col ${showSidebar && !isRTL ? '' : 'border-r-0 border-l-0'} ${language === 'ar' ? 'font-arabic' : ''}`}>
+        {/* Main Content - Desktop: constrained width, Mobile: full width */}
+        <div className={`flex-1 ${isRTL ? '' : 'border-r border-gray-200'} flex flex-col md:max-w-[600px] ${showSidebar && !isRTL ? '' : 'border-r-0 border-l-0'} ${language === 'ar' ? 'font-arabic' : ''}`}>
           {/* Desktop Header with Tabs - Fixed (Full Width) */}
           <div className="bg-white/95 backdrop-blur-md border-b border-gray-200 z-50 flex-shrink-0">
-            {/* Content wrapper with max-width for header content */}
-            <div className="w-full px-4">
+            {/* Content wrapper with responsive padding */}
+            <div className="w-full px-4 md:px-6">
             {/* Top section with country filter */}
             <div className="flex items-center justify-between border-b border-gray-100 py-4">
               {/* Country Filter Dropdown */}
@@ -351,7 +351,7 @@ export const Timeline: React.FC = () => {
           <div className="flex-1 overflow-y-auto">
             <div className="flex flex-col">
               {/* Desktop Tweet Composer - Now inside scrollable area */}
-              <div className="border-b border-gray-200 bg-white px-4">
+              <div className="border-b border-gray-200 bg-white px-4 md:px-6">
                 <div className="flex space-x-4 py-4">
                   <LazyAvatar
                     src={userProfile?.avatar}
@@ -372,7 +372,7 @@ export const Timeline: React.FC = () => {
 
               {/* Filter indicators */}
               {(categoryFilter || countryFilter !== 'ALL') && (
-                <div className="bg-blue-50 border-b border-blue-200 px-4 py-2">
+                <div className="bg-blue-50 border-b border-blue-200 px-4 md:px-6 py-2">
                   <div className="flex items-center justify-between">
                     <div className="text-sm text-blue-700 flex items-center space-x-4">
                       {categoryFilter && (
