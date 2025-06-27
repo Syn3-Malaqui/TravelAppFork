@@ -84,7 +84,7 @@ export const TweetCard: React.FC<TweetCardProps> = ({
 
   const handleDelete = async () => {
     // Mock delete functionality
-    console.log('Delete tweet:', tweet.id);
+    // TODO: Implement actual delete functionality
   };
 
   const handleProfileClick = (e: React.MouseEvent) => {
@@ -167,20 +167,22 @@ export const TweetCard: React.FC<TweetCardProps> = ({
         userBookmarks = bookmarksResult.data?.map(bookmark => bookmark.tweet_id) || [];
       }
 
+      const profile = Array.isArray(data.profiles) ? data.profiles[0] : data.profiles;
+      
       const formattedTweet: Tweet = {
         id: data.id,
         content: data.content,
         author: {
-          id: data.profiles.id,
-          username: data.profiles.username,
-          displayName: data.profiles.display_name,
-          avatar: data.profiles.avatar_url || '',
-          bio: data.profiles.bio,
-          verified: data.profiles.verified,
-          followers: data.profiles.followers_count,
-          following: data.profiles.following_count,
-          country: data.profiles.country,
-          joinedDate: new Date(data.profiles.created_at),
+          id: profile.id,
+          username: profile.username,
+          displayName: profile.display_name,
+          avatar: profile.avatar_url || '',
+          bio: profile.bio,
+          verified: profile.verified,
+          followers: profile.followers_count,
+          following: profile.following_count,
+          country: profile.country,
+          joinedDate: new Date(profile.created_at),
         },
         createdAt: new Date(data.created_at),
         likes: data.likes_count,

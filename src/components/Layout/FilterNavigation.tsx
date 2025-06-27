@@ -132,7 +132,7 @@ export const FilterNavigation: React.FC<FilterNavigationProps> = ({
   };
 
   return (
-    <div className={`bg-white border-b border-gray-200 w-full relative h-12 flex-shrink-0 flex items-center ${isRTL ? 'font-arabic' : ''}`}>
+    <div className={`bg-white border-b border-gray-100 w-full relative h-14 flex-shrink-0 flex items-center ${isRTL ? 'font-arabic' : ''}`}>
       {/* Left scroll button - only show when needed */}
       {isOverflowing && showLeftButton && (
         <button 
@@ -147,7 +147,7 @@ export const FilterNavigation: React.FC<FilterNavigationProps> = ({
       {/* Horizontally scrollable filter strip */}
       <div 
         ref={scrollContainerRef}
-        className="flex space-x-2 overflow-x-auto scrollbar-hide py-1 px-6 w-full"
+        className="flex space-x-2 overflow-x-auto scrollbar-hide py-2 px-4 w-full"
         style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
         onScroll={handleScroll}
       >
@@ -158,10 +158,10 @@ export const FilterNavigation: React.FC<FilterNavigationProps> = ({
             variant="ghost"
             size="sm"
             onClick={() => onFilterChange(filter.id)}
-            className={`rounded-full px-3 py-1 text-sm font-medium whitespace-nowrap transition-colors flex-shrink-0 ${
+            className={`rounded-full px-4 py-2 text-sm font-medium whitespace-nowrap transition-colors flex-shrink-0 ${
               selectedFilter === filter.id
-                ? 'bg-green-100 text-green-800 hover:bg-green-200'
-                : 'text-gray-700 hover:bg-gray-100'
+                ? 'bg-blue-100 text-blue-800 hover:bg-blue-200 border border-blue-200'
+                : 'text-gray-600 hover:bg-gray-100 border border-gray-200'
             }`}
             data-filter-id={filter.id}
           >

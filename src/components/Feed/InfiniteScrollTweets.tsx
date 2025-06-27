@@ -247,13 +247,8 @@ export const InfiniteScrollTweets: React.FC<InfiniteScrollTweetsProps> = ({
 
       {/* Tweets */}
       {filteredTweets.map((tweet, index) => {
-        // Debug logging
-        if (index === 0) {
-          console.log(`📱 InfiniteScrollTweets: isMobile=${isMobile}, using ${isMobile ? 'MobileTweetCard' : 'TweetCard'}`);
-        }
-        
         return (
-          <div key={`${tweet.id}-${tweet.retweetedAt || tweet.createdAt}-${index}`} className="w-full">
+          <div key={`${tweet.id}-${tweet.retweetedAt || tweet.createdAt}-${index}`} className={`w-full ${isMobile ? 'border-b border-gray-100' : ''}`}>
             {isMobile ? (
               <MobileTweetCard 
                 tweet={tweet}

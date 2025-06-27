@@ -92,10 +92,10 @@ export const useTweetViews = () => {
           if (!tweetId) return;
 
           if (entry.isIntersecting) {
-            // Start a timer to record view after 3 seconds of visibility (increased from 2s)
+            // Start a timer to record view after 5 seconds of visibility (increased for performance)
             const timeout = setTimeout(() => {
               recordView(tweetId);
-            }, 3000);
+            }, 5000);
             
             viewTimeoutsRef.current.set(tweetId, timeout);
           } else {
@@ -109,8 +109,8 @@ export const useTweetViews = () => {
         });
       },
       {
-        threshold: 0.6, // Increased threshold - tweet must be 60% visible
-        rootMargin: '0px 0px -150px 0px' // Increased margin - only count if tweet is well within viewport
+        threshold: 0.8, // Increased threshold - tweet must be 80% visible
+        rootMargin: '0px 0px -200px 0px' // Increased margin - only count if tweet is well within viewport
       }
     );
 
@@ -145,7 +145,7 @@ export const useTweetViews = () => {
 
       batchTimeoutRef.current = setTimeout(() => {
         processPendingViews();
-      }, 2000); // Process batch every 2 seconds
+      }, 5000); // Process batch every 5 seconds (reduced frequency)
 
     } catch (error) {
       console.error('Error recording tweet view:', error);

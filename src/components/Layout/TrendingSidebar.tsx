@@ -49,7 +49,7 @@ export const TrendingSidebar: React.FC = () => {
         setSidebarWidth('w-56'); // 224px - minimum width
       }
       
-      console.log(`Available for trending: ${availableForTrending}px, Using: ${getSidebarWidthPx(availableForTrending)}px`);
+      // Removed console.log for performance
     };
 
     const getSidebarWidthPx = (available: number) => {

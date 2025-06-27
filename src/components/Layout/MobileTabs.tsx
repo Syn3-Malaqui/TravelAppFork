@@ -16,16 +16,16 @@ export const MobileTabs: React.FC<MobileTabsProps> = ({ activeTab, onTabChange }
   ];
 
   return (
-    <div className={`md:hidden border-b border-gray-200 bg-white ${isRTL ? 'font-arabic' : ''}`}>
+    <div className={`bg-white ${isRTL ? 'font-arabic' : ''}`}>
       <div className="flex">
         {tabs.map((tab) => (
           <Button
             key={tab.id}
             variant="ghost"
-            className={`flex-1 py-6 px-6 font-bold text-base rounded-none border-b-2 transition-colors ${
+            className={`flex-1 py-4 px-4 font-bold text-lg rounded-none border-b-2 transition-colors ${
               activeTab === tab.id
-                ? 'border-blue-500 text-black'
-                : 'border-transparent text-gray-500 hover:bg-gray-50'
+                ? 'border-blue-500 text-blue-600 bg-blue-50/50'
+                : 'border-transparent text-gray-600 hover:bg-gray-50 hover:text-gray-800'
             }`}
             onClick={() => onTabChange(tab.id as 'for-you' | 'following')}
           >

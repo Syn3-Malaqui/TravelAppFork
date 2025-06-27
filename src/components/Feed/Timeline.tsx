@@ -22,29 +22,11 @@ import { X, ChevronDown, Check } from 'lucide-react';
 export const Timeline: React.FC = () => {
   const navigate = useNavigate();
   const { language, isRTL } = useLanguageStore();
-  const { width, isMobile: windowIsMobile } = useWindowSize();
+  const { width, isMobile } = useWindowSize();
   const [activeTab, setActiveTab] = useState<'for-you' | 'following'>('for-you');
   
-  // Force mobile detection for testing - check current window size directly
-  const [forcedMobile, setForcedMobile] = useState(false);
+  // Remove forced mobile detection - use CSS responsive design instead
   
-  useEffect(() => {
-    const checkMobile = () => {
-      const isMobileNow = window.innerWidth < 768;
-      setForcedMobile(isMobileNow);
-      console.log('🔍 Timeline direct check - window.innerWidth:', window.innerWidth, 'isMobileNow:', isMobileNow);
-    };
-    
-    checkMobile();
-    window.addEventListener('resize', checkMobile);
-    return () => window.removeEventListener('resize', checkMobile);
-  }, []);
-  
-  // Use either the hook or forced detection
-  const isMobileMode = forcedMobile || windowIsMobile;
-  
-  // Additional mobile detection logging
-  console.log('🔍 Timeline render - windowIsMobile:', windowIsMobile, 'forcedMobile:', forcedMobile, 'isMobileMode:', isMobileMode, 'width:', width);
   const [categoryFilter, setCategoryFilter] = useState<string | null>(null);
   const [countryFilter, setCountryFilter] = useState<string>('ALL');
   const [selectedFilter, setSelectedFilter] = useState<string>('all');
@@ -67,24 +49,18 @@ export const Timeline: React.FC = () => {
     const margins = 60; // padding and margins
     const minRequiredWidth = leftSidebarWidth + minMainContentWidth + trendingSidebarWidth + margins;
     
-    console.log(`📏 Screen width: ${width}px, Required: ${minRequiredWidth}px, isMobile: ${windowIsMobile}`);
-    
-    if (isMobileMode) {
-      console.log('🔥 MOBILE MODE - Using MobileTweetCard');
+    if (isMobile) {
       setShowSidebar(false);
       setShowFilterNavigation(true);
     } else {
-      console.log('💻 DESKTOP MODE - Using TweetCard');
       // Show trending sidebar only if there's enough actual space
       const hasEnoughSpace = width >= minRequiredWidth;
       setShowSidebar(hasEnoughSpace);
       
       // Show filter navigation only on very large screens
       setShowFilterNavigation(width >= 1400);
-      
-      console.log(`Trending sidebar: ${hasEnoughSpace ? 'SHOWN' : 'HIDDEN'}`);
     }
-  }, [width, windowIsMobile]);
+  }, [width, isMobile]);
 
   // Fetch available countries from the database
   useEffect(() => {
@@ -224,63 +200,58 @@ export const Timeline: React.FC = () => {
 
   const selectedCountryData = availableCountries.find(c => c.code === countryFilter) || availableCountries[0];
 
-  // Debug logging at render time
-  console.log('🔥 TIMELINE RENDER DECISION:', {
-    windowIsMobile,
-    forcedMobile,
-    isMobileMode,
-    width,
-    windowInnerWidth: window.innerWidth
-  });
 
-  // Mobile view
-  if (isMobileMode) {
-    return (
-      <div className={`w-full ${isRTL ? '' : 'border-r border-gray-200'} overflow-hidden flex flex-col ${language === 'ar' ? 'font-arabic' : ''}`}>
-        {/* Mobile Tabs */}
-        <MobileTabs activeTab={activeTab} onTabChange={handleTabChange} />
 
-        {/* WhatsApp-style filter navigation for mobile */}
-        <FilterNavigation 
-          selectedFilter={selectedFilter}
-          onFilterChange={handleFilterChange}
-        />
+  return (
+    <div className="h-full flex">
+      {/* Mobile Layout - Only visible on mobile screens */}
+      <div className={`md:hidden w-full h-full flex flex-col ${language === 'ar' ? 'font-arabic' : ''}`}>
+        {/* Mobile Header with Tabs - Fixed at top */}
+        <div className="bg-white border-b border-gray-100 sticky top-0 z-10">
+          <MobileTabs activeTab={activeTab} onTabChange={handleTabChange} />
+          
+          {/* Mobile Filter Navigation */}
+          <FilterNavigation 
+            selectedFilter={selectedFilter}
+            onFilterChange={handleFilterChange}
+          />
+        </div>
 
-        {/* Timeline - Scrollable container */}
-        <div className="flex-1 overflow-y-auto">
-          <div className="flex flex-col pb-20">
-            {/* Filter indicators */}
-            {(categoryFilter || countryFilter !== 'ALL') && (
-              <div className="bg-blue-50 border-b border-blue-200 px-4 py-2">
-                <div className="flex items-center justify-between">
-                  <div className="text-xs text-blue-700 flex items-center space-x-2">
-                    {categoryFilter && (
-                      <span className="flex items-center">
-                        <span>Category: <span className="font-semibold">{categoryFilter}</span></span>
+        {/* Main Content Area - Full height minus header and bottom nav */}
+        <div className="flex-1 overflow-y-auto bg-gray-50 w-full">
+          {/* Filter indicators */}
+          {(categoryFilter || countryFilter !== 'ALL') && (
+            <div className="bg-blue-50 border-b border-blue-200 px-4 py-3 w-full">
+              <div className="flex items-center justify-between">
+                <div className="text-sm text-blue-700">
+                  {categoryFilter && (
+                    <span className="inline-block mr-3">
+                      <span className="font-medium">{categoryFilter}</span>
+                    </span>
+                  )}
+                  {countryFilter !== 'ALL' && (
+                    <span className="inline-block">
+                      <span className="font-medium">
+                        {availableCountries.find(c => c.code === countryFilter)?.name}
                       </span>
-                    )}
-                    {countryFilter !== 'ALL' && (
-                      <span className="flex items-center">
-                        <span>Country: <span className="font-semibold">
-                          {availableCountries.find(c => c.code === countryFilter)?.name}
-                        </span></span>
-                      </span>
-                    )}
-                  </div>
-                  <button 
-                    onClick={clearFilters}
-                    className="flex items-center text-blue-600 hover:text-blue-800 text-xs font-medium"
-                  >
-                    <X className="h-3 w-3 mr-1" />
-                    Clear
-                  </button>
+                    </span>
+                  )}
                 </div>
+                <button 
+                  onClick={clearFilters}
+                  className="flex items-center text-blue-600 hover:text-blue-800 text-sm font-medium"
+                >
+                  <X className="h-4 w-4 mr-1" />
+                  Clear
+                </button>
               </div>
-            )}
+            </div>
+          )}
 
-            {/* Infinite Scroll Tweets */}
+          {/* Tweets Container with proper mobile spacing */}
+          <div className="pb-20 w-full">
             <InfiniteScrollTweets 
-              isMobile={isMobileMode} 
+              isMobile={true} 
               feedType={activeTab}
               categoryFilter={categoryFilter}
               countryFilter={countryFilter}
@@ -288,13 +259,9 @@ export const Timeline: React.FC = () => {
           </div>
         </div>
       </div>
-    );
-  }
 
-  // Desktop view
-  return (
-    <div className="h-full flex">
-      <div className="flex-1">
+      {/* Desktop Layout - Only visible on desktop screens */}
+      <div className="hidden md:flex flex-1">
         {/* Main Content */}
         <div className={`flex-1 ${isRTL ? '' : 'border-r border-gray-200'} flex flex-col max-w-[600px] ${showSidebar && !isRTL ? '' : 'border-r-0 border-l-0'} ${language === 'ar' ? 'font-arabic' : ''}`}>
           {/* Desktop Header with Tabs - Fixed (Full Width) */}
@@ -434,7 +401,7 @@ export const Timeline: React.FC = () => {
 
               {/* Infinite Scroll Tweets */}
               <InfiniteScrollTweets 
-                isMobile={isMobileMode} 
+                isMobile={false} 
                 feedType={activeTab}
                 categoryFilter={categoryFilter}
                 countryFilter={countryFilter}

@@ -83,7 +83,7 @@ export const MobileTweetCard: React.FC<MobileTweetCardProps> = ({
 
   const handleDelete = async () => {
     // Mock delete functionality
-    console.log('Delete tweet:', tweet.id);
+    // TODO: Implement actual delete functionality
   };
 
   const handleProfileClick = (e: React.MouseEvent) => {
@@ -166,20 +166,22 @@ export const MobileTweetCard: React.FC<MobileTweetCardProps> = ({
         userBookmarks = bookmarksResult.data?.map(bookmark => bookmark.tweet_id) || [];
       }
 
+      const profile = Array.isArray(data.profiles) ? data.profiles[0] : data.profiles;
+      
       const formattedTweet: Tweet = {
         id: data.id,
         content: data.content,
         author: {
-          id: data.profiles.id,
-          username: data.profiles.username,
-          displayName: data.profiles.display_name,
-          avatar: data.profiles.avatar_url || '',
-          bio: data.profiles.bio,
-          verified: data.profiles.verified,
-          followers: data.profiles.followers_count,
-          following: data.profiles.following_count,
-          country: data.profiles.country,
-          joinedDate: new Date(data.profiles.created_at),
+          id: profile.id,
+          username: profile.username,
+          displayName: profile.display_name,
+          avatar: profile.avatar_url || '',
+          bio: profile.bio,
+          verified: profile.verified,
+          followers: profile.followers_count,
+          following: profile.following_count,
+          country: profile.country,
+          joinedDate: new Date(profile.created_at),
         },
         createdAt: new Date(data.created_at),
         likes: data.likes_count,
@@ -398,7 +400,7 @@ export const MobileTweetCard: React.FC<MobileTweetCardProps> = ({
     <>
       <div 
         ref={tweetRef}
-        className={`border-b border-gray-100 bg-white ${isReply ? 'ml-8 border-l-2 border-gray-200' : ''}`}
+        className={`w-full bg-white ${isReply ? 'ml-6 border-l-2 border-gray-200' : ''}`}
       >
         {/* Retweet indicator */}
         {tweet.isRetweet && tweet.retweetedBy && (
@@ -437,42 +439,42 @@ export const MobileTweetCard: React.FC<MobileTweetCardProps> = ({
         )}
 
         <div 
-          className="p-3 cursor-pointer"
+          className="w-full p-4 cursor-pointer"
           onClick={handleTweetClick}
         >
-          <div className="flex gap-2">
+          <div className="flex gap-3 w-full">
             {/* Avatar */}
             <LazyAvatar
               src={tweet.author.avatar}
               fallback={tweet.author.displayName[0]}
-              className="w-8 h-8 flex-shrink-0 cursor-pointer"
+              className="w-10 h-10 flex-shrink-0 cursor-pointer"
               onClick={handleProfileClick}
-              size={64}
+              size={80}
             />
 
             {/* Content */}
-            <div className="flex-1 min-w-0">
+            <div className="flex-1 min-w-0 w-full overflow-hidden">
               {/* Header */}
               <div className="flex items-center justify-between mb-1">
                 {/* User info and timestamp */}
-                <div className="flex items-center space-x-1 min-w-0">
+                <div className="flex items-center space-x-1 min-w-0 flex-1 overflow-hidden">
                   <span 
-                    className="font-bold text-gray-900 text-xs truncate cursor-pointer hover:underline"
+                    className="font-bold text-gray-900 text-sm truncate cursor-pointer hover:underline"
                     onClick={handleProfileClick}
                   >
                     {tweet.author.displayName}
                   </span>
                   {tweet.author.verified && (
-                    <CheckCircle className="w-3 h-3 text-blue-500 fill-current flex-shrink-0" />
+                    <CheckCircle className="w-4 h-4 text-blue-500 fill-current flex-shrink-0" />
                   )}
                   <span 
-                    className="text-gray-500 text-xs truncate cursor-pointer hover:underline"
+                    className="text-gray-500 text-sm truncate cursor-pointer hover:underline"
                     onClick={handleProfileClick}
                   >
                     @{tweet.author.username}
                   </span>
-                  <span className="text-gray-500 text-xs">·</span>
-                  <span className="text-gray-500 text-xs flex-shrink-0">
+                  <span className="text-gray-500 text-sm">·</span>
+                  <span className="text-gray-500 text-sm flex-shrink-0">
                     {formatDistanceToNow(tweet.createdAt, { addSuffix: true }).replace('about ', '')}
                   </span>
                 </div>
@@ -521,10 +523,10 @@ export const MobileTweetCard: React.FC<MobileTweetCardProps> = ({
               </div>
 
               {/* Tweet Text with Enhanced Link Parsing */}
-              <div className="text-gray-900 mb-2 text-xs leading-4">
+              <div className="text-gray-900 mb-3 text-base leading-5 w-full break-words overflow-wrap-anywhere">
                 {parseTextWithLinks(displayContent)}
                 {tweet.content.length > 200 && (
-                  <span className="text-gray-500 text-xs italic"> (truncated)</span>
+                  <span className="text-gray-500 text-sm italic"> (truncated)</span>
                 )}
               </div>
 
@@ -569,7 +571,7 @@ export const MobileTweetCard: React.FC<MobileTweetCardProps> = ({
 
               {/* Images */}
               {tweet.images && tweet.images.length > 0 && (
-                <div className="mb-2 rounded-lg overflow-hidden">
+                <div className="mb-2 rounded-lg overflow-hidden w-full max-w-full">
                   {tweet.images.length === 1 ? (
                     // Single image - centered and fills container
                     <div className="w-full aspect-[16/9] cursor-pointer" onClick={(e) => handleImageClick(0, e)}>
@@ -631,12 +633,12 @@ export const MobileTweetCard: React.FC<MobileTweetCardProps> = ({
               )}
 
               {/* Action Buttons */}
-              <div className="flex items-center justify-between space-x-2 mt-2">
+              <div className="flex items-center justify-between space-x-1 mt-2 w-full max-w-full overflow-hidden">
                 {/* Reply */}
                 <Button 
                   variant="ghost" 
                   size="sm" 
-                  className="text-gray-500 p-1 h-6 flex items-center"
+                  className="text-gray-500 p-1 h-6 flex items-center flex-shrink-0"
                   onClick={(e) => handleReplyClick(e)}
                 >
                   <MessageCircle className="w-3 h-3" />
@@ -647,7 +649,7 @@ export const MobileTweetCard: React.FC<MobileTweetCardProps> = ({
                 <Button 
                   variant="ghost" 
                   size="sm" 
-                  className={`p-1 h-6 flex items-center ${
+                  className={`p-1 h-6 flex items-center flex-shrink-0 ${
                     tweet.isRetweeted 
                       ? 'text-green-500' 
                       : 'text-gray-500'
@@ -662,7 +664,7 @@ export const MobileTweetCard: React.FC<MobileTweetCardProps> = ({
                 <Button 
                   variant="ghost" 
                   size="sm" 
-                  className={`p-1 h-6 flex items-center ${
+                  className={`p-1 h-6 flex items-center flex-shrink-0 ${
                     tweet.isLiked 
                       ? 'text-red-500' 
                       : 'text-gray-500'
@@ -677,7 +679,7 @@ export const MobileTweetCard: React.FC<MobileTweetCardProps> = ({
                 <Button 
                   variant="ghost" 
                   size="sm" 
-                  className="text-gray-500 p-1 h-6 flex items-center"
+                  className="text-gray-500 p-1 h-6 flex items-center flex-shrink-0"
                   onClick={handleViewsClick}
                 >
                   <Eye className="w-3 h-3" />
@@ -690,7 +692,7 @@ export const MobileTweetCard: React.FC<MobileTweetCardProps> = ({
                 <Button 
                   variant="ghost" 
                   size="sm" 
-                      className="text-gray-500 p-1 h-6"
+                      className="text-gray-500 p-1 h-6 flex-shrink-0"
                       onClick={(e) => e.stopPropagation()}
                 >
                       <Share className="w-3 h-3" />

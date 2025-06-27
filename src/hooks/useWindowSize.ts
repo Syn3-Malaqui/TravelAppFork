@@ -24,8 +24,6 @@ export const useWindowSize = (): WindowSize => {
     const height = window.innerHeight;
     const isMobile = width < 768;
     
-    console.log('🔍 Initial window size:', { width, height, isMobile });
-    
     return {
       width,
       height,
@@ -50,8 +48,7 @@ export const useWindowSize = (): WindowSize => {
         isDesktop: width >= 1024,
       });
       
-      console.log(`📏 Window resize: ${width}x${height}, isMobile: ${width < 768}`);
-      console.log('🎯 Setting window size state:', { width, height, isMobile: width < 768 });
+
     }
 
     // Set initial size

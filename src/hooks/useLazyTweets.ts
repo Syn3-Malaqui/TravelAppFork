@@ -77,8 +77,8 @@ export const useLazyTweets = (options: UseLazyTweetsOptions = {}) => {
       
       const { tweets: cachedTweets, timestamp, offset } = JSON.parse(cached);
       
-      // Cache expires after 1 minute for deployed environments, 2 minutes for local
-      const cacheExpiry = isDeployedRef.current ? 1 * 60 * 1000 : 2 * 60 * 1000;
+      // Cache expires after 2 minutes for deployed environments, 5 minutes for local (increased for performance)
+      const cacheExpiry = isDeployedRef.current ? 2 * 60 * 1000 : 5 * 60 * 1000;
       if (Date.now() - timestamp > cacheExpiry) {
         sessionStorage.removeItem(cacheKey);
         return null;
