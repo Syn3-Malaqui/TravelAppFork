@@ -264,7 +264,7 @@ export const Timeline: React.FC = () => {
         <div className="bg-white border-b border-gray-100 sticky top-0 z-10">
           
           {/* 1. Categories at the top */}
-          <div className="py-2 border-b border-gray-100">
+          <div className="py-3 border-b border-gray-100 px-4">
             <FilterNavigation 
               selectedFilter={selectedFilter}
               onFilterChange={handleFilterChange}
@@ -272,16 +272,16 @@ export const Timeline: React.FC = () => {
           </div>
           
           {/* 2. Countries in the middle as buttons */}
-          <div className="py-2 border-b border-gray-100">
-            <div className="flex items-center gap-1 overflow-x-auto scrollbar-hide px-3">
-              <div className="flex gap-1 min-w-max">
+          <div className="py-3 border-b border-gray-100">
+            <div className="flex items-center gap-2 overflow-x-auto scrollbar-hide px-4">
+              <div className="flex gap-2 min-w-max">
                 {availableCountries.slice(0, 8).map((country) => (
                   <Button
                     key={country.code}
                     variant={countryFilter === country.code ? "default" : "outline"}
                     size="sm"
                     onClick={() => handleCountryChange(country.code)}
-                    className={`rounded-full px-2 py-1 text-xs font-medium whitespace-nowrap transition-colors flex-shrink-0 ${
+                    className={`rounded-full px-3 py-1 text-xs font-medium whitespace-nowrap transition-colors flex-shrink-0 ${
                       countryFilter === country.code
                         ? 'bg-blue-500 text-white hover:bg-blue-600'
                         : 'text-gray-600 hover:bg-gray-100 border border-gray-200'
@@ -296,7 +296,7 @@ export const Timeline: React.FC = () => {
                       <Button 
                         variant="outline" 
                         size="sm"
-                        className="rounded-full px-2 py-1 text-xs font-medium whitespace-nowrap border border-gray-200 text-gray-600 hover:bg-gray-100"
+                        className="rounded-full px-3 py-1 text-xs font-medium whitespace-nowrap border border-gray-200 text-gray-600 hover:bg-gray-100"
                       >
                         +
                       </Button>
@@ -379,11 +379,9 @@ export const Timeline: React.FC = () => {
         <div className={`flex-1 ${isRTL ? '' : 'border-r border-gray-200'} flex flex-col md:max-w-[600px] ${showSidebar && !isRTL ? '' : 'border-r-0 border-l-0'} ${language === 'ar' ? 'font-arabic' : ''}`}>
           {/* Desktop Header with NEW Layout - Categories → Countries → Tabs */}
           <div className="bg-white/95 backdrop-blur-md border-b border-gray-200 z-50 flex-shrink-0">
-            {/* Content wrapper with responsive padding */}
-            <div className="w-full px-4 md:px-6">
             
             {/* 1. Categories at the top */}
-            <div className="py-3 border-b border-gray-100">
+            <div className="py-4 border-b border-gray-100 px-4 md:px-6">
               <FilterNavigation 
                 selectedFilter={selectedFilter}
                 onFilterChange={handleFilterChange}
@@ -391,7 +389,7 @@ export const Timeline: React.FC = () => {
             </div>
             
             {/* 2. Countries in the middle as buttons */}
-            <div className="py-3 border-b border-gray-100">
+            <div className="py-4 border-b border-gray-100 px-4 md:px-6">
               <div className="flex items-center gap-2 overflow-x-auto scrollbar-hide">
                 <div className="flex gap-2 min-w-max">
                   {availableCountries.slice(0, 10).map((country) => (
@@ -454,7 +452,7 @@ export const Timeline: React.FC = () => {
             </div>
             
             {/* 3. For you / Following tabs at the bottom */}
-            <div className="flex">
+            <div className="flex px-4 md:px-6">
               <Button
                 variant="ghost"
                 onClick={() => handleTabChange('for-you')}
@@ -477,8 +475,6 @@ export const Timeline: React.FC = () => {
               >
 {language === 'en' ? 'Following' : 'المتابعة'}
               </Button>
-            </div>
-
             </div>
           </div>
 
