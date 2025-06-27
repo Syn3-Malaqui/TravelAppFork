@@ -262,8 +262,8 @@ export const Timeline: React.FC = () => {
 
       {/* Desktop Layout - Only visible on desktop screens */}
       <div className="hidden md:flex flex-1">
-        {/* Main Content */}
-        <div className={`flex-1 ${isRTL ? '' : 'border-r border-gray-200'} flex flex-col max-w-[600px] ${showSidebar && !isRTL ? '' : 'border-r-0 border-l-0'} ${language === 'ar' ? 'font-arabic' : ''}`}>
+        {/* Main Content - Responsive width */}
+        <div className={`flex-1 ${isRTL ? '' : 'border-r border-gray-200'} flex flex-col ${showSidebar && !isRTL ? '' : 'border-r-0 border-l-0'} ${language === 'ar' ? 'font-arabic' : ''}`}>
           {/* Desktop Header with Tabs - Fixed (Full Width) */}
           <div className="bg-white/95 backdrop-blur-md border-b border-gray-200 z-50 flex-shrink-0">
             {/* Content wrapper with max-width for header content */}

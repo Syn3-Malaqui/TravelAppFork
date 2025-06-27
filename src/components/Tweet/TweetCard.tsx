@@ -401,7 +401,7 @@ export const TweetCard: React.FC<TweetCardProps> = ({
     <>
       <div 
         ref={tweetRef}
-        className={`border-b border-gray-200 transition-colors hover:bg-gray-50 cursor-pointer ${isReply ? 'ml-12 border-l-2 border-gray-200' : ''}`}
+        className={`w-full border-b border-gray-200 transition-colors hover:bg-gray-50 cursor-pointer ${isReply ? 'ml-12 border-l-2 border-gray-200' : ''}`}
       >
         {/* Retweet indicator */}
         {tweet.isRetweet && tweet.retweetedBy && (
@@ -440,10 +440,10 @@ export const TweetCard: React.FC<TweetCardProps> = ({
         )}
 
         <div 
-          className="px-4 py-2"
+          className="w-full px-4 py-2"
           onClick={handleTweetClick}
         >
-          <div className="flex gap-3">
+          <div className="flex gap-3 w-full">
             {/* Avatar */}
             <LazyAvatar
               src={tweet.author.avatar}
