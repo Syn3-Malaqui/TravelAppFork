@@ -2,6 +2,24 @@
 
 ## [Unreleased] - 2025-01-26
 
+### 🌐 Internationalization & Localization (Latest)
+- **NEW**: Added comprehensive Arabic language support with RTL (Right-to-Left) layout
+- Implemented Arabic translations for all major UI components:
+  - **Trending Sidebar**: Trending → "الرائج", posts → "منشور", recent → "حديث"
+  - **Hashtag Page**: Recent → "الأحدث", Top → "الأعلى", Create post → "إنشاء منشور"
+  - **Notifications Page**: Notifications → "الإشعارات", All → "الكل", Unread → "غير مقروء"
+  - **Search Page**: Search placeholder, tab labels (Top → "الأعلى", People → "الأشخاص")
+- Added proper RTL layout support with responsive spacing adjustments
+- Implemented icon positioning and arrow rotation for RTL layouts
+- Added cultural context translations (followers → "متابع", trending → "رائج")
+
+### 🔧 Layout & Scrolling Fixes (Latest)
+- **FIXED**: Notifications page scrolling issues with proper flex layout structure
+- **FIXED**: Hashtag page scrolling with fixed headers and scrollable content areas
+- Implemented consistent layout pattern: `h-full flex flex-col overflow-hidden`
+- Added `flex-shrink-0` for fixed headers and `flex-1 overflow-y-auto` for content
+- Ensured proper mobile navigation spacing (`pb-20 md:pb-0`)
+
 ### 🚀 Deployment & Infrastructure
 - **BREAKING**: Migrated from Netlify to Vercel deployment
 - Added comprehensive Vercel configuration with SPA routing and security headers
@@ -103,10 +121,16 @@
 ├── 📄 README.md *(UPDATED)*
 ├── 📄 package.json *(UPDATED)*
 ├── 📄 vite.config.ts *(UPDATED)*
+├── 📄 CHANGELOG.md *(UPDATED - Today's changes)*
 └── 📁 src/
     └── 📁 components/
-        └── 📁 Layout/
-            └── 📄 TrendingSidebar.tsx *(UPDATED)*
+        ├── 📁 Layout/
+        │   └── 📄 TrendingSidebar.tsx *(UPDATED - Arabic translations)*
+        ├── 📁 Search/
+        │   ├── 📄 HashtagPage.tsx *(UPDATED - Arabic translations + scrolling fix)*
+        │   └── 📄 OptimizedSearchPage.tsx *(UPDATED - Arabic translations)*
+        └── 📁 Notifications/
+            └── 📄 NotificationsPage.tsx *(UPDATED - Arabic translations + scrolling fix)*
 
 📁 Removed/
 └── 📄 public/_redirects *(REMOVED - Netlify specific)*
@@ -136,6 +160,9 @@
 ```
 
 ## Impact Summary (Latest Release)
+- 🌐 **Internationalization**: Full Arabic language support with RTL layout for global accessibility
+- 🔧 **User Experience**: Fixed critical scrolling issues in notifications and hashtag pages
+- 🎨 **Layout Consistency**: Standardized flex layout patterns across all scrollable pages
 - 🚀 **Deployment**: Fully migrated to Vercel with optimized performance and global CDN
 - 🛡️ **Security**: Comprehensive security audit passed with enhanced protection
 - 📊 **Performance**: Improved build times, bundle optimization, and asset caching
