@@ -167,7 +167,7 @@ export const FollowListModal: React.FC<FollowListModalProps> = ({
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent 
-        className="max-w-sm w-full h-[500px] p-0 overflow-hidden"
+        className="max-w-sm w-full p-0"
         dir={isRTL ? 'rtl' : 'ltr'}
       >
         <DialogHeader className="px-3 pt-1 pb-0.5 border-b border-gray-200">
