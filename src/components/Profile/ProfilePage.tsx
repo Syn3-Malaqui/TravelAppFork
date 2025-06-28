@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Calendar, MapPin, Link as LinkIcon, UserPlus, UserMinus, Settings, MessageCircle } from 'lucide-react';
 import { Button } from '../ui/button';
@@ -58,61 +58,7 @@ export const ProfilePage: React.FC = () => {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  // Fetch profile data when username changes - with persistent session caching
-  useEffect(() => {
-    if (!username) return;
-
-    // Check if this profile was already loaded in this session
-    const sessionLoadedProfiles = sessionStorage.getItem('loaded_profiles');
-    const loadedInSession = sessionLoadedProfiles ? JSON.parse(sessionLoadedProfiles) : [];
-    
-    // Check if we have cached data for this profile
-    const cachedProfile = sessionStorage.getItem(`profile_${username}`);
-    
-    if (cachedProfile && loadedInSession.includes(username)) {
-      // Profile was loaded in this session and we have cached data
-      try {
-        const parsed = JSON.parse(cachedProfile);
-        // Use longer cache for session-loaded profiles (until page refresh)
-        if (Date.now() - parsed.timestamp < 60 * 60 * 1000) { // 1 hour cache for session profiles
-          setProfile(parsed.profile);
-          setTweets(parsed.tweets || []);
-          setReplies(parsed.replies || []);
-          setLikes(parsed.likes || []);
-          setLoading(false);
-          return;
-        }
-      } catch (error) {
-        console.error('Error parsing cached profile:', error);
-      }
-    }
-    
-    // If not in session cache, check for fresh cached data
-    if (cachedProfile) {
-      try {
-        const parsed = JSON.parse(cachedProfile);
-        if (Date.now() - parsed.timestamp < 5 * 60 * 1000) { // 5 minute cache for fresh loads
-          setProfile(parsed.profile);
-          setTweets(parsed.tweets || []);
-          setReplies(parsed.replies || []);
-          setLikes(parsed.likes || []);
-          setLoading(false);
-          
-          // Mark as loaded in this session
-          const updatedLoaded = [...loadedInSession, username];
-          sessionStorage.setItem('loaded_profiles', JSON.stringify(updatedLoaded));
-          return;
-        }
-      } catch (error) {
-        console.error('Error parsing cached profile:', error);
-      }
-    }
-    
-    // Need to fetch fresh data
-    fetchProfile();
-  }, [username]);
-
-  const fetchProfile = async () => {
+  const fetchProfile = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
@@ -335,7 +281,61 @@ export const ProfilePage: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [username, currentUser]);
+
+  // Fetch profile data when username changes - with persistent session caching
+  useEffect(() => {
+    if (!username) return;
+
+    // Check if this profile was already loaded in this session
+    const sessionLoadedProfiles = sessionStorage.getItem('loaded_profiles');
+    const loadedInSession = sessionLoadedProfiles ? JSON.parse(sessionLoadedProfiles) : [];
+    
+    // Check if we have cached data for this profile
+    const cachedProfile = sessionStorage.getItem(`profile_${username}`);
+    
+    if (cachedProfile && loadedInSession.includes(username)) {
+      // Profile was loaded in this session and we have cached data
+      try {
+        const parsed = JSON.parse(cachedProfile);
+        // Use longer cache for session-loaded profiles (until page refresh)
+        if (Date.now() - parsed.timestamp < 60 * 60 * 1000) { // 1 hour cache for session profiles
+          setProfile(parsed.profile);
+          setTweets(parsed.tweets || []);
+          setReplies(parsed.replies || []);
+          setLikes(parsed.likes || []);
+          setLoading(false);
+          return;
+        }
+      } catch (error) {
+        console.error('Error parsing cached profile:', error);
+      }
+    }
+    
+    // If not in session cache, check for fresh cached data
+    if (cachedProfile) {
+      try {
+        const parsed = JSON.parse(cachedProfile);
+        if (Date.now() - parsed.timestamp < 5 * 60 * 1000) { // 5 minute cache for fresh loads
+          setProfile(parsed.profile);
+          setTweets(parsed.tweets || []);
+          setReplies(parsed.replies || []);
+          setLikes(parsed.likes || []);
+          setLoading(false);
+          
+          // Mark as loaded in this session
+          const updatedLoaded = [...loadedInSession, username];
+          sessionStorage.setItem('loaded_profiles', JSON.stringify(updatedLoaded));
+          return;
+        }
+      } catch (error) {
+        console.error('Error parsing cached profile:', error);
+      }
+    }
+    
+    // Need to fetch fresh data
+    fetchProfile();
+  }, [username, fetchProfile]);
 
   const handleFollow = async () => {
     if (!profile) return;
