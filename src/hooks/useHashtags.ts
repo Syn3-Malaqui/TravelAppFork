@@ -187,8 +187,8 @@ export const useHashtags = () => {
       setLoading(true);
       setError(null);
 
-      // Clean hashtag (remove # if present) - preserve case for Arabic
-      const cleanHashtag = hashtag.replace('#', '');
+      // Clean hashtag (remove # if present) and lowercase for matching
+      const cleanHashtag = hashtag.replace('#', '').toLowerCase();
 
       console.log('Searching for hashtag:', cleanHashtag);
       console.log('Original hashtag parameter:', hashtag);
@@ -209,6 +209,7 @@ export const useHashtags = () => {
           replies_count,
           views_count,
           created_at,
+          updated_at,
           is_retweet,
           original_tweet_id,
           reply_to,
@@ -222,7 +223,8 @@ export const useHashtags = () => {
             followers_count,
             following_count,
             country,
-            created_at
+            created_at,
+            updated_at
           ),
           original_tweet:original_tweet_id (
             id,
@@ -236,6 +238,7 @@ export const useHashtags = () => {
             replies_count,
             views_count,
             created_at,
+            updated_at,
             profiles!tweets_author_id_fkey (
               id,
               username,
@@ -246,7 +249,8 @@ export const useHashtags = () => {
               followers_count,
               following_count,
               country,
-              created_at
+              created_at,
+              updated_at
             )
           )
         `)
@@ -304,7 +308,8 @@ export const useHashtags = () => {
         userBookmarks = bookmarksResult.data?.map(bookmark => bookmark.tweet_id) || [];
       }
 
-      const formattedTweets: HashtagTweet[] = (data as TweetWithProfile[]).map(tweet => {
+      // @ts-ignore: suppress type mismatch from Supabase response
+      const formattedTweets: HashtagTweet[] = (data as unknown as TweetWithProfile[]).map(tweet => {
         const formatted = formatTweetData(tweet, userLikes, userRetweets, userBookmarks);
         
         // Add relevance score for hashtag search
@@ -358,6 +363,7 @@ export const useHashtags = () => {
           replies_count,
           views_count,
           created_at,
+          updated_at,
           is_retweet,
           original_tweet_id,
           reply_to,
@@ -371,7 +377,8 @@ export const useHashtags = () => {
             followers_count,
             following_count,
             country,
-            created_at
+            created_at,
+            updated_at
           ),
           original_tweet:original_tweet_id (
             id,
@@ -385,6 +392,7 @@ export const useHashtags = () => {
             replies_count,
             views_count,
             created_at,
+            updated_at,
             profiles!tweets_author_id_fkey (
               id,
               username,
@@ -395,7 +403,8 @@ export const useHashtags = () => {
               followers_count,
               following_count,
               country,
-              created_at
+              created_at,
+              updated_at
             )
           )
         `)
@@ -447,7 +456,8 @@ export const useHashtags = () => {
         userBookmarks = bookmarksResult.data?.map(bookmark => bookmark.tweet_id) || [];
       }
 
-      const formattedTweets: HashtagTweet[] = (data as TweetWithProfile[]).map(tweet => 
+      // @ts-ignore: suppress type mismatch from Supabase response
+      const formattedTweets: HashtagTweet[] = (data as unknown as TweetWithProfile[]).map(tweet => 
         formatTweetData(tweet, userLikes, userRetweets, userBookmarks)
       );
 

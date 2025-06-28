@@ -14,7 +14,7 @@ export const HashtagPage: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { user } = useAuth();
-  const { hashtagTweets, loading, error, searchHashtagTweets, trendingHashtags } = useHashtags();
+  const { hashtagTweets, loading, error, searchTweetsByKeyword, trendingHashtags } = useHashtags();
   const { likeTweet, unlikeTweet, retweetTweet, unretweetTweet, bookmarkTweet, unbookmarkTweet } = useTweets();
   const [sortBy, setSortBy] = useState<'recent' | 'top'>('recent');
   const [isMounted, setIsMounted] = useState(false);
@@ -29,10 +29,11 @@ export const HashtagPage: React.FC = () => {
 
   useEffect(() => {
     if (isMounted && cleanHashtag) {
-      console.log('HashtagPage: Searching for hashtag:', cleanHashtag);
-      searchHashtagTweets(cleanHashtag, sortBy);
+      console.log('HashtagPage: Keyword search for hashtag:', cleanHashtag);
+      // Fallback to content search to handle Arabic hashtags
+      searchTweetsByKeyword(`#${cleanHashtag}`, sortBy);
     }
-  }, [cleanHashtag, sortBy, searchHashtagTweets, isMounted]);
+  }, [cleanHashtag, sortBy, searchTweetsByKeyword, isMounted]);
 
   const handleLike = async (tweetId: string, isCurrentlyLiked: boolean) => {
     try {
@@ -43,7 +44,7 @@ export const HashtagPage: React.FC = () => {
       }
       // Refresh hashtag tweets to update like counts
       if (cleanHashtag) {
-        searchHashtagTweets(cleanHashtag, sortBy);
+        searchTweetsByKeyword(`#${cleanHashtag}`, sortBy);
       }
     } catch (error) {
       console.error('Error toggling like:', error);
@@ -59,7 +60,7 @@ export const HashtagPage: React.FC = () => {
       }
       // Refresh hashtag tweets to update retweet counts
       if (cleanHashtag) {
-        searchHashtagTweets(cleanHashtag, sortBy);
+        searchTweetsByKeyword(`#${cleanHashtag}`, sortBy);
       }
     } catch (error) {
       console.error('Error toggling retweet:', error);
@@ -75,7 +76,7 @@ export const HashtagPage: React.FC = () => {
       }
       // Refresh hashtag tweets to update bookmark status
       if (cleanHashtag) {
-        searchHashtagTweets(cleanHashtag, sortBy);
+        searchTweetsByKeyword(`#${cleanHashtag}`, sortBy);
       }
     } catch (error) {
       console.error('Error toggling bookmark:', error);
@@ -223,7 +224,7 @@ export const HashtagPage: React.FC = () => {
               <p className="text-sm text-gray-600">{error}</p>
               <Button
                 variant="outline"
-                onClick={() => cleanHashtag && searchHashtagTweets(cleanHashtag, sortBy)}
+                onClick={() => cleanHashtag && searchTweetsByKeyword(`#${cleanHashtag}`, sortBy)}
                 className="mt-4"
               >
                 Try again
