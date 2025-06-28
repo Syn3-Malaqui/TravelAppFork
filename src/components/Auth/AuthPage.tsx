@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
-import { Eye, EyeOff, Mail, Lock, User, ArrowLeft, MessageSquare } from 'lucide-react';
+import { Eye, EyeOff, Mail, Lock, User, ArrowLeft } from 'lucide-react';
 import { Button } from '../ui/button';
 import { useAuth } from '../../hooks/useAuth';
 
-type AuthMode = 'welcome' | 'login' | 'signup' | 'forgot-password' | 'verify-email';
+type AuthMode = 'welcome' | 'login' | 'signup' | 'forgot-password';
 
 export const AuthPage: React.FC = () => {
   const [mode, setMode] = useState<AuthMode>('welcome');
@@ -12,7 +12,6 @@ export const AuthPage: React.FC = () => {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [username, setUsername] = useState('');
   const [displayName, setDisplayName] = useState('');
-  const [verificationCode, setVerificationCode] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -20,24 +19,6 @@ export const AuthPage: React.FC = () => {
   const [success, setSuccess] = useState('');
 
   const { signIn, signUp, resetPassword } = useAuth();
-
-  // Generate WhatsApp-style verification code
-  const generateVerificationCode = () => {
-    return Math.floor(100000 + Math.random() * 900000).toString();
-  };
-
-  // Send verification email with WhatsApp-style code
-  const sendVerificationEmail = async (email: string, code: string) => {
-    // This would integrate with your email service (SendGrid, etc.)
-    // For now, we'll show the code in the success message for testing
-    console.log(`Verification code for ${email}: ${code}`);
-    
-    // Store code temporarily (in production, store in backend)
-    localStorage.setItem('verification_code', code);
-    localStorage.setItem('verification_email', email);
-    
-    return true;
-  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -67,53 +48,14 @@ export const AuthPage: React.FC = () => {
           return;
         }
 
-        // Generate and send verification code
-        const code = generateVerificationCode();
-        await sendVerificationEmail(email, code);
-        
-        // Store signup data temporarily
-        localStorage.setItem('signup_data', JSON.stringify({
-          email,
-          password,
-          username,
-          displayName
-        }));
-        
-        setMode('verify-email');
-        setSuccess(`We've sent a WhatsApp-style verification code to ${email}. Please check your email and enter the 6-digit code below.`);
-      } else if (mode === 'verify-email') {
-        const storedCode = localStorage.getItem('verification_code');
-        const storedEmail = localStorage.getItem('verification_email');
-        const signupDataStr = localStorage.getItem('signup_data');
-        
-        if (!storedCode || !signupDataStr) {
-          setError('Verification session expired. Please try signing up again.');
-          setLoading(false);
-          return;
-        }
-        
-        if (verificationCode !== storedCode) {
-          setError('Invalid verification code. Please try again.');
-          setLoading(false);
-          return;
-        }
-        
-        const signupData = JSON.parse(signupDataStr);
-        
-        // Proceed with signup after verification
-        await signUp(signupData.email, signupData.password, { 
-          username: signupData.username, 
-          displayName: signupData.displayName,
-          country: 'US' // Default country, no longer user-selectable
+        // Create account immediately without verification
+        await signUp(email, password, { 
+          username, 
+          displayName,
+          country: 'US' // Default country
         });
         
-        // Clean up temporary data
-        localStorage.removeItem('verification_code');
-        localStorage.removeItem('verification_email');
-        localStorage.removeItem('signup_data');
-        
-        setSuccess('Account created successfully! You can now sign in.');
-        setTimeout(() => setMode('login'), 2000);
+        setSuccess('Account created successfully! You can now use the app.');
       } else if (mode === 'forgot-password') {
         await resetPassword(email);
         setSuccess('Password reset email sent! Please check your inbox.');
@@ -131,7 +73,6 @@ export const AuthPage: React.FC = () => {
     setConfirmPassword('');
     setUsername('');
     setDisplayName('');
-    setVerificationCode('');
     setError('');
     setSuccess('');
     setShowPassword(false);
@@ -141,19 +82,6 @@ export const AuthPage: React.FC = () => {
   const switchMode = (newMode: AuthMode) => {
     setMode(newMode);
     resetForm();
-  };
-
-  const resendVerificationCode = async () => {
-    const storedEmail = localStorage.getItem('verification_email');
-    if (!storedEmail) {
-      setError('No email found. Please try signing up again.');
-      return;
-    }
-    
-    const code = generateVerificationCode();
-    await sendVerificationEmail(storedEmail, code);
-    setSuccess('New verification code sent to your email!');
-    setError('');
   };
 
   // Welcome Screen
@@ -206,7 +134,7 @@ export const AuthPage: React.FC = () => {
     );
   }
 
-  // Auth Forms (Login/Signup/Forgot Password/Verify Email)
+  // Auth Forms (Login/Signup/Forgot Password)
   return (
     <div className="min-h-screen bg-white flex flex-col">
       {/* Header */}
@@ -216,8 +144,6 @@ export const AuthPage: React.FC = () => {
           onClick={() => {
             if (mode === 'forgot-password') {
               setMode('login');
-            } else if (mode === 'verify-email') {
-              setMode('signup');
             } else {
               setMode('welcome');
             }
@@ -244,15 +170,7 @@ export const AuthPage: React.FC = () => {
               {mode === 'login' && 'Sign in to X'}
               {mode === 'signup' && 'Create your account'}
               {mode === 'forgot-password' && 'Reset your password'}
-              {mode === 'verify-email' && 'Verify your email'}
             </h1>
-            {mode === 'verify-email' && (
-              <div className="flex items-center justify-center mt-4 mb-2">
-                <div className="bg-green-100 p-3 rounded-full">
-                  <MessageSquare className="h-8 w-8 text-green-600" />
-                </div>
-              </div>
-            )}
           </div>
 
           {/* Error/Success Messages */}
@@ -270,39 +188,8 @@ export const AuthPage: React.FC = () => {
 
           {/* Form */}
           <form onSubmit={handleSubmit} className="space-y-6">
-            {/* Email Verification Code (Verify Email mode only) */}
-            {mode === 'verify-email' && (
-              <div>
-                <div className="relative">
-                  <MessageSquare className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
-                  <input
-                    type="text"
-                    value={verificationCode}
-                    onChange={(e) => setVerificationCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
-                    className="w-full pl-12 pr-4 py-4 bg-gray-100 rounded-lg border-none outline-none focus:bg-white focus:ring-2 focus:ring-blue-500 transition-all text-center text-2xl tracking-widest"
-                    placeholder="000000"
-                    maxLength={6}
-                    required
-                  />
-                </div>
-                <p className="mt-2 text-xs text-gray-500 text-center">
-                  Enter the 6-digit code sent to your email
-                </p>
-                <div className="text-center mt-4">
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    onClick={resendVerificationCode}
-                    className="text-blue-600 hover:text-blue-800 font-medium text-sm"
-                  >
-                    Resend code
-                  </Button>
-                </div>
-              </div>
-            )}
-
             {/* Email */}
-            {mode !== 'verify-email' && (
+            {mode !== 'forgot-password' || mode === 'forgot-password' ? (
               <div>
                 <div className="relative">
                   <Mail className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
@@ -316,7 +203,7 @@ export const AuthPage: React.FC = () => {
                   />
                 </div>
               </div>
-            )}
+            ) : null}
 
             {/* Username (Signup only) */}
             {mode === 'signup' && (
@@ -364,7 +251,7 @@ export const AuthPage: React.FC = () => {
             )}
 
             {/* Password */}
-            {mode !== 'forgot-password' && mode !== 'verify-email' && (
+            {mode !== 'forgot-password' && (
               <div>
                 <div className="relative">
                   <Lock className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
@@ -426,15 +313,14 @@ export const AuthPage: React.FC = () => {
             >
               {loading ? 'Please wait...' : (
                 mode === 'login' ? 'Sign in' :
-                mode === 'signup' ? 'Continue' :
-                mode === 'verify-email' ? 'Verify & Create Account' :
+                mode === 'signup' ? 'Create Account' :
                 'Send reset email'
               )}
             </Button>
           </form>
 
           {/* Footer Links */}
-          <div className="mt-8 text-center">
+          <div className="text-center mt-8">
             {mode === 'login' && (
               <>
                 <Button
@@ -466,19 +352,6 @@ export const AuthPage: React.FC = () => {
                   className="text-black hover:text-gray-600 p-0 h-auto font-medium underline"
                 >
                   Sign in
-                </Button>
-              </div>
-            )}
-
-            {mode === 'verify-email' && (
-              <div className="text-gray-600">
-                Wrong email?{' '}
-                <Button
-                  variant="ghost"
-                  onClick={() => switchMode('signup')}
-                  className="text-black hover:text-gray-600 p-0 h-auto font-medium underline"
-                >
-                  Go back
                 </Button>
               </div>
             )}

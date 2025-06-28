@@ -47,7 +47,13 @@ WHERE id IN (
   WHERE auth.users.email = 'archiejuniof@gmail.com'
 );
 
--- 6. Create Row Level Security policies for role-based access
+-- 6. Drop existing policies and create new ones for role-based access
+
+-- Drop existing policies if they exist
+DROP POLICY IF EXISTS "Users can view their own role" ON public.profiles;
+DROP POLICY IF EXISTS "Public profiles are viewable by everyone" ON public.profiles;
+DROP POLICY IF EXISTS "Users can update own profile" ON public.profiles;
+DROP POLICY IF EXISTS "Admins can update user roles" ON public.profiles;
 
 -- Allow users to read their own role
 CREATE POLICY "Users can view their own role" ON public.profiles
