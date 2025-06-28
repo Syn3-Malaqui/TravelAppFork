@@ -104,17 +104,24 @@ export const AdminPanel: React.FC = () => {
     try {
       setUpdating(userId);
       
+      const newVerifiedStatus = !currentStatus;
+      
       const { error } = await supabase
         .from('profiles')
-        .update({ verified: !currentStatus })
+        .update({ 
+          verified: newVerifiedStatus,
+          updated_at: new Date().toISOString()
+        })
         .eq('id', userId);
 
       if (error) throw error;
 
+      console.log(`✅ Admin Panel: Updated verification status for user ${userId} to ${newVerifiedStatus}`);
+
       // Update local state
       setUsers(prev => prev.map(user => 
         user.id === userId 
-          ? { ...user, verified: !currentStatus }
+          ? { ...user, verified: newVerifiedStatus }
           : user
       ));
     } catch (error) {

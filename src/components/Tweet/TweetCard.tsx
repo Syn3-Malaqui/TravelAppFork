@@ -28,6 +28,7 @@ import { useNavigate } from 'react-router-dom';
 import { ReplyComposer } from './ReplyComposer';
 import { useTweets } from '../../hooks/useTweets';
 import { useTweetViews } from '../../hooks/useTweetViews';
+import { useProfileSync } from '../../hooks/useProfileSync';
 import { supabase } from '../../lib/supabase';
 
 interface TweetCardProps {
@@ -67,21 +68,69 @@ export const TweetCard: React.FC<TweetCardProps> = ({
   const [originalTweet, setOriginalTweet] = useState<Tweet | null>(null);
   const [loadingOriginal, setLoadingOriginal] = useState(false);
   const [replyingToTweetId, setReplyingToTweetId] = useState<string | null>(null);
+  const [localTweet, setLocalTweet] = useState<Tweet>(tweet);
   const { replies, fetchReplies, createRetweet, removeRetweet } = useTweets();
   const { observeTweet, unobserveTweet, recordView } = useTweetViews();
   const tweetRef = useRef<HTMLDivElement>(null);
+
+  // Sync local tweet state with prop changes
+  useEffect(() => {
+    setLocalTweet(tweet);
+  }, [tweet]);
+
+  // Handle profile updates via real-time sync
+  useProfileSync((profileUpdate) => {
+    // Update main tweet author
+    if (localTweet.author.id === profileUpdate.id) {
+      setLocalTweet(prev => ({
+        ...prev,
+        author: {
+          ...prev.author,
+          verified: profileUpdate.verified ?? prev.author.verified,
+          displayName: profileUpdate.display_name ?? prev.author.displayName,
+          avatar: profileUpdate.avatar_url ?? prev.author.avatar,
+        }
+      }));
+    }
+
+    // Update retweeted by user if applicable
+    if (localTweet.retweetedBy && localTweet.retweetedBy.id === profileUpdate.id) {
+      setLocalTweet(prev => ({
+        ...prev,
+        retweetedBy: prev.retweetedBy ? {
+          ...prev.retweetedBy,
+          verified: profileUpdate.verified ?? prev.retweetedBy.verified,
+          displayName: profileUpdate.display_name ?? prev.retweetedBy.displayName,
+          avatar: profileUpdate.avatar_url ?? prev.retweetedBy.avatar,
+        } : prev.retweetedBy
+      }));
+    }
+
+    // Update original tweet author if this is a reply with original tweet shown
+    if (originalTweet && originalTweet.author.id === profileUpdate.id) {
+      setOriginalTweet(prev => prev ? {
+        ...prev,
+        author: {
+          ...prev.author,
+          verified: profileUpdate.verified ?? prev.author.verified,
+          displayName: profileUpdate.display_name ?? prev.author.displayName,
+          avatar: profileUpdate.avatar_url ?? prev.author.avatar,
+        }
+      } : prev);
+    }
+  });
 
   // Set up view tracking
   useEffect(() => {
     const element = tweetRef.current;
     if (element && !isReply) { // Only track views for main tweets, not replies
-      observeTweet(element, tweet.id);
+      observeTweet(element, localTweet.id);
       
       return () => {
         unobserveTweet(element);
       };
     }
-  }, [tweet.id, isReply, observeTweet, unobserveTweet]);
+  }, [localTweet.id, isReply, observeTweet, unobserveTweet]);
 
   const formatNumber = (num: number): string => {
     if (num >= 1000000) {
@@ -100,13 +149,13 @@ export const TweetCard: React.FC<TweetCardProps> = ({
 
   const handleProfileClick = (e: React.MouseEvent) => {
     e.stopPropagation();
-    navigate(`/profile/${tweet.author.username}`);
+    navigate(`/profile/${localTweet.author.username}`);
   };
 
   const handleRetweeterProfileClick = (e: React.MouseEvent) => {
     e.stopPropagation();
-    if (tweet.retweetedBy) {
-      navigate(`/profile/${tweet.retweetedBy.username}`);
+    if (localTweet.retweetedBy) {
+      navigate(`/profile/${localTweet.retweetedBy.username}`);
     }
   };
 
@@ -226,14 +275,14 @@ export const TweetCard: React.FC<TweetCardProps> = ({
 
   const handleTweetClick = async () => {
     // Record view when user explicitly clicks on tweet
-    await recordView(tweet.id);
+    await recordView(localTweet.id);
     // Navigate to tweet detail page instead of showing replies inline
-    navigate(`/tweet/${tweet.id}`);
+    navigate(`/tweet/${localTweet.id}`);
   };
 
   const handleReplyClick = (e: React.MouseEvent, targetTweetId?: string) => {
     e.stopPropagation();
-    setReplyingToTweetId(targetTweetId || tweet.id);
+    setReplyingToTweetId(targetTweetId || localTweet.id);
     setShowReplyComposer(!showReplyComposer);
   };
 
@@ -458,17 +507,17 @@ export const TweetCard: React.FC<TweetCardProps> = ({
     return parts;
   };
 
-  const isOwnTweet = currentUserId === tweet.author.id;
-  const tweetReplies = replies[parentTweetId || tweet.id] || [];
-  const hasReplies = tweet.replies > 0 && !isReply;
+  const isOwnTweet = currentUserId === localTweet.author.id;
+  const tweetReplies = replies[parentTweetId || localTweet.id] || [];
+  const hasReplies = localTweet.replies > 0 && !isReply;
 
   // Truncate content if it exceeds 200 characters (for display purposes)
-  const displayContent = tweet.content.length > 200 
-    ? tweet.content.substring(0, 200) + '...' 
-    : tweet.content;
+  const displayContent = localTweet.content.length > 200 
+    ? localTweet.content.substring(0, 200) + '...' 
+    : localTweet.content;
 
   // Check if this tweet is replying to someone (has @mention at the start)
-  const isReplyToReply = isReply && tweet.content.startsWith('@');
+  const isReplyToReply = isReply && localTweet.content.startsWith('@');
 
   return (
     <>
@@ -477,7 +526,7 @@ export const TweetCard: React.FC<TweetCardProps> = ({
         className={`w-full border-b border-gray-200 transition-colors hover:bg-gray-50 cursor-pointer ${isReply ? 'ml-12 border-l-2 border-gray-200' : ''}`}
       >
         {/* Retweet indicator */}
-        {tweet.isRetweet && tweet.retweetedBy && (
+        {localTweet.isRetweet && localTweet.retweetedBy && (
           <div className="px-4 pt-2 pb-0.5">
             <div className="flex items-center space-x-2 text-gray-500 text-sm">
               <Repeat2 className="w-4 h-4" />
@@ -485,19 +534,19 @@ export const TweetCard: React.FC<TweetCardProps> = ({
                 className="hover:underline cursor-pointer"
                 onClick={handleRetweeterProfileClick}
               >
-                <span className="font-medium">{tweet.retweetedBy.displayName}</span> retweeted
+                <span className="font-medium">{localTweet.retweetedBy.displayName}</span> retweeted
               </span>
-              {tweet.retweetedBy.verified && (
+              {localTweet.retweetedBy.verified && (
                 <CheckCircle className="w-4 h-4 text-blue-500 fill-current" />
               )}
               <span>·</span>
-              <span>{formatDistanceToNow(tweet.retweetedAt!, { addSuffix: true })}</span>
+              <span>{formatDistanceToNow(localTweet.retweetedAt!, { addSuffix: true })}</span>
             </div>
           </div>
         )}
 
         {/* Reply indicator */}
-        {tweet.replyTo && (
+        {localTweet.replyTo && (
           <div className="px-4 pt-2 pb-0.5">
             <div className="flex items-center space-x-2 text-gray-500 text-sm">
               <CornerUpLeft className="w-4 h-4" />
@@ -519,8 +568,8 @@ export const TweetCard: React.FC<TweetCardProps> = ({
           <div className="flex gap-3 w-full">
             {/* Avatar */}
             <LazyAvatar
-              src={tweet.author.avatar}
-              fallback={tweet.author.displayName[0]}
+              src={localTweet.author.avatar}
+              fallback={localTweet.author.displayName[0]}
               className="w-10 h-10 flex-shrink-0 cursor-pointer"
               onClick={handleProfileClick}
               size={80}
@@ -536,20 +585,20 @@ export const TweetCard: React.FC<TweetCardProps> = ({
                     className="font-bold text-gray-900 hover:underline cursor-pointer truncate"
                     onClick={handleProfileClick}
                   >
-                    {tweet.author.displayName}
+                    {localTweet.author.displayName}
                   </span>
-                  {tweet.author.verified && (
+                  {localTweet.author.verified && (
                     <CheckCircle className="w-5 h-5 text-blue-500 fill-current flex-shrink-0" />
                   )}
                   <span 
                     className="text-gray-500 truncate cursor-pointer hover:underline"
                     onClick={handleProfileClick}
                   >
-                    @{tweet.author.username}
+                    @{localTweet.author.username}
                   </span>
                   <span className="text-gray-500">·</span>
                   <span className="text-gray-500 hover:underline cursor-pointer text-sm flex-shrink-0">
-                    {formatDistanceToNow(tweet.createdAt, { addSuffix: true })}
+                    {formatDistanceToNow(localTweet.createdAt, { addSuffix: true })}
                   </span>
                 </div>
                 
@@ -584,7 +633,7 @@ export const TweetCard: React.FC<TweetCardProps> = ({
                             View Profile
                           </DropdownMenuItem>
                           <DropdownMenuItem className="hover:bg-gray-50">
-                            Mute @{tweet.author.username}
+                            Mute @{localTweet.author.username}
                           </DropdownMenuItem>
                           <DropdownMenuItem className="text-red-600 hover:bg-red-50">
                             Report post
@@ -599,11 +648,11 @@ export const TweetCard: React.FC<TweetCardProps> = ({
               {/* Tweet Text with Enhanced Link Parsing */}
               <div 
                 className="text-gray-900 mb-2 text-[15px] leading-5"
-                dir={getTextDirection(tweet.content)}
-                style={{ textAlign: getTextDirection(tweet.content) === 'rtl' ? 'right' : 'left' }}
+                dir={getTextDirection(localTweet.content)}
+                style={{ textAlign: getTextDirection(localTweet.content) === 'rtl' ? 'right' : 'left' }}
               >
                 {parseTextWithLinks(displayContent)}
-                {tweet.content.length > 200 && (
+                {localTweet.content.length > 200 && (
                   <span className="text-gray-500 text-sm italic"> (truncated)</span>
                 )}
               </div>

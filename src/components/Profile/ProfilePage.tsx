@@ -12,6 +12,7 @@ import { FollowListModal } from './FollowListModal';
 import { useAuth } from '../../hooks/useAuth';
 import { useFollow } from '../../hooks/useFollow';
 import { useMessages } from '../../hooks/useMessages';
+import { useProfileSync } from '../../hooks/useProfileSync';
 import { supabase } from '../../lib/supabase';
 import { storageService } from '../../lib/storage';
 import { Tweet, User } from '../../types';
@@ -35,6 +36,18 @@ export const ProfilePage: React.FC = () => {
   const [messageLoading, setMessageLoading] = useState(false);
   const [followModalOpen, setFollowModalOpen] = useState(false);
   const [followModalType, setFollowModalType] = useState<'followers' | 'following'>('followers');
+
+  // Handle profile updates via real-time sync
+  useProfileSync((profileUpdate) => {
+    if (profile && profile.id === profileUpdate.id) {
+      setProfile(prev => prev ? {
+        ...prev,
+        verified: profileUpdate.verified ?? prev.verified,
+        displayName: profileUpdate.display_name ?? prev.displayName,
+        avatar: profileUpdate.avatar_url ?? prev.avatar,
+      } : prev);
+    }
+  });
 
   // Handle window resize to show/hide sidebar
   useEffect(() => {

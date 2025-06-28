@@ -7,13 +7,15 @@ import {
   User, 
   LogOut,
   Languages,
-  Settings
+  Settings,
+  CheckCircle
 } from 'lucide-react';
 import { Button } from '../ui/button';
 import { Avatar, AvatarImage, AvatarFallback } from '../ui/avatar';
 
 import { useAuth } from '../../hooks/useAuth';
 import { useNotifications } from '../../hooks/useNotifications';
+import { useProfileSync } from '../../hooks/useProfileSync';
 import { storageService } from '../../lib/storage';
 import { supabase } from '../../lib/supabase';
 import { useLanguageStore } from '../../store/useLanguageStore';
@@ -56,7 +58,20 @@ export const Sidebar: React.FC = () => {
     username: string;
     avatar: string;
     isAdmin: boolean;
+    verified?: boolean;
   } | null>(null);
+
+  // Handle profile updates via real-time sync
+  useProfileSync((profileUpdate) => {
+    if (userProfile && user && user.id === profileUpdate.id) {
+      setUserProfile(prev => prev ? {
+        ...prev,
+        verified: profileUpdate.verified ?? prev.verified,
+        displayName: profileUpdate.display_name ?? prev.displayName,
+        avatar: profileUpdate.avatar_url ?? prev.avatar,
+      } : prev);
+    }
+  });
 
   // Fetch user profile data
   useEffect(() => {
@@ -66,7 +81,7 @@ export const Sidebar: React.FC = () => {
       try {
         const { data, error } = await supabase
           .from('profiles')
-          .select('display_name, username, avatar_url, role')
+          .select('display_name, username, avatar_url, role, verified')
           .eq('id', user.id)
           .single();
 
@@ -90,6 +105,7 @@ export const Sidebar: React.FC = () => {
           username: data.username,
           avatar: data.avatar_url || '',
           isAdmin: isAdmin,
+          verified: data.verified || false,
         });
       } catch (error) {
         console.error('Error fetching user profile:', error);
@@ -161,7 +177,12 @@ export const Sidebar: React.FC = () => {
               <AvatarFallback>{userProfile?.displayName[0]?.toUpperCase() || 'U'}</AvatarFallback>
             </Avatar>
             <div className="min-w-0 text-right">
-              <div className="font-bold text-sm truncate">{userProfile?.displayName || 'User'}</div>
+              <div className="font-bold text-sm truncate flex items-center justify-end">
+                {userProfile?.displayName || 'User'}
+                {userProfile?.verified && (
+                  <CheckCircle className="w-4 h-4 text-blue-500 fill-current flex-shrink-0 mr-1" />
+                )}
+              </div>
               <div className="text-gray-500 text-sm truncate">@{userProfile?.username || 'user'}</div>
             </div>
           </>
@@ -174,7 +195,12 @@ export const Sidebar: React.FC = () => {
               <AvatarFallback>{userProfile?.displayName[0]?.toUpperCase() || 'U'}</AvatarFallback>
             </Avatar>
             <div className="min-w-0 text-left">
-              <div className="font-bold text-sm truncate">{userProfile?.displayName || 'User'}</div>
+              <div className="font-bold text-sm truncate flex items-center">
+                {userProfile?.displayName || 'User'}
+                {userProfile?.verified && (
+                  <CheckCircle className="w-4 h-4 text-blue-500 fill-current flex-shrink-0 ml-1" />
+                )}
+              </div>
               <div className="text-gray-500 text-sm truncate">@{userProfile?.username || 'user'}</div>
             </div>
           </>
