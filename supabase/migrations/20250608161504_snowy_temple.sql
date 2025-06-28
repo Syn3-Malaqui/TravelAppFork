@@ -9,6 +9,7 @@
       - `avatar_url` (text)
       - `bio` (text)
       - `verified` (boolean, default false)
+      - `is_admin` (boolean, default false)
       - `followers_count` (integer, default 0)
       - `following_count` (integer, default 0)
       - `created_at` (timestamp)
@@ -18,6 +19,7 @@
     - Enable RLS on `profiles` table
     - Add policies for authenticated users to read all profiles
     - Add policies for users to update their own profile
+    - Add policies for admins to update any profile
 */
 
 CREATE TABLE IF NOT EXISTS profiles (
@@ -27,6 +29,7 @@ CREATE TABLE IF NOT EXISTS profiles (
   avatar_url text,
   bio text DEFAULT '',
   verified boolean DEFAULT false,
+  is_admin boolean DEFAULT false,
   followers_count integer DEFAULT 0,
   following_count integer DEFAULT 0,
   created_at timestamptz DEFAULT now(),
@@ -48,6 +51,18 @@ CREATE POLICY "Users can update own profile"
   FOR UPDATE
   TO authenticated
   USING (auth.uid() = id);
+
+-- Allow admins to update any profile
+CREATE POLICY "Admins can update any profile"
+  ON profiles
+  FOR UPDATE
+  TO authenticated
+  USING (
+    EXISTS (
+      SELECT 1 FROM profiles 
+      WHERE id = auth.uid() AND is_admin = true
+    )
+  );
 
 -- Allow users to insert their own profile
 CREATE POLICY "Users can insert own profile"

@@ -5,6 +5,7 @@ export interface User {
   avatar: string;
   bio?: string;
   verified: boolean;
+  isAdmin?: boolean;
   followers: number;
   following: number;
   joinedDate: Date;
@@ -69,6 +70,7 @@ interface Profile {
   avatar_url: string | null;
   bio: string;
   verified: boolean;
+  is_admin: boolean;
   followers_count: number;
   following_count: number;
   country: string;

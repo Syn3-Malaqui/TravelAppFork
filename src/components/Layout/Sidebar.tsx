@@ -6,7 +6,8 @@ import {
   Bell, 
   User, 
   LogOut,
-  Languages
+  Languages,
+  Settings
 } from 'lucide-react';
 import { Button } from '../ui/button';
 import { Avatar, AvatarImage, AvatarFallback } from '../ui/avatar';
@@ -18,13 +19,25 @@ import { supabase } from '../../lib/supabase';
 import { useLanguageStore } from '../../store/useLanguageStore';
 import { LanguageSelector } from '../ui/LanguageSelector';
 
-const getSidebarItems = (language: string) => [
-  { icon: Home, label: language === 'en' ? 'Home' : 'الرئيسية', path: '/' },
-  { icon: Search, label: language === 'en' ? 'Explore' : 'استكشف', path: '/search' },
-  { icon: Bell, label: language === 'en' ? 'Notifications' : 'الإشعارات', path: '/notifications' },
-  { icon: User, label: language === 'en' ? 'Profile' : 'الملف الشخصي', path: '/profile' },
-  { icon: Languages, label: language === 'en' ? 'Language' : 'اللغة', path: '/language' },
-];
+const getSidebarItems = (language: string, isAdmin: boolean = false) => {
+  const items = [
+    { icon: Home, label: language === 'en' ? 'Home' : 'الرئيسية', path: '/' },
+    { icon: Search, label: language === 'en' ? 'Explore' : 'استكشف', path: '/search' },
+    { icon: Bell, label: language === 'en' ? 'Notifications' : 'الإشعارات', path: '/notifications' },
+    { icon: User, label: language === 'en' ? 'Profile' : 'الملف الشخصي', path: '/profile' },
+    { icon: Languages, label: language === 'en' ? 'Language' : 'اللغة', path: '/language' },
+  ];
+  
+  if (isAdmin) {
+    items.splice(-1, 0, { 
+      icon: Settings, 
+      label: language === 'en' ? 'Control Panel' : 'لوحة التحكم', 
+      path: '/admin' 
+    });
+  }
+  
+  return items;
+};
 
 export const Sidebar: React.FC = () => {
   const navigate = useNavigate();
@@ -37,6 +50,7 @@ export const Sidebar: React.FC = () => {
     displayName: string;
     username: string;
     avatar: string;
+    isAdmin: boolean;
   } | null>(null);
 
   // Fetch user profile data
@@ -47,7 +61,7 @@ export const Sidebar: React.FC = () => {
       try {
         const { data, error } = await supabase
           .from('profiles')
-          .select('display_name, username, avatar_url')
+          .select('display_name, username, avatar_url, is_admin')
           .eq('id', user.id)
           .single();
 
@@ -57,6 +71,7 @@ export const Sidebar: React.FC = () => {
           displayName: data.display_name,
           username: data.username,
           avatar: data.avatar_url || '',
+          isAdmin: data.is_admin || false,
         });
       } catch (error) {
         console.error('Error fetching user profile:', error);
@@ -65,6 +80,7 @@ export const Sidebar: React.FC = () => {
           displayName: user.user_metadata?.display_name || 'User',
           username: user.user_metadata?.username || 'user',
           avatar: user.user_metadata?.avatar_url || '',
+          isAdmin: false,
         });
       }
     };
@@ -149,7 +165,7 @@ export const Sidebar: React.FC = () => {
       {/* Navigation */}
       <nav className="mb-6">
         <ul className="space-y-2">
-          {getSidebarItems(language).map((item) => {
+          {getSidebarItems(language, userProfile?.isAdmin).map((item) => {
             const isActive = location.pathname === item.path || (item.path === '/language' && languageSelectorOpen);
             const isNotifications = item.path === '/notifications';
             

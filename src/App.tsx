@@ -9,6 +9,7 @@ import { AuthPage } from './components/Auth/AuthPage';
 import { LazyLoadWrapper } from './components/ui/LazyLoadWrapper';
 import { useAuth } from './hooks/useAuth';
 import { usePreloader } from './hooks/usePreloader';
+import { AdminPanel } from './components/AdminPanel';
 
 // Lazy load heavy components
 import {
@@ -104,7 +105,14 @@ function App() {
                     </LazyLoadWrapper>
                   } 
                 />
-                {/* Messages route removed per user request */}
+                <Route 
+                  path="/messages" 
+                  element={
+                    <LazyLoadWrapper>
+                      <LazyMessagesPage />
+                    </LazyLoadWrapper>
+                  } 
+                />
                 <Route 
                   path="/profile/:username" 
                   element={
@@ -127,6 +135,7 @@ function App() {
                     <div className="p-8 text-center text-gray-500">Explore Page</div>
                   } 
                 />
+                <Route path="/admin" element={<AdminPanel />} />
                 {/* Catch-all route for direct links */}
                 <Route path="*" element={<Navigate to="/" replace />} />
               </Routes>
