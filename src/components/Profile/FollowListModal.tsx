@@ -170,28 +170,20 @@ export const FollowListModal: React.FC<FollowListModalProps> = ({
         className="max-w-sm w-full h-[500px] p-0 overflow-hidden"
         dir={isRTL ? 'rtl' : 'ltr'}
       >
-        <DialogHeader className="px-3 py-2 border-b border-gray-200">
+        <DialogHeader className="px-3 py-1.5 border-b border-gray-200">
           <div className={`flex items-center justify-between ${isRTL ? 'flex-row-reverse' : ''}`}>
             <div>
-              <DialogTitle className="text-base font-bold">
+              <DialogTitle className="text-sm font-bold">
                 {title}
               </DialogTitle>
               <p className="text-xs text-gray-500">
                 @{username}
               </p>
             </div>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={onClose}
-              className="p-1"
-            >
-              <X className="h-4 w-4" />
-            </Button>
           </div>
         </DialogHeader>
 
-        <div className="px-3 py-1.5 border-b border-gray-200">
+        <div className="px-3 py-1 border-b border-gray-200">
           <div className="relative">
             <Search className={`absolute top-1/2 transform -translate-y-1/2 h-3.5 w-3.5 text-gray-400 ${isRTL ? 'right-2.5' : 'left-2.5'}`} />
             <input
@@ -209,7 +201,7 @@ export const FollowListModal: React.FC<FollowListModalProps> = ({
 
         <div className="flex-1 overflow-y-auto">
           {loading ? (
-            <div className="px-3 py-1 space-y-2">
+            <div className="px-3 py-0.5 space-y-1.5">
               {Array.from({ length: 5 }).map((_, index) => (
                 <div key={index} className="flex items-center space-x-2.5">
                   <div className="w-9 h-9 bg-gray-200 rounded-full animate-pulse"></div>
@@ -221,7 +213,7 @@ export const FollowListModal: React.FC<FollowListModalProps> = ({
               ))}
             </div>
           ) : error ? (
-            <div className="flex flex-col items-center justify-center py-4 px-3">
+            <div className="flex flex-col items-center justify-center py-3 px-3">
               <p className="text-red-500 text-center mb-2 text-sm">
                 {language === 'en' ? 'Error loading users' : 'خطأ في تحميل المستخدمين'}
               </p>
@@ -231,7 +223,7 @@ export const FollowListModal: React.FC<FollowListModalProps> = ({
               </Button>
             </div>
           ) : filteredUsers.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-4 px-3">
+            <div className="flex flex-col items-center justify-center py-3 px-3">
               <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center mb-3">
                 <User className="w-6 h-6 text-gray-400" />
               </div>
@@ -253,7 +245,7 @@ export const FollowListModal: React.FC<FollowListModalProps> = ({
           ) : (
             <div className="divide-y divide-gray-100">
               {filteredUsers.map((user) => (
-                <div key={user.id} className="px-3 py-1.5 hover:bg-gray-50 transition-colors">
+                <div key={user.id} className="px-3 py-1 hover:bg-gray-50 transition-colors">
                   <div className={`flex items-center ${isRTL ? 'space-x-reverse space-x-2.5' : 'space-x-2.5'}`}>
                     <LazyAvatar
                       src={user.avatar}
