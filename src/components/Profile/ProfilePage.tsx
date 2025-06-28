@@ -427,7 +427,7 @@ export const ProfilePage: React.FC = () => {
     }
   };
 
-  if (loading) {
+  if (loading && profile === null) {
     return <ProfileSkeleton isMobile={window.innerWidth < 768} />;
   }
 
