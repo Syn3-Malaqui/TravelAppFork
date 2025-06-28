@@ -136,9 +136,9 @@ export const AdminPanel: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-white" dir={isRTL ? 'rtl' : 'ltr'}>
+    <div className="h-screen bg-white flex flex-col" dir={isRTL ? 'rtl' : 'ltr'}>
       {/* Header */}
-      <div className="sticky top-0 bg-white/95 backdrop-blur-md border-b border-gray-200 z-10">
+      <div className="flex-shrink-0 bg-white/95 backdrop-blur-md border-b border-gray-200 z-10">
         <div className="flex items-center justify-between p-4">
           <div className={`flex items-center ${isRTL ? 'space-x-reverse space-x-4' : 'space-x-4'}`}>
             <Button
@@ -179,8 +179,10 @@ export const AdminPanel: React.FC = () => {
         </div>
       </div>
 
-      {/* Users List */}
-      <div className="p-4">
+      {/* Scrollable Content Area */}
+      <div className="flex-1 overflow-y-auto">
+        {/* Users List */}
+        <div className="p-4">
         <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
           {filteredUsers.length === 0 ? (
             <div className="text-center py-12">
@@ -308,6 +310,7 @@ export const AdminPanel: React.FC = () => {
             </div>
           )}
         </div>
+      </div>
       </div>
     </div>
   );
