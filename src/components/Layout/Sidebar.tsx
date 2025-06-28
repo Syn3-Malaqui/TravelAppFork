@@ -61,26 +61,30 @@ export const Sidebar: React.FC = () => {
       try {
         const { data, error } = await supabase
           .from('profiles')
-          .select('display_name, username, avatar_url, is_admin')
+          .select('display_name, username, avatar_url, role')
           .eq('id', user.id)
           .single();
 
         if (error) throw error;
 
+        // Check if user is admin by username OR role
+        const isAdmin = data.username === 'admin' || data.role === 'admin';
+
         setUserProfile({
           displayName: data.display_name,
           username: data.username,
           avatar: data.avatar_url || '',
-          isAdmin: data.is_admin || false,
+          isAdmin: isAdmin,
         });
       } catch (error) {
         console.error('Error fetching user profile:', error);
         // Fallback to auth metadata
+        const fallbackUsername = user.user_metadata?.username || 'user';
         setUserProfile({
           displayName: user.user_metadata?.display_name || 'User',
-          username: user.user_metadata?.username || 'user',
+          username: fallbackUsername,
           avatar: user.user_metadata?.avatar_url || '',
-          isAdmin: false,
+          isAdmin: fallbackUsername === 'admin',
         });
       }
     };

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ArrowLeft, Crown, User, Search, Check, X } from 'lucide-react';
+import { ArrowLeft, Crown, User, Search, Check, X, Settings } from 'lucide-react';
 import { Button } from './ui/button';
 import { LazyAvatar } from './ui/LazyAvatar';
 import { useNavigate } from 'react-router-dom';
@@ -14,7 +14,7 @@ interface UserProfile {
   avatar_url: string;
   bio: string;
   verified: boolean;
-  is_admin: boolean;
+  role: 'user' | 'moderator' | 'admin';
   followers_count: number;
   following_count: number;
   created_at: string;
@@ -66,13 +66,23 @@ export const AdminPanel: React.FC = () => {
     }
   };
 
-  const toggleAdminStatus = async (userId: string, currentStatus: boolean) => {
+  const toggleAdminStatus = async (userId: string, currentRole: 'user' | 'moderator' | 'admin') => {
     try {
       setUpdating(userId);
       
+      // Cycle through roles: user -> moderator -> admin -> user
+      let newRole: 'user' | 'moderator' | 'admin';
+      if (currentRole === 'user') {
+        newRole = 'moderator';
+      } else if (currentRole === 'moderator') {
+        newRole = 'admin';
+      } else {
+        newRole = 'user';
+      }
+      
       const { error } = await supabase
         .from('profiles')
-        .update({ is_admin: !currentStatus })
+        .update({ role: newRole })
         .eq('id', userId);
 
       if (error) throw error;
@@ -80,11 +90,11 @@ export const AdminPanel: React.FC = () => {
       // Update local state
       setUsers(prev => prev.map(user => 
         user.id === userId 
-          ? { ...user, is_admin: !currentStatus }
+          ? { ...user, role: newRole }
           : user
       ));
     } catch (error) {
-      console.error('Error updating admin status:', error);
+      console.error('Error updating user role:', error);
     } finally {
       setUpdating(null);
     }
@@ -203,8 +213,13 @@ export const AdminPanel: React.FC = () => {
                               <Check className="w-2.5 h-2.5 text-white" />
                             </div>
                           )}
-                          {userProfile.is_admin && (
+                          {userProfile.role === 'admin' && (
                             <Crown className="w-4 h-4 text-yellow-500" />
+                          )}
+                          {userProfile.role === 'moderator' && (
+                            <div className="text-xs px-2 py-1 bg-orange-100 text-orange-700 rounded">
+                              {language === 'en' ? 'Mod' : 'مشرف'}
+                            </div>
                           )}
                         </div>
                         <p className="text-sm text-gray-500">@{userProfile.username}</p>
@@ -248,27 +263,40 @@ export const AdminPanel: React.FC = () => {
                         </Button>
 
                         <Button
-                          variant={userProfile.is_admin ? "outline" : "default"}
+                          variant="outline"
                           size="sm"
-                          onClick={() => toggleAdminStatus(userProfile.id, userProfile.is_admin)}
+                          onClick={() => toggleAdminStatus(userProfile.id, userProfile.role)}
                           disabled={updating === userProfile.id}
                           className={`text-xs ${
-                            userProfile.is_admin 
+                            userProfile.role === 'admin' 
                               ? 'border-yellow-300 text-yellow-700 hover:bg-yellow-50' 
-                              : 'bg-yellow-500 text-white hover:bg-yellow-600'
+                              : userProfile.role === 'moderator'
+                              ? 'border-orange-300 text-orange-700 hover:bg-orange-50'
+                              : 'border-gray-300 text-gray-700 hover:bg-gray-50'
                           }`}
                         >
                           {updating === userProfile.id ? (
                             '...'
-                          ) : userProfile.is_admin ? (
-                            <>
-                              <X className="w-3 h-3 mr-1" />
-                              {language === 'en' ? 'Remove Admin' : 'إزالة الإدارة'}
-                            </>
                           ) : (
                             <>
-                              <Crown className="w-3 h-3 mr-1" />
-                              {language === 'en' ? 'Make Admin' : 'جعل مدير'}
+                              {userProfile.role === 'admin' && (
+                                <>
+                                  <Crown className="w-3 h-3 mr-1" />
+                                  {language === 'en' ? 'Admin' : 'مدير'}
+                                </>
+                              )}
+                              {userProfile.role === 'moderator' && (
+                                <>
+                                  <Settings className="w-3 h-3 mr-1" />
+                                  {language === 'en' ? 'Moderator' : 'مشرف'}
+                                </>
+                              )}
+                              {userProfile.role === 'user' && (
+                                <>
+                                  <User className="w-3 h-3 mr-1" />
+                                  {language === 'en' ? 'User' : 'مستخدم'}
+                                </>
+                              )}
                             </>
                           )}
                         </Button>
