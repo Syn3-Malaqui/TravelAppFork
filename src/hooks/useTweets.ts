@@ -947,8 +947,8 @@ export const useTweets = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('User not authenticated');
 
-      // Extract hashtags and mentions from content
-      const hashtags = content.match(/#\w+/g)?.map(tag => tag.slice(1)) || [];
+      // Extract hashtags and mentions from content (including Arabic support)
+      const hashtags = content.match(/#[\w\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF]+/g)?.map(tag => tag.slice(1)) || [];
       const mentions = content.match(/@\w+/g)?.map(mention => mention.slice(1)) || [];
 
       const { data, error } = await supabase
@@ -1014,8 +1014,8 @@ export const useTweets = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('User not authenticated');
 
-      // Extract hashtags and mentions from content
-      const hashtags = content.match(/#\w+/g)?.map(tag => tag.slice(1)) || [];
+      // Extract hashtags and mentions from content (including Arabic support)
+      const hashtags = content.match(/#[\w\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF]+/g)?.map(tag => tag.slice(1)) || [];
       const mentions = content.match(/@\w+/g)?.map(mention => mention.slice(1)) || [];
 
       const { data, error } = await supabase

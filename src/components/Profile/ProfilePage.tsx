@@ -8,6 +8,7 @@ import { MobileTweetCard } from '../Tweet/MobileTweetCard';
 import { ProfileSkeleton } from './ProfileSkeleton';
 import { TweetSkeletonList } from '../Tweet/TweetSkeleton';
 import { TrendingSidebar } from '../Layout/TrendingSidebar';
+import { FollowListModal } from './FollowListModal';
 import { useAuth } from '../../hooks/useAuth';
 import { useFollow } from '../../hooks/useFollow';
 import { useMessages } from '../../hooks/useMessages';
@@ -32,6 +33,8 @@ export const ProfilePage: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'tweets' | 'replies' | 'media' | 'likes'>('tweets');
   const [showSidebar, setShowSidebar] = useState(true);
   const [messageLoading, setMessageLoading] = useState(false);
+  const [followModalOpen, setFollowModalOpen] = useState(false);
+  const [followModalType, setFollowModalType] = useState<'followers' | 'following'>('followers');
 
   // Handle window resize to show/hide sidebar
   useEffect(() => {
@@ -380,6 +383,16 @@ export const ProfilePage: React.FC = () => {
     console.log('Bookmark:', tweetId);
   };
 
+  const handleFollowersClick = () => {
+    setFollowModalType('followers');
+    setFollowModalOpen(true);
+  };
+
+  const handleFollowingClick = () => {
+    setFollowModalType('following');
+    setFollowModalOpen(true);
+  };
+
   // Function to refresh profile data (called when new tweets are added)
   const refreshProfileData = () => {
     if (username) {
@@ -565,11 +578,17 @@ export const ProfilePage: React.FC = () => {
 
                   {/* Follow Stats */}
                   <div className="flex space-x-6">
-                    <div className="flex items-center space-x-1">
+                    <div 
+                      className="flex items-center space-x-1 cursor-pointer hover:underline"
+                      onClick={handleFollowingClick}
+                    >
                       <span className="font-bold text-gray-900">{profile.following.toLocaleString()}</span>
                       <span className="text-gray-500">Following</span>
                     </div>
-                    <div className="flex items-center space-x-1">
+                    <div 
+                      className="flex items-center space-x-1 cursor-pointer hover:underline"
+                      onClick={handleFollowersClick}
+                    >
                       <span className="font-bold text-gray-900">{profile.followers.toLocaleString()}</span>
                       <span className="text-gray-500">Followers</span>
                     </div>
@@ -751,11 +770,17 @@ export const ProfilePage: React.FC = () => {
 
                 {/* Follow Stats */}
                 <div className="flex space-x-4">
-                  <div className="flex items-center space-x-1">
+                  <div 
+                    className="flex items-center space-x-1 cursor-pointer hover:underline"
+                    onClick={handleFollowingClick}
+                  >
                     <span className="font-bold text-gray-900 text-sm">{profile.following.toLocaleString()}</span>
                     <span className="text-gray-500 text-xs">Following</span>
                   </div>
-                  <div className="flex items-center space-x-1">
+                  <div 
+                    className="flex items-center space-x-1 cursor-pointer hover:underline"
+                    onClick={handleFollowersClick}
+                  >
                     <span className="font-bold text-gray-900 text-sm">{profile.followers.toLocaleString()}</span>
                     <span className="text-gray-500 text-xs">Followers</span>
                   </div>
@@ -826,6 +851,15 @@ export const ProfilePage: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* Follow List Modal */}
+      <FollowListModal
+        isOpen={followModalOpen}
+        onClose={() => setFollowModalOpen(false)}
+        userId={profile.id}
+        type={followModalType}
+        username={profile.username}
+      />
     </div>
   );
 };
