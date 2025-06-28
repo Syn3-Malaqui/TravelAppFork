@@ -1,3 +1,5 @@
+export type UserRole = 'user' | 'moderator' | 'admin';
+
 export interface Database {
   public: {
     Tables: {
@@ -14,6 +16,7 @@ export interface Database {
           country: string;
           created_at: string;
           updated_at: string;
+          role: UserRole;
         };
         Insert: {
           id: string;
@@ -27,6 +30,7 @@ export interface Database {
           country?: string;
           created_at?: string;
           updated_at?: string;
+          role?: UserRole;
         };
         Update: {
           id?: string;
@@ -40,6 +44,7 @@ export interface Database {
           country?: string;
           created_at?: string;
           updated_at?: string;
+          role?: UserRole;
         };
       };
       tweets: {
@@ -177,10 +182,21 @@ export interface Database {
       [_ in never]: never;
     };
     Functions: {
-      [_ in never]: never;
+      is_admin: {
+        Args: {};
+        Returns: boolean;
+      };
+      is_moderator_or_admin: {
+        Args: {};
+        Returns: boolean;
+      };
+      get_user_role: {
+        Args: {};
+        Returns: UserRole;
+      };
     };
     Enums: {
-      [_ in never]: never;
+      user_role: UserRole;
     };
   };
 }
