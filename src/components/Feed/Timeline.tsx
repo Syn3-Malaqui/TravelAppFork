@@ -57,10 +57,7 @@ export const Timeline: React.FC = () => {
   } | null>(null);
 
   // Scroll refs and state for navigation arrows
-  const categoriesScrollRef = React.useRef<HTMLDivElement>(null);
   const countriesScrollRef = React.useRef<HTMLDivElement>(null);
-  const [canScrollCategoriesLeft, setCanScrollCategoriesLeft] = useState(false);
-  const [canScrollCategoriesRight, setCanScrollCategoriesRight] = useState(false);
   const [canScrollCountriesLeft, setCanScrollCountriesLeft] = useState(false);
   const [canScrollCountriesRight, setCanScrollCountriesRight] = useState(false);
 
@@ -261,18 +258,6 @@ export const Timeline: React.FC = () => {
   };
 
   // Scroll functions
-  const scrollCategories = (direction: 'left' | 'right') => {
-    const element = categoriesScrollRef.current;
-    if (!element) return;
-    
-    const scrollAmount = 200;
-    const newScrollLeft = direction === 'left' 
-      ? element.scrollLeft - scrollAmount 
-      : element.scrollLeft + scrollAmount;
-    
-    element.scrollTo({ left: newScrollLeft, behavior: 'smooth' });
-  };
-
   const scrollCountries = (direction: 'left' | 'right') => {
     const element = countriesScrollRef.current;
     if (!element) return;
@@ -296,21 +281,11 @@ export const Timeline: React.FC = () => {
 
   // Effect to check initial scroll positions and add listeners
   useEffect(() => {
-    const categoriesElement = categoriesScrollRef.current;
     const countriesElement = countriesScrollRef.current;
-
-    const handleCategoriesScroll = () => {
-      checkScrollPosition(categoriesElement!, setCanScrollCategoriesLeft, setCanScrollCategoriesRight);
-    };
 
     const handleCountriesScroll = () => {
       checkScrollPosition(countriesElement!, setCanScrollCountriesLeft, setCanScrollCountriesRight);
     };
-
-    if (categoriesElement) {
-      checkScrollPosition(categoriesElement, setCanScrollCategoriesLeft, setCanScrollCategoriesRight);
-      categoriesElement.addEventListener('scroll', handleCategoriesScroll);
-    }
 
     if (countriesElement) {
       checkScrollPosition(countriesElement, setCanScrollCountriesLeft, setCanScrollCountriesRight);
@@ -318,9 +293,6 @@ export const Timeline: React.FC = () => {
     }
 
     return () => {
-      if (categoriesElement) {
-        categoriesElement.removeEventListener('scroll', handleCategoriesScroll);
-      }
       if (countriesElement) {
         countriesElement.removeEventListener('scroll', handleCountriesScroll);
       }
@@ -330,14 +302,11 @@ export const Timeline: React.FC = () => {
   // Check scroll positions when content changes
   useEffect(() => {
     setTimeout(() => {
-      if (categoriesScrollRef.current) {
-        checkScrollPosition(categoriesScrollRef.current, setCanScrollCategoriesLeft, setCanScrollCategoriesRight);
-      }
       if (countriesScrollRef.current) {
         checkScrollPosition(countriesScrollRef.current, setCanScrollCountriesLeft, setCanScrollCountriesRight);
       }
     }, 100);
-  }, [availableCountries, selectedFilter]);
+  }, [availableCountries]);
 
   const selectedCountryData = availableCountries.find(c => c.code === countryFilter) || availableCountries[0];
 
@@ -351,41 +320,11 @@ export const Timeline: React.FC = () => {
         <div className="bg-white border-b border-gray-100 sticky top-0 z-10">
           
           {/* 1. Categories at the top */}
-          <div className="py-2 border-b border-gray-100">
-            <div className="flex items-center px-4">
-              {/* Left Arrow */}
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => scrollCategories('left')}
-                disabled={!canScrollCategoriesLeft}
-                className={`p-1 mr-2 flex-shrink-0 ${!canScrollCategoriesLeft ? 'opacity-30' : 'opacity-100'}`}
-              >
-                <ChevronLeft className="h-4 w-4" />
-              </Button>
-              
-              {/* Categories Container */}
-              <div 
-                ref={categoriesScrollRef}
-                className="flex-1 overflow-x-auto scrollbar-hide"
-              >
-                <FilterNavigation 
-                  selectedFilter={selectedFilter}
-                  onFilterChange={handleFilterChange}
-                />
-              </div>
-              
-              {/* Right Arrow */}
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => scrollCategories('right')}
-                disabled={!canScrollCategoriesRight}
-                className={`p-1 ml-2 flex-shrink-0 ${!canScrollCategoriesRight ? 'opacity-30' : 'opacity-100'}`}
-              >
-                <ChevronRight className="h-4 w-4" />
-              </Button>
-            </div>
+          <div className="py-2 border-b border-gray-100 px-4">
+            <FilterNavigation 
+              selectedFilter={selectedFilter}
+              onFilterChange={handleFilterChange}
+            />
           </div>
           
           {/* 2. Countries in the middle as buttons */}
@@ -397,9 +336,9 @@ export const Timeline: React.FC = () => {
                 size="sm"
                 onClick={() => scrollCountries('left')}
                 disabled={!canScrollCountriesLeft}
-                className={`p-1 mr-2 flex-shrink-0 ${!canScrollCountriesLeft ? 'opacity-30' : 'opacity-100'}`}
+                className={`p-1 ${isRTL ? 'ml-2' : 'mr-2'} flex-shrink-0 ${!canScrollCountriesLeft ? 'opacity-30' : 'opacity-100'}`}
               >
-                <ChevronLeft className="h-4 w-4" />
+                {isRTL ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
               </Button>
               
               {/* Countries Container */}
@@ -464,9 +403,9 @@ export const Timeline: React.FC = () => {
                 size="sm"
                 onClick={() => scrollCountries('right')}
                 disabled={!canScrollCountriesRight}
-                className={`p-1 ml-2 flex-shrink-0 ${!canScrollCountriesRight ? 'opacity-30' : 'opacity-100'}`}
+                className={`p-1 ${isRTL ? 'mr-2' : 'ml-2'} flex-shrink-0 ${!canScrollCountriesRight ? 'opacity-30' : 'opacity-100'}`}
               >
-                <ChevronRight className="h-4 w-4" />
+                {isRTL ? <ChevronLeft className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
               </Button>
             </div>
           </div>
@@ -526,41 +465,11 @@ export const Timeline: React.FC = () => {
           <div className="bg-white/95 backdrop-blur-md border-b border-gray-200 z-50 flex-shrink-0">
             
             {/* 1. Categories at the top */}
-            <div className="py-2 border-b border-gray-100">
-              <div className="flex items-center px-4 md:px-6">
-                {/* Left Arrow */}
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => scrollCategories('left')}
-                  disabled={!canScrollCategoriesLeft}
-                  className={`p-1 mr-2 flex-shrink-0 ${!canScrollCategoriesLeft ? 'opacity-30' : 'opacity-100'}`}
-                >
-                  <ChevronLeft className="h-4 w-4" />
-                </Button>
-                
-                {/* Categories Container */}
-                <div 
-                  ref={categoriesScrollRef}
-                  className="flex-1 overflow-x-auto scrollbar-hide"
-                >
-                  <FilterNavigation 
-                    selectedFilter={selectedFilter}
-                    onFilterChange={handleFilterChange}
-                  />
-                </div>
-                
-                {/* Right Arrow */}
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => scrollCategories('right')}
-                  disabled={!canScrollCategoriesRight}
-                  className={`p-1 ml-2 flex-shrink-0 ${!canScrollCategoriesRight ? 'opacity-30' : 'opacity-100'}`}
-                >
-                  <ChevronRight className="h-4 w-4" />
-                </Button>
-              </div>
+            <div className="py-2 border-b border-gray-100 px-4 md:px-6">
+              <FilterNavigation 
+                selectedFilter={selectedFilter}
+                onFilterChange={handleFilterChange}
+              />
             </div>
             
             {/* 2. Countries in the middle as buttons */}
@@ -572,9 +481,9 @@ export const Timeline: React.FC = () => {
                   size="sm"
                   onClick={() => scrollCountries('left')}
                   disabled={!canScrollCountriesLeft}
-                  className={`p-1 mr-2 flex-shrink-0 ${!canScrollCountriesLeft ? 'opacity-30' : 'opacity-100'}`}
+                  className={`p-1 ${isRTL ? 'ml-2' : 'mr-2'} flex-shrink-0 ${!canScrollCountriesLeft ? 'opacity-30' : 'opacity-100'}`}
                 >
-                  <ChevronLeft className="h-4 w-4" />
+                  {isRTL ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
                 </Button>
                 
                 {/* Countries Container */}
@@ -647,9 +556,9 @@ export const Timeline: React.FC = () => {
                   size="sm"
                   onClick={() => scrollCountries('right')}
                   disabled={!canScrollCountriesRight}
-                  className={`p-1 ml-2 flex-shrink-0 ${!canScrollCountriesRight ? 'opacity-30' : 'opacity-100'}`}
+                  className={`p-1 ${isRTL ? 'mr-2' : 'ml-2'} flex-shrink-0 ${!canScrollCountriesRight ? 'opacity-30' : 'opacity-100'}`}
                 >
-                  <ChevronRight className="h-4 w-4" />
+                  {isRTL ? <ChevronLeft className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
                 </Button>
               </div>
             </div>

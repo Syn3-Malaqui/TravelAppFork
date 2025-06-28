@@ -137,10 +137,10 @@ export const FilterNavigation: React.FC<FilterNavigationProps> = ({
       {isOverflowing && showLeftButton && (
         <button 
           onClick={scrollLeft}
-          className="absolute left-0 top-1/2 transform -translate-y-1/2 z-10 bg-white/90 rounded-full shadow-md p-1 hover:bg-gray-100 transition-colors"
+          className={`absolute ${isRTL ? 'right-0' : 'left-0'} top-1/2 transform -translate-y-1/2 z-10 bg-white/90 rounded-full shadow-md p-1 hover:bg-gray-100 transition-colors`}
           aria-label="Scroll left"
         >
-          <ChevronLeft className="h-5 w-5 text-gray-600" />
+          {isRTL ? <ChevronRight className="h-5 w-5 text-gray-600" /> : <ChevronLeft className="h-5 w-5 text-gray-600" />}
         </button>
       )}
       
@@ -174,10 +174,10 @@ export const FilterNavigation: React.FC<FilterNavigationProps> = ({
       {isOverflowing && showRightButton && (
         <button 
           onClick={scrollRight}
-          className="absolute right-0 top-1/2 transform -translate-y-1/2 z-10 bg-white/90 rounded-full shadow-md p-1 hover:bg-gray-100 transition-colors"
+          className={`absolute ${isRTL ? 'left-0' : 'right-0'} top-1/2 transform -translate-y-1/2 z-10 bg-white/90 rounded-full shadow-md p-1 hover:bg-gray-100 transition-colors`}
           aria-label="Scroll right"
         >
-          <ChevronRight className="h-5 w-5 text-gray-600" />
+          {isRTL ? <ChevronLeft className="h-5 w-5 text-gray-600" /> : <ChevronRight className="h-5 w-5 text-gray-600" />}
         </button>
       )}
       
