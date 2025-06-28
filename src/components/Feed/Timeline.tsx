@@ -263,7 +263,12 @@ export const Timeline: React.FC = () => {
     if (!element) return;
     
     const scrollAmount = 200;
-    const newScrollLeft = direction === 'left' 
+    // In RTL mode, reverse the scroll direction logic
+    const actualDirection = isRTL 
+      ? (direction === 'left' ? 'right' : 'left')
+      : direction;
+    
+    const newScrollLeft = actualDirection === 'left' 
       ? element.scrollLeft - scrollAmount 
       : element.scrollLeft + scrollAmount;
     
@@ -275,8 +280,16 @@ export const Timeline: React.FC = () => {
     if (!element) return;
     
     const { scrollLeft, scrollWidth, clientWidth } = element;
-    setCanScrollLeft(scrollLeft > 0);
-    setCanScrollRight(scrollLeft < scrollWidth - clientWidth - 1);
+    
+    // In RTL mode, the scroll logic is reversed
+    if (isRTL) {
+      const maxScrollLeft = scrollWidth - clientWidth;
+      setCanScrollLeft(scrollLeft < maxScrollLeft - 1);
+      setCanScrollRight(scrollLeft > 1);
+    } else {
+      setCanScrollLeft(scrollLeft > 1);
+      setCanScrollRight(scrollLeft < scrollWidth - clientWidth - 1);
+    }
   };
 
   // Effect to check initial scroll positions and add listeners
@@ -306,7 +319,7 @@ export const Timeline: React.FC = () => {
         checkScrollPosition(countriesScrollRef.current, setCanScrollCountriesLeft, setCanScrollCountriesRight);
       }
     }, 100);
-  }, [availableCountries]);
+  }, [availableCountries, isRTL]);
 
   const selectedCountryData = availableCountries.find(c => c.code === countryFilter) || availableCountries[0];
 

@@ -48,8 +48,15 @@ export const FilterNavigation: React.FC<FilterNavigationProps> = ({
       setIsOverflowing(isOverflow);
       
       // Show/hide scroll buttons based on scroll position
-      setShowLeftButton(container.scrollLeft > 10);
-      setShowRightButton(container.scrollLeft + container.clientWidth < container.scrollWidth - 10);
+      // In RTL mode, the scroll logic is reversed
+      if (isRTL) {
+        const maxScrollLeft = container.scrollWidth - container.clientWidth;
+        setShowLeftButton(container.scrollLeft < maxScrollLeft - 10);
+        setShowRightButton(container.scrollLeft > 10);
+      } else {
+        setShowLeftButton(container.scrollLeft > 10);
+        setShowRightButton(container.scrollLeft + container.clientWidth < container.scrollWidth - 10);
+      }
     }
   };
 
@@ -59,7 +66,7 @@ export const FilterNavigation: React.FC<FilterNavigationProps> = ({
     window.addEventListener('resize', checkOverflow);
     
     return () => window.removeEventListener('resize', checkOverflow);
-  }, []);
+  }, [isRTL]);
 
   // Initial animation to show scrollability
   useEffect(() => {
@@ -106,8 +113,10 @@ export const FilterNavigation: React.FC<FilterNavigationProps> = ({
 
   const scrollLeft = () => {
     if (scrollContainerRef.current) {
+      // In RTL mode, "scrollLeft" should actually scroll right
+      const scrollAmount = isRTL ? 200 : -200;
       scrollContainerRef.current.scrollBy({
-        left: -200,
+        left: scrollAmount,
         behavior: 'smooth'
       });
     }
@@ -115,8 +124,10 @@ export const FilterNavigation: React.FC<FilterNavigationProps> = ({
 
   const scrollRight = () => {
     if (scrollContainerRef.current) {
+      // In RTL mode, "scrollRight" should actually scroll left
+      const scrollAmount = isRTL ? -200 : 200;
       scrollContainerRef.current.scrollBy({
-        left: 200,
+        left: scrollAmount,
         behavior: 'smooth'
       });
     }
@@ -126,8 +137,15 @@ export const FilterNavigation: React.FC<FilterNavigationProps> = ({
   const handleScroll = () => {
     const container = scrollContainerRef.current;
     if (container) {
-      setShowLeftButton(container.scrollLeft > 10);
-      setShowRightButton(container.scrollLeft + container.clientWidth < container.scrollWidth - 10);
+      // In RTL mode, the scroll logic is reversed
+      if (isRTL) {
+        const maxScrollLeft = container.scrollWidth - container.clientWidth;
+        setShowLeftButton(container.scrollLeft < maxScrollLeft - 10);
+        setShowRightButton(container.scrollLeft > 10);
+      } else {
+        setShowLeftButton(container.scrollLeft > 10);
+        setShowRightButton(container.scrollLeft + container.clientWidth < container.scrollWidth - 10);
+      }
     }
   };
 

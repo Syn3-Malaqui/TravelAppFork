@@ -39,6 +39,17 @@ interface MobileTweetCardProps {
   parentTweetId?: string; // ID of the parent tweet in the thread
 }
 
+// Function to detect if text contains Arabic characters
+const isArabicText = (text: string): boolean => {
+  const arabicRegex = /[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF]/;
+  return arabicRegex.test(text);
+};
+
+// Function to get text direction based on content
+const getTextDirection = (text: string): 'ltr' | 'rtl' => {
+  return isArabicText(text) ? 'rtl' : 'ltr';
+};
+
 export const MobileTweetCard: React.FC<MobileTweetCardProps> = ({ 
   tweet, 
   onLike, 
@@ -585,7 +596,11 @@ export const MobileTweetCard: React.FC<MobileTweetCardProps> = ({
               </div>
 
               {/* Tweet Text with Enhanced Link Parsing */}
-              <div className="text-gray-900 mb-3 text-base leading-5 w-full break-words overflow-wrap-anywhere">
+              <div 
+                className="text-gray-900 mb-3 text-base leading-5 w-full break-words overflow-wrap-anywhere"
+                dir={getTextDirection(tweet.content)}
+                style={{ textAlign: getTextDirection(tweet.content) === 'rtl' ? 'right' : 'left' }}
+              >
                 {parseTextWithLinks(displayContent)}
                 {tweet.content.length > 200 && (
                   <span className="text-gray-500 text-sm italic"> (truncated)</span>
@@ -623,7 +638,11 @@ export const MobileTweetCard: React.FC<MobileTweetCardProps> = ({
                           {formatDistanceToNow(originalTweet.createdAt, { addSuffix: true }).replace('about ', '')}
                         </span>
                       </div>
-                      <p className="text-gray-700 text-xs line-clamp-2">
+                      <p 
+                        className="text-gray-700 text-xs line-clamp-2"
+                        dir={getTextDirection(originalTweet.content)}
+                        style={{ textAlign: getTextDirection(originalTweet.content) === 'rtl' ? 'right' : 'left' }}
+                      >
                         {originalTweet.content}
                       </p>
                     </div>

@@ -16,6 +16,17 @@ import { storageService } from '../../lib/storage';
 import { Tweet, TweetWithProfile } from '../../types';
 import { formatDistanceToNow } from 'date-fns';
 
+// Function to detect if text contains Arabic characters
+const isArabicText = (text: string): boolean => {
+  const arabicRegex = /[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF]/;
+  return arabicRegex.test(text);
+};
+
+// Function to get text direction based on content
+const getTextDirection = (text: string): 'ltr' | 'rtl' => {
+  return isArabicText(text) ? 'rtl' : 'ltr';
+};
+
 export const TweetDetailPage: React.FC = () => {
   const { tweetId } = useParams<{ tweetId: string }>();
   const navigate = useNavigate();
@@ -503,7 +514,11 @@ export const TweetDetailPage: React.FC = () => {
                             {formatDistanceToNow(parentTweet.createdAt, { addSuffix: true })}
                           </span>
                         </div>
-                        <p className="text-gray-900 text-sm line-clamp-3">
+                        <p 
+                          className="text-gray-900 text-sm line-clamp-3"
+                          dir={getTextDirection(parentTweet.content)}
+                          style={{ textAlign: getTextDirection(parentTweet.content) === 'rtl' ? 'right' : 'left' }}
+                        >
                           {parentTweet.content}
                         </p>
                       </div>
@@ -552,7 +567,11 @@ export const TweetDetailPage: React.FC = () => {
                 </div>
 
                 {/* Tweet Content */}
-                <div className="text-gray-900 text-xl leading-relaxed mb-4">
+                <div 
+                  className="text-gray-900 text-xl leading-relaxed mb-4"
+                  dir={getTextDirection(tweet.content)}
+                  style={{ textAlign: getTextDirection(tweet.content) === 'rtl' ? 'right' : 'left' }}
+                >
                   {tweet.content}
                 </div>
 
@@ -836,7 +855,11 @@ export const TweetDetailPage: React.FC = () => {
               </div>
 
               {/* Tweet Content */}
-              <div className="text-gray-900 text-lg leading-relaxed mb-3">
+              <div 
+                className="text-gray-900 text-lg leading-relaxed mb-3"
+                dir={getTextDirection(tweet.content)}
+                style={{ textAlign: getTextDirection(tweet.content) === 'rtl' ? 'right' : 'left' }}
+              >
                 {tweet.content}
               </div>
 
