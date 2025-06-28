@@ -167,38 +167,40 @@ export const FollowListModal: React.FC<FollowListModalProps> = ({
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent 
-        className="max-w-md w-full h-[600px] p-0 overflow-hidden"
+        className="max-w-sm w-full h-[500px] p-0 overflow-hidden"
         dir={isRTL ? 'rtl' : 'ltr'}
       >
-        <DialogHeader className="p-4 border-b border-gray-200">
+        <DialogHeader className="p-3 border-b border-gray-200">
           <div className={`flex items-center justify-between ${isRTL ? 'flex-row-reverse' : ''}`}>
-            <DialogTitle className="text-lg font-bold">
-              {title}
-            </DialogTitle>
+            <div>
+              <DialogTitle className="text-base font-bold">
+                {title}
+              </DialogTitle>
+              <p className="text-xs text-gray-500">
+                @{username}
+              </p>
+            </div>
             <Button
               variant="ghost"
               size="sm"
               onClick={onClose}
-              className="p-2"
+              className="p-1.5"
             >
-              <X className="h-5 w-5" />
+              <X className="h-4 w-4" />
             </Button>
           </div>
-          <p className="text-sm text-gray-500 mt-1">
-            @{username}
-          </p>
         </DialogHeader>
 
-        <div className="p-4 border-b border-gray-200">
+        <div className="p-3 border-b border-gray-200">
           <div className="relative">
-            <Search className={`absolute top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400 ${isRTL ? 'right-3' : 'left-3'}`} />
+            <Search className={`absolute top-1/2 transform -translate-y-1/2 h-3.5 w-3.5 text-gray-400 ${isRTL ? 'right-2.5' : 'left-2.5'}`} />
             <input
               type="text"
               placeholder={language === 'en' ? 'Search people...' : 'البحث عن أشخاص...'}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className={`w-full bg-gray-100 rounded-full py-2 text-gray-900 placeholder-gray-500 border-none focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all ${
-                isRTL ? 'pr-10 pl-4 text-right' : 'pl-10 pr-4 text-left'
+              className={`w-full bg-gray-100 rounded-full py-1.5 text-sm text-gray-900 placeholder-gray-500 border-none focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all ${
+                isRTL ? 'pr-8 pl-3 text-right' : 'pl-8 pr-3 text-left'
               }`}
               dir={isRTL ? 'rtl' : 'ltr'}
             />
@@ -207,33 +209,33 @@ export const FollowListModal: React.FC<FollowListModalProps> = ({
 
         <div className="flex-1 overflow-y-auto">
           {loading ? (
-            <div className="p-4 space-y-4">
+            <div className="p-3 space-y-3">
               {Array.from({ length: 5 }).map((_, index) => (
-                <div key={index} className="flex items-center space-x-3">
-                  <div className="w-12 h-12 bg-gray-200 rounded-full animate-pulse"></div>
+                <div key={index} className="flex items-center space-x-2.5">
+                  <div className="w-9 h-9 bg-gray-200 rounded-full animate-pulse"></div>
                   <div className="flex-1">
-                    <div className="h-4 bg-gray-200 rounded animate-pulse w-3/4 mb-2"></div>
-                    <div className="h-3 bg-gray-200 rounded animate-pulse w-1/2"></div>
+                    <div className="h-3 bg-gray-200 rounded animate-pulse w-3/4 mb-1.5"></div>
+                    <div className="h-2.5 bg-gray-200 rounded animate-pulse w-1/2"></div>
                   </div>
                 </div>
               ))}
             </div>
           ) : error ? (
-            <div className="flex flex-col items-center justify-center py-12 px-4">
-              <p className="text-red-500 text-center mb-2">
+            <div className="flex flex-col items-center justify-center py-8 px-3">
+              <p className="text-red-500 text-center mb-2 text-sm">
                 {language === 'en' ? 'Error loading users' : 'خطأ في تحميل المستخدمين'}
               </p>
-              <p className="text-sm text-gray-600 text-center mb-4">{error}</p>
-              <Button onClick={fetchUsers} variant="outline" size="sm">
+              <p className="text-xs text-gray-600 text-center mb-3">{error}</p>
+              <Button onClick={fetchUsers} variant="outline" size="sm" className="text-xs py-1 px-3">
                 {language === 'en' ? 'Try again' : 'حاول مرة أخرى'}
               </Button>
             </div>
           ) : filteredUsers.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-12 px-4">
-              <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4">
-                <User className="w-8 h-8 text-gray-400" />
+            <div className="flex flex-col items-center justify-center py-8 px-3">
+              <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center mb-3">
+                <User className="w-6 h-6 text-gray-400" />
               </div>
-              <p className="text-lg text-gray-900 mb-2">
+              <p className="text-sm text-gray-900 mb-2 text-center">
                 {searchQuery ? 
                   (language === 'en' ? 'No users found' : 'لم يتم العثور على مستخدمين') :
                   (type === 'followers' ? 
@@ -243,7 +245,7 @@ export const FollowListModal: React.FC<FollowListModalProps> = ({
                 }
               </p>
               {searchQuery && (
-                <p className="text-sm text-gray-500">
+                <p className="text-xs text-gray-500 text-center">
                   {language === 'en' ? 'Try a different search term' : 'جرب مصطلح بحث مختلف'}
                 </p>
               )}
@@ -251,33 +253,33 @@ export const FollowListModal: React.FC<FollowListModalProps> = ({
           ) : (
             <div className="divide-y divide-gray-100">
               {filteredUsers.map((user) => (
-                <div key={user.id} className="p-4 hover:bg-gray-50 transition-colors">
-                  <div className={`flex items-center ${isRTL ? 'space-x-reverse space-x-3' : 'space-x-3'}`}>
+                <div key={user.id} className="p-3 hover:bg-gray-50 transition-colors">
+                  <div className={`flex items-center ${isRTL ? 'space-x-reverse space-x-2.5' : 'space-x-2.5'}`}>
                     <LazyAvatar
                       src={user.avatar}
                       fallback={user.displayName[0]?.toUpperCase() || 'U'}
-                      className="w-12 h-12 flex-shrink-0"
-                      size={96}
+                      className="w-9 h-9 flex-shrink-0"
+                      size={72}
                     />
                     
                     <div className="flex-1 min-w-0">
-                      <div className={`flex items-center ${isRTL ? 'space-x-reverse space-x-2' : 'space-x-2'}`}>
-                        <p className="font-bold text-gray-900 truncate">
+                      <div className={`flex items-center ${isRTL ? 'space-x-reverse space-x-1.5' : 'space-x-1.5'}`}>
+                        <p className="font-semibold text-gray-900 truncate text-sm">
                           {user.displayName}
                         </p>
                         {user.verified && (
-                          <div className="w-4 h-4 bg-blue-500 rounded-full flex items-center justify-center">
+                          <div className="w-3.5 h-3.5 bg-blue-500 rounded-full flex items-center justify-center">
                             <span className="text-white text-xs">✓</span>
                           </div>
                         )}
                       </div>
-                      <p className="text-gray-500 text-sm">@{user.username}</p>
+                      <p className="text-gray-500 text-xs">@{user.username}</p>
                       {user.bio && (
-                        <p className="text-gray-700 text-sm mt-1 line-clamp-2">
+                        <p className="text-gray-700 text-xs mt-0.5 line-clamp-1">
                           {user.bio}
                         </p>
                       )}
-                      <p className="text-gray-500 text-xs mt-1">
+                      <p className="text-gray-500 text-xs mt-0.5">
                         {user.followers.toLocaleString()} {language === 'en' ? 'followers' : 'متابع'}
                       </p>
                     </div>
@@ -288,7 +290,7 @@ export const FollowListModal: React.FC<FollowListModalProps> = ({
                         size="sm"
                         onClick={() => handleFollow(user.id)}
                         disabled={followLoading}
-                        className={`flex-shrink-0 ${
+                        className={`flex-shrink-0 text-xs py-1 px-2.5 ${
                           user.isFollowedByCurrentUser 
                             ? 'border-gray-300 text-gray-700 hover:bg-red-50 hover:text-red-600 hover:border-red-300' 
                             : 'bg-blue-500 text-white hover:bg-blue-600'
@@ -298,12 +300,12 @@ export const FollowListModal: React.FC<FollowListModalProps> = ({
                           '...'
                         ) : user.isFollowedByCurrentUser ? (
                           <>
-                            <UserMinus className="w-3 h-3 mr-1" />
+                            <UserMinus className="w-2.5 h-2.5 mr-1" />
                             {language === 'en' ? 'Following' : 'متابع'}
                           </>
                         ) : (
                           <>
-                            <UserPlus className="w-3 h-3 mr-1" />
+                            <UserPlus className="w-2.5 h-2.5 mr-1" />
                             {language === 'en' ? 'Follow' : 'متابعة'}
                           </>
                         )}

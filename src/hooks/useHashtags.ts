@@ -100,12 +100,12 @@ export const useHashtags = () => {
 
   const fetchTrendingHashtags = useCallback(async () => {
     try {
-      // Check cache first
-      const cached = sessionStorage.getItem('trending_hashtags_data');
+      // Check cache first (reduced cache time for testing)
+      const cached = sessionStorage.getItem('trending_hashtags_data_v2');
       if (cached) {
         try {
           const parsed = JSON.parse(cached);
-          if (Date.now() - parsed.timestamp < 10 * 60 * 1000) { // 10 minute cache
+          if (Date.now() - parsed.timestamp < 2 * 60 * 1000) { // 2 minute cache for testing
             setTrendingHashtags(parsed.hashtags);
             return;
           }
@@ -137,6 +137,7 @@ export const useHashtags = () => {
         
         // Include both original tweets and replies in hashtag counting
         tweet.hashtags.forEach((hashtag: string) => {
+          // Keep original case for Arabic hashtags, but use lowercase for grouping
           const tag = hashtag.toLowerCase();
           if (!hashtagCounts[tag]) {
             hashtagCounts[tag] = { count: 0, recent: 0, engagement: 0 };
@@ -166,7 +167,7 @@ export const useHashtags = () => {
 
       // Cache the results
       try {
-        sessionStorage.setItem('trending_hashtags_data', JSON.stringify({
+        sessionStorage.setItem('trending_hashtags_data_v2', JSON.stringify({
           hashtags: trending,
           timestamp: Date.now()
         }));
@@ -186,10 +187,11 @@ export const useHashtags = () => {
       setLoading(true);
       setError(null);
 
-      // Clean hashtag (remove # if present)
-      const cleanHashtag = hashtag.replace('#', '').toLowerCase();
+      // Clean hashtag (remove # if present) - preserve case for Arabic
+      const cleanHashtag = hashtag.replace('#', '');
 
       console.log('Searching for hashtag:', cleanHashtag);
+      console.log('Original hashtag parameter:', hashtag);
 
       // Updated query to include both original tweets AND replies
       let query = supabase

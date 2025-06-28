@@ -948,8 +948,13 @@ export const useTweets = () => {
       if (!user) throw new Error('User not authenticated');
 
       // Extract hashtags and mentions from content (including Arabic support)
-      const hashtags = content.match(/#[\w\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF]+/g)?.map(tag => tag.slice(1)) || [];
+      const hashtagMatches = content.match(/#[\w\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF]+/g);
+      const hashtags = hashtagMatches?.map(tag => tag.slice(1)) || [];
       const mentions = content.match(/@\w+/g)?.map(mention => mention.slice(1)) || [];
+      
+      console.log('Tweet content:', content);
+      console.log('Hashtag matches:', hashtagMatches);
+      console.log('Extracted hashtags:', hashtags);
 
       const { data, error } = await supabase
         .from('tweets')
@@ -1015,8 +1020,13 @@ export const useTweets = () => {
       if (!user) throw new Error('User not authenticated');
 
       // Extract hashtags and mentions from content (including Arabic support)
-      const hashtags = content.match(/#[\w\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF]+/g)?.map(tag => tag.slice(1)) || [];
+      const hashtagMatches = content.match(/#[\w\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF]+/g);
+      const hashtags = hashtagMatches?.map(tag => tag.slice(1)) || [];
       const mentions = content.match(/@\w+/g)?.map(mention => mention.slice(1)) || [];
+      
+      console.log('Reply content:', content);
+      console.log('Hashtag matches:', hashtagMatches);
+      console.log('Extracted hashtags:', hashtags);
 
       const { data, error } = await supabase
         .from('tweets')
