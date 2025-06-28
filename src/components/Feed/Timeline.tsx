@@ -264,7 +264,7 @@ export const Timeline: React.FC = () => {
         <div className="bg-white border-b border-gray-100 sticky top-0 z-10">
           
           {/* 1. Categories at the top */}
-          <div className="py-3 border-b border-gray-100 px-4">
+          <div className="py-2 border-b border-gray-100 px-4">
             <FilterNavigation 
               selectedFilter={selectedFilter}
               onFilterChange={handleFilterChange}
@@ -272,7 +272,7 @@ export const Timeline: React.FC = () => {
           </div>
           
           {/* 2. Countries in the middle as buttons */}
-          <div className="py-3 border-b border-gray-100">
+          <div className="py-2 border-b border-gray-100">
             <div className="flex items-center gap-2 overflow-x-auto scrollbar-hide px-4">
               <div className="flex gap-2 min-w-max">
                 {availableCountries.slice(0, 8).map((country) => (
@@ -381,7 +381,7 @@ export const Timeline: React.FC = () => {
           <div className="bg-white/95 backdrop-blur-md border-b border-gray-200 z-50 flex-shrink-0">
             
             {/* 1. Categories at the top */}
-            <div className="py-4 border-b border-gray-100 px-4 md:px-6">
+            <div className="py-2 border-b border-gray-100 px-4 md:px-6">
               <FilterNavigation 
                 selectedFilter={selectedFilter}
                 onFilterChange={handleFilterChange}
@@ -389,7 +389,7 @@ export const Timeline: React.FC = () => {
             </div>
             
             {/* 2. Countries in the middle as buttons */}
-            <div className="py-4 border-b border-gray-100 px-4 md:px-6">
+            <div className="py-2 border-b border-gray-100 px-4 md:px-6">
               <div className="flex items-center gap-2 overflow-x-auto scrollbar-hide">
                 <div className="flex gap-2 min-w-max">
                   {availableCountries.slice(0, 10).map((country) => (
