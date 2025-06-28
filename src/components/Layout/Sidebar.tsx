@@ -98,8 +98,8 @@ export const Sidebar: React.FC = () => {
 
   return (
     <div className={`w-64 h-full ${isRTL ? '' : 'border-r'} border-gray-200 bg-white p-4 flex flex-col`}>
-      {/* Logo */}
-      <div className={`mb-6 ${isRTL ? 'flex justify-end' : 'flex justify-start'}`}>
+      {/* Logo with Site Name */}
+      <div className={`mb-6 flex items-center ${isRTL ? 'justify-end' : 'justify-start'}`}>
         <div className="w-12 h-12">
           <img 
             src="https://i.ibb.co/3YPVCWX2/Website-Logo.jpg" 
@@ -107,6 +107,7 @@ export const Sidebar: React.FC = () => {
             className="w-full h-full object-contain"
           />
         </div>
+        <span className={`font-bold text-xl text-[#1DA1F2] ${isRTL ? 'mr-2' : 'ml-2'}`}>سافر</span>
       </div>
 
       {/* User Profile - Moved below logo */}
