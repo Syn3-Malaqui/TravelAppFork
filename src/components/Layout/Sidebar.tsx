@@ -18,8 +18,11 @@ import { storageService } from '../../lib/storage';
 import { supabase } from '../../lib/supabase';
 import { useLanguageStore } from '../../store/useLanguageStore';
 import { LanguageSelector } from '../ui/LanguageSelector';
+import { AdminSetupButton } from '../AdminSetupButton';
 
 const getSidebarItems = (language: string, isAdmin: boolean = false) => {
+  console.log('🔍 getSidebarItems called with isAdmin:', isAdmin);
+  
   const items = [
     { icon: Home, label: language === 'en' ? 'Home' : 'الرئيسية', path: '/' },
     { icon: Search, label: language === 'en' ? 'Explore' : 'استكشف', path: '/search' },
@@ -29,6 +32,7 @@ const getSidebarItems = (language: string, isAdmin: boolean = false) => {
   ];
   
   if (isAdmin) {
+    console.log('🔍 Adding Control Panel to sidebar items');
     items.splice(-1, 0, { 
       icon: Settings, 
       label: language === 'en' ? 'Control Panel' : 'لوحة التحكم', 
@@ -36,6 +40,7 @@ const getSidebarItems = (language: string, isAdmin: boolean = false) => {
     });
   }
   
+  console.log('🔍 Final sidebar items:', items);
   return items;
 };
 
@@ -67,8 +72,18 @@ export const Sidebar: React.FC = () => {
 
         if (error) throw error;
 
+        // Debug logging - check what we're getting
+        console.log('🔍 Profile Data:', data);
+        console.log('🔍 User Email:', user.email);
+        console.log('🔍 User ID:', user.id);
+
         // Check if user is admin by username OR role
         const isAdmin = data.username === 'admin' || data.role === 'admin';
+        console.log('🔍 Is Admin Check:', { 
+          username: data.username, 
+          role: data.role, 
+          isAdmin 
+        });
 
         setUserProfile({
           displayName: data.display_name,
@@ -242,6 +257,9 @@ export const Sidebar: React.FC = () => {
           )}
         </Button>
       </div>
+
+      {/* Admin Setup Button - Temporary Debug */}
+      <AdminSetupButton />
 
       {/* Language Selector Modal */}
       <LanguageSelector 
