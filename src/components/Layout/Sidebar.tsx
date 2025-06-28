@@ -5,18 +5,12 @@ import {
   Search, 
   Bell, 
   User, 
-  Settings,
   LogOut,
   Languages
 } from 'lucide-react';
 import { Button } from '../ui/button';
 import { Avatar, AvatarImage, AvatarFallback } from '../ui/avatar';
-import { 
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '../ui/dropdown-menu';
+
 import { useAuth } from '../../hooks/useAuth';
 import { useNotifications } from '../../hooks/useNotifications';
 import { storageService } from '../../lib/storage';
@@ -29,6 +23,7 @@ const getSidebarItems = (language: string) => [
   { icon: Search, label: language === 'en' ? 'Explore' : 'استكشف', path: '/search' },
   { icon: Bell, label: language === 'en' ? 'Notifications' : 'الإشعارات', path: '/notifications' },
   { icon: User, label: language === 'en' ? 'Profile' : 'الملف الشخصي', path: '/profile' },
+  { icon: Languages, label: language === 'en' ? 'Language' : 'اللغة', path: '/language' },
 ];
 
 export const Sidebar: React.FC = () => {
@@ -36,7 +31,6 @@ export const Sidebar: React.FC = () => {
   const location = useLocation();
   const { user, signOut } = useAuth();
   const { unreadCount } = useNotifications();
-  const [settingsOpen, setSettingsOpen] = useState(false);
   const [languageSelectorOpen, setLanguageSelectorOpen] = useState(false);
   const { language, isRTL } = useLanguageStore();
   const [userProfile, setUserProfile] = useState<{
@@ -85,14 +79,17 @@ export const Sidebar: React.FC = () => {
   const handleSignOut = async () => {
     try {
       await signOut();
-      setSettingsOpen(false);
     } catch (error) {
       console.error('Error signing out:', error);
     }
   };
 
   const handleNavClick = (path: string) => {
-    navigate(path);
+    if (path === '/language') {
+      setLanguageSelectorOpen(true);
+    } else {
+      navigate(path);
+    }
   };
 
   const handleProfileClick = () => {
@@ -102,7 +99,7 @@ export const Sidebar: React.FC = () => {
   return (
     <div className={`w-64 h-full ${isRTL ? '' : 'border-r'} border-gray-200 bg-white p-4 flex flex-col`}>
       {/* Logo */}
-      <div className={`mb-8 ${isRTL ? 'flex justify-end' : 'flex justify-start'}`}>
+      <div className={`mb-6 ${isRTL ? 'flex justify-end' : 'flex justify-start'}`}>
         <div className="w-12 h-12">
           <img 
             src="https://i.ibb.co/3YPVCWX2/Website-Logo.jpg" 
@@ -112,11 +109,47 @@ export const Sidebar: React.FC = () => {
         </div>
       </div>
 
+      {/* User Profile - Moved below logo */}
+      <div 
+        className={`flex items-center ${isRTL ? 'p-3 pr-2' : 'p-3'} hover:bg-gray-50 rounded-lg cursor-pointer transition-colors mb-6 ${
+          isRTL ? 'justify-end' : 'justify-start'
+        }`}
+        onClick={handleProfileClick}
+      >
+        {isRTL ? (
+          <>
+            <Avatar className="w-10 h-10 ml-3">
+              <AvatarImage 
+                src={userProfile?.avatar ? storageService.getOptimizedImageUrl(userProfile.avatar, { width: 80, quality: 80 }) : undefined} 
+              />
+              <AvatarFallback>{userProfile?.displayName[0]?.toUpperCase() || 'U'}</AvatarFallback>
+            </Avatar>
+            <div className="min-w-0 text-right">
+              <div className="font-bold text-sm truncate">{userProfile?.displayName || 'User'}</div>
+              <div className="text-gray-500 text-sm truncate">@{userProfile?.username || 'user'}</div>
+            </div>
+          </>
+        ) : (
+          <>
+            <Avatar className="w-10 h-10 mr-3">
+              <AvatarImage 
+                src={userProfile?.avatar ? storageService.getOptimizedImageUrl(userProfile.avatar, { width: 80, quality: 80 }) : undefined} 
+              />
+              <AvatarFallback>{userProfile?.displayName[0]?.toUpperCase() || 'U'}</AvatarFallback>
+            </Avatar>
+            <div className="min-w-0 text-left">
+              <div className="font-bold text-sm truncate">{userProfile?.displayName || 'User'}</div>
+              <div className="text-gray-500 text-sm truncate">@{userProfile?.username || 'user'}</div>
+            </div>
+          </>
+        )}
+      </div>
+
       {/* Navigation */}
       <nav className="mb-6">
         <ul className="space-y-2">
           {getSidebarItems(language).map((item) => {
-            const isActive = location.pathname === item.path;
+            const isActive = location.pathname === item.path || (item.path === '/language' && languageSelectorOpen);
             const isNotifications = item.path === '/notifications';
             
             return (
@@ -159,97 +192,34 @@ export const Sidebar: React.FC = () => {
           })}
         </ul>
 
-        {/* Tweet Button */}
+        {/* Post Button */}
         <Button 
           className="w-full mt-4 bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 rounded-full text-lg"
           onClick={handleTweetClick}
         >
-          {language === 'en' ? 'Tweet' : 'تغريد'}
+          {language === 'en' ? 'Post' : 'تغريد'}
         </Button>
       </nav>
 
-      {/* Settings and User Profile Section */}
-      <div className="mt-auto space-y-4">
-        {/* Settings Dropdown */}
-        <DropdownMenu open={settingsOpen} onOpenChange={setSettingsOpen}>
-          <DropdownMenuTrigger asChild>
-            <Button 
-              variant="ghost"
-              className={`w-full ${isRTL ? 'justify-end text-right pr-2' : 'justify-start text-left'} text-lg py-3 px-4 h-auto text-gray-700 hover:bg-gray-100`}
-            >
-              {isRTL ? (
-                <>
-                  <Settings className="h-5 w-5 ml-3" />
-                  <span>{language === 'en' ? 'Settings' : 'الإعدادات'}</span>
-                </>
-              ) : (
-                <>
-                  <Settings className="h-5 w-5 mr-3" />
-                  <span>{language === 'en' ? 'Settings' : 'الإعدادات'}</span>
-                </>
-              )}
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent 
-            align={isRTL ? "end" : "start"}
-            side="top"
-            className="w-56"
-            sideOffset={8}
-            avoidCollisions={true}
-            collisionPadding={8}
-          >
-            <DropdownMenuItem 
-              onClick={() => {
-                setLanguageSelectorOpen(true);
-                setSettingsOpen(false);
-              }} 
-              className="cursor-pointer"
-            >
-              <Languages className={`h-4 w-4 ${isRTL ? 'ml-2' : 'mr-2'}`} />
-              {language === 'en' ? 'Language' : 'اللغة'}
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={handleSignOut} className="text-red-600 hover:bg-red-50 cursor-pointer">
-              <LogOut className={`h-4 w-4 ${isRTL ? 'ml-2' : 'mr-2'}`} />
-              {language === 'en' ? 'Sign Out' : 'تسجيل الخروج'}
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-
-        {/* User Profile */}
-        <div 
-          className={`flex items-center ${isRTL ? 'p-3 pr-2' : 'p-3'} hover:bg-gray-50 rounded-lg cursor-pointer transition-colors ${
-            isRTL ? 'justify-end' : 'justify-start'
-          }`}
-          onClick={handleProfileClick}
+      {/* Sign Out Button - Converted from Settings */}
+      <div className="mt-auto">
+        <Button 
+          variant="ghost"
+          onClick={handleSignOut}
+          className={`w-full ${isRTL ? 'justify-end text-right pr-2' : 'justify-start text-left'} text-lg py-3 px-4 h-auto text-red-600 hover:bg-red-50`}
         >
           {isRTL ? (
             <>
-              <Avatar className="w-10 h-10 ml-3">
-                <AvatarImage 
-                  src={userProfile?.avatar ? storageService.getOptimizedImageUrl(userProfile.avatar, { width: 80, quality: 80 }) : undefined} 
-                />
-                <AvatarFallback>{userProfile?.displayName[0]?.toUpperCase() || 'U'}</AvatarFallback>
-              </Avatar>
-              <div className="min-w-0 text-right">
-                <div className="font-bold text-sm truncate">{userProfile?.displayName || 'User'}</div>
-                <div className="text-gray-500 text-sm truncate">@{userProfile?.username || 'user'}</div>
-              </div>
+              <LogOut className="h-5 w-5 ml-3" />
+              <span>{language === 'en' ? 'Sign Out' : 'تسجيل الخروج'}</span>
             </>
           ) : (
             <>
-              <Avatar className="w-10 h-10 mr-3">
-                <AvatarImage 
-                  src={userProfile?.avatar ? storageService.getOptimizedImageUrl(userProfile.avatar, { width: 80, quality: 80 }) : undefined} 
-                />
-                <AvatarFallback>{userProfile?.displayName[0]?.toUpperCase() || 'U'}</AvatarFallback>
-              </Avatar>
-              <div className="min-w-0 text-left">
-                <div className="font-bold text-sm truncate">{userProfile?.displayName || 'User'}</div>
-                <div className="text-gray-500 text-sm truncate">@{userProfile?.username || 'user'}</div>
-              </div>
+              <LogOut className="h-5 w-5 mr-3" />
+              <span>{language === 'en' ? 'Sign Out' : 'تسجيل الخروج'}</span>
             </>
           )}
-        </div>
+        </Button>
       </div>
 
       {/* Language Selector Modal */}
