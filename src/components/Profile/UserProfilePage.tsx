@@ -154,9 +154,9 @@ export const UserProfilePage: React.FC = () => {
 
       // Get current user's interactions
       const allTweetIds = [
-        ...tweetsData.map(t => t.id),
-        ...repliesData.map(t => t.id),
-        ...likesData.map(l => l.tweets.id)
+        ...(tweetsData || []).map((t: any) => t.id),
+        ...(repliesData || []).map((t: any) => t.id),
+        ...(likesData || []).filter((l: any) => l.tweets).map((l: any) => l.tweets.id)
       ];
 
       let userLikes: string[] = [];
@@ -220,9 +220,9 @@ export const UserProfilePage: React.FC = () => {
         replyTo: tweetData.reply_to,
       });
 
-      const formattedTweets: Tweet[] = tweetsData.map(formatTweetData);
-      const formattedReplies: Tweet[] = repliesData.map(formatTweetData);
-      const formattedLikes: Tweet[] = likesData.map(like => formatTweetData(like.tweets));
+      const formattedTweets: Tweet[] = (tweetsData || []).map(formatTweetData);
+      const formattedReplies: Tweet[] = (repliesData || []).map(formatTweetData);
+      const formattedLikes: Tweet[] = (likesData || []).filter((like: any) => like.tweets).map((like: any) => formatTweetData(like.tweets));
 
       setProfile(formattedProfile);
       setTweets(formattedTweets);
@@ -404,11 +404,17 @@ export const UserProfilePage: React.FC = () => {
 
                   {/* Follow Stats */}
                   <div className="flex space-x-6">
-                    <div className="flex items-center space-x-1 cursor-pointer hover:underline">
+                    <div 
+                      className="flex items-center space-x-1 cursor-pointer hover:underline"
+                      onClick={handleFollowingClick}
+                    >
                       <span className="font-bold text-gray-900">{profile.following.toLocaleString()}</span>
                       <span className="text-gray-500">Following</span>
                     </div>
-                    <div className="flex items-center space-x-1 cursor-pointer hover:underline">
+                    <div 
+                      className="flex items-center space-x-1 cursor-pointer hover:underline"
+                      onClick={handleFollowersClick}
+                    >
                       <span className="font-bold text-gray-900">{profile.followers.toLocaleString()}</span>
                       <span className="text-gray-500">Followers</span>
                     </div>
@@ -592,11 +598,17 @@ export const UserProfilePage: React.FC = () => {
 
                 {/* Follow Stats */}
                 <div className="flex space-x-4">
-                  <div className="flex items-center space-x-1 cursor-pointer hover:underline">
+                  <div 
+                    className="flex items-center space-x-1 cursor-pointer hover:underline"
+                    onClick={handleFollowingClick}
+                  >
                     <span className="font-bold text-gray-900 text-sm">{profile.following.toLocaleString()}</span>
                     <span className="text-gray-500 text-xs">Following</span>
                   </div>
-                  <div className="flex items-center space-x-1 cursor-pointer hover:underline">
+                  <div 
+                    className="flex items-center space-x-1 cursor-pointer hover:underline"
+                    onClick={handleFollowersClick}
+                  >
                     <span className="font-bold text-gray-900 text-sm">{profile.followers.toLocaleString()}</span>
                     <span className="text-gray-500 text-xs">Followers</span>
                   </div>
@@ -687,6 +699,15 @@ export const UserProfilePage: React.FC = () => {
           coverImage: profile.coverImage,
         }}
         onProfileUpdate={handleProfileUpdate}
+      />
+
+      {/* Follow List Modal */}
+      <FollowListModal
+        isOpen={followModalOpen}
+        onClose={() => setFollowModalOpen(false)}
+        userId={profile.id}
+        type={followModalType}
+        username={profile.username}
       />
     </div>
   );
