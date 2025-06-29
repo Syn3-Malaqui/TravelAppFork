@@ -54,39 +54,67 @@ export const FollowListPage: React.FC = () => {
     try {
       setLoading(true);
       setError(null);
-      let query;
+      
+      let userIds: string[] = [];
+      
       if (activeTab === 'followers') {
-        query = supabase
+        // Get IDs of users who follow this profile
+        const { data: followData, error: followError } = await supabase
           .from('follows')
-          .select('follower_id:profiles(id, username, display_name, avatar_url, verified, followers_count, following_count, country, created_at)')
-          .eq('following_id', profileId);
+          .select('follower_id')
+          .eq('following_id', profileId)
+          .order('created_at', { ascending: false });
+          
+        if (followError) throw followError;
+        userIds = followData.map(row => row.follower_id);
       } else {
-        query = supabase
+        // Get IDs of users this profile follows
+        const { data: followData, error: followError } = await supabase
           .from('follows')
-          .select('following_id:profiles(id, username, display_name, avatar_url, verified, followers_count, following_count, country, created_at)')
-          .eq('follower_id', profileId);
+          .select('following_id')
+          .eq('follower_id', profileId)
+          .order('created_at', { ascending: false });
+          
+        if (followError) throw followError;
+        userIds = followData.map(row => row.following_id);
       }
-      const { data, error } = await query;
-      if (error) throw error;
-      // Map to User[]
-      const mapped: User[] = (data || []).map((row: any) => {
-        const p = activeTab === 'followers' ? row.follower_id : row.following_id;
-        return {
-          id: p.id,
-          username: p.username,
-          displayName: p.display_name || p.username,
-          avatar: p.avatar_url || '',
+      
+      // If no users found, set empty array and return
+      if (userIds.length === 0) {
+        setUsers([]);
+        return;
+      }
+      
+      // Fetch profile data for these users
+      const { data: profilesData, error: profilesError } = await supabase
+        .from('profiles')
+        .select('id, username, display_name, avatar_url, verified, followers_count, following_count, country, created_at')
+        .in('id', userIds);
+        
+      if (profilesError) throw profilesError;
+      
+      // Map to User[] and maintain the order from follows table
+      const profilesMap = new Map(profilesData.map(profile => [profile.id, profile]));
+      const mapped: User[] = userIds
+        .map(userId => profilesMap.get(userId))
+        .filter((profile): profile is NonNullable<typeof profile> => !!profile) // Type-safe filter
+        .map(profile => ({
+          id: profile.id,
+          username: profile.username,
+          displayName: profile.display_name || profile.username,
+          avatar: profile.avatar_url || '',
           bio: '',
-          verified: p.verified || false,
-          followers: p.followers_count || 0,
-          following: p.following_count || 0,
-          joinedDate: new Date(p.created_at),
-          country: p.country || 'US',
-        };
-      });
+          verified: profile.verified || false,
+          followers: profile.followers_count || 0,
+          following: profile.following_count || 0,
+          joinedDate: new Date(profile.created_at),
+          country: profile.country || 'US',
+        }));
+      
       setUsers(mapped);
     } catch (err: any) {
       setError(err.message);
+      console.error('Error fetching users:', err);
     } finally {
       setLoading(false);
     }

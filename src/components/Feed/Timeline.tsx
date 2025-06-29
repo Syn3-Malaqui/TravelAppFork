@@ -32,31 +32,9 @@ export const Timeline: React.FC = () => {
   const [selectedFilter, setSelectedFilter] = useState<string>('all');
   const [showSidebar, setShowSidebar] = useState(true);
   const [showFilterNavigation, setShowFilterNavigation] = useState(true);
-  const [availableCountries, setAvailableCountries] = useState<Array<{code: string, name: string}>>(
-    // Preload popular travel destinations so the UI isn't empty - use a function to get preloaded data
-    () => {
-      const popularCountries = [
-        'ALL', 'US', 'GB', 'AE', 'SA', 'DE', 'FR', 'IT', 'ES', 'JP', 
-        'AU', 'CA', 'EG', 'TR', 'TH', 'SG'
-      ];
-      
-      // Merge in any countries stored after composing a tweet
-      try {
-        const recent = JSON.parse(sessionStorage.getItem('recent_tweet_countries') || '[]');
-        recent.forEach((c: string) => {
-          if (!popularCountries.includes(c)) popularCountries.push(c);
-        });
-      } catch {}
-      
-      return popularCountries
-        .map(code => FILTER_COUNTRIES.find(c => c.code === code))
-        .filter(Boolean)
-        .map(country => ({
-          code: country!.code,
-          name: getLocalizedCountryName(country!, language)
-        }));
-    }
-  );
+  const [availableCountries, setAvailableCountries] = useState<Array<{code: string, name: string}>>([
+    { code: 'ALL', name: 'All Countries' }
+  ]);
   const { user } = useAuth();
   const [userProfile, setUserProfile] = useState<{
     displayName: string;
@@ -91,84 +69,76 @@ export const Timeline: React.FC = () => {
     }
   }, [width, isMobile]);
 
-  // Update country names when language changes
-  useEffect(() => {
-    const popularCountries = [
-      'ALL', 'US', 'GB', 'AE', 'SA', 'DE', 'FR', 'IT', 'ES', 'JP', 
-      'AU', 'CA', 'EG', 'TR', 'TH', 'SG'
-    ];
-    
-    const localizedCountries = popularCountries
-      .map(code => FILTER_COUNTRIES.find(c => c.code === code))
-      .filter(Boolean)
-      .map(country => ({
-        code: country!.code,
-        name: getLocalizedCountryName(country!, language)
-      }));
-    
-    setAvailableCountries(localizedCountries);
-  }, [language]);
-
-  // Fetch available countries from the database
+  // Fetch available countries from the database - only countries with actual tweets
   useEffect(() => {
     const fetchAvailableCountries = async () => {
       try {
+        // Query tweets to get all unique tags (which include country codes)
         const { data, error } = await supabase
-          .from('profiles')
-          .select('country')
-          .not('country', 'is', null)
-          .not('country', 'eq', '');
+          .from('tweets')
+          .select('tags')
+          .not('tags', 'is', null);
 
         if (error) throw error;
 
-        // Get unique countries from the database
-        let uniqueCountries = [...new Set(data.map(profile => profile.country))];
+        // Extract all country codes from tweet tags
+        const allTags = data.flatMap(tweet => tweet.tags || []);
+        
+        // Filter only valid country codes (that exist in our FILTER_COUNTRIES list)
+        const countryCodesInTweets = [...new Set(allTags)]
+          .filter(tag => FILTER_COUNTRIES.find(c => c.code === tag && c.code !== 'ALL'));
+        
         // Merge recently tweeted countries so they always appear
         try {
           const recent = JSON.parse(sessionStorage.getItem('recent_tweet_countries') || '[]');
-          uniqueCountries = Array.from(new Set([...uniqueCountries, ...recent]));
+          const recentCountries = recent.filter((code: string) => 
+            FILTER_COUNTRIES.find(c => c.code === code && c.code !== 'ALL')
+          );
+          countryCodesInTweets.push(...recentCountries);
         } catch {}
         
-        // Map to our country format, including only countries that exist in our predefined list
-        const mappedCountries = uniqueCountries
+        // Remove duplicates and get unique country codes
+        const uniqueCountryCodes = [...new Set(countryCodesInTweets)];
+        
+        // Map to our country format with localized names
+        const mappedCountries = uniqueCountryCodes
           .map(countryCode => FILTER_COUNTRIES.find(c => c.code === countryCode))
           .filter(Boolean) // Remove undefined entries
-          .sort((a, b) => a!.name.localeCompare(b!.name)); // Sort alphabetically
+          .map(country => ({
+            code: country!.code,
+            name: getLocalizedCountryName(country!, language)
+          }))
+          .sort((a, b) => a.name.localeCompare(b.name)); // Sort alphabetically
 
-        // Merge preloaded countries with database countries (avoid duplicates)
-        const preloadedCodes = new Set(availableCountries.map(c => c.code));
-        const newCountries = mappedCountries.filter(country => !preloadedCodes.has(country!.code));
-        
-        // Always include "All" at the beginning, then preloaded, then new ones
-        const allCountries = [
-          { code: 'ALL', name: 'All Countries' },
-          ...availableCountries.slice(1), // Remove the old "All" entry
-          ...(newCountries as Array<{code: string, name: string}>)
+        // Always include "All" at the beginning
+        const finalCountries = [
+          { code: 'ALL', name: language === 'en' ? 'All Countries' : 'جميع البلدان' },
+          ...mappedCountries
         ];
-
-        // Remove duplicates and sort (keeping "All" first)
-        const uniqueCountriesMap = new Map();
-        allCountries.forEach(country => {
-          if (!uniqueCountriesMap.has(country.code)) {
-            uniqueCountriesMap.set(country.code, country);
-          }
-        });
-
-        const finalCountries = Array.from(uniqueCountriesMap.values());
-        // Keep "All" first, sort the rest
-        const allFirst = finalCountries.filter(c => c.code === 'ALL');
-        const others = finalCountries.filter(c => c.code !== 'ALL').sort((a, b) => a.name.localeCompare(b.name));
         
-        setAvailableCountries([...allFirst, ...others]);
+        setAvailableCountries(finalCountries);
+        
+        console.log(`✅ Found ${mappedCountries.length} countries with tweets`);
       } catch (error) {
-        console.error('Error fetching countries:', error);
-        // Keep the preloaded countries if database fetch fails
-        console.log('Using preloaded countries as fallback');
+        console.error('Error fetching countries from tweets:', error);
+        
+        // Fallback: Use a minimal set of popular countries if the database query fails
+        const fallbackCountries = [
+          'ALL', 'US', 'GB', 'AE', 'SA', 'DE', 'FR', 'IT', 'ES', 'JP'
+        ].map(code => FILTER_COUNTRIES.find(c => c.code === code))
+         .filter(Boolean)
+         .map(country => ({
+           code: country!.code,
+           name: getLocalizedCountryName(country!, language)
+         }));
+         
+        setAvailableCountries(fallbackCountries);
+        console.log('Using fallback countries due to query error');
       }
     };
 
     fetchAvailableCountries();
-  }, []);
+  }, [language]); // Add language as dependency so it updates when language changes
 
   // Refresh available countries when user returns from composing (check sessionStorage changes)
   useEffect(() => {
