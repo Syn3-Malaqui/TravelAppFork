@@ -664,7 +664,7 @@ export const TweetCard: React.FC<TweetCardProps> = ({
 
               {/* Tweet Text with Enhanced Link Parsing */}
               <div 
-                className="text-gray-900 mb-2 text-[15px] leading-5"
+                className="text-gray-900 mb-2 text-[15px] leading-5 break-words overflow-wrap-anywhere whitespace-pre-wrap"
                 dir={getTextDirection(localTweet.content)}
                 style={{ textAlign: getTextDirection(localTweet.content) === 'rtl' ? 'right' : 'left' }}
               >

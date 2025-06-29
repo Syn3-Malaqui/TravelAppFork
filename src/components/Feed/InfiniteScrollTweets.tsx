@@ -27,14 +27,16 @@ export const InfiniteScrollTweets: React.FC<InfiniteScrollTweetsProps> = ({
   const { likeTweet, unlikeTweet, retweetTweet, unretweetTweet, bookmarkTweet, unbookmarkTweet } = useTweets();
   const [filteredTweets, setFilteredTweets] = useState<Tweet[]>([]);
   
-  // Use different hooks based on feed type
+  // Use different hooks based on feed type with optimized page sizes
   const forYouFeed = useLazyTweets({
-    pageSize: 10,
+    pageSize: 15, // Subsequent loads
+    initialPageSize: 30, // Initial load
     initialLoad: feedType === 'for-you',
   });
   
   const followingFeed = useLazyTweets({
-    pageSize: 10,
+    pageSize: 15, // Subsequent loads  
+    initialPageSize: 30, // Initial load
     initialLoad: feedType === 'following',
     followingOnly: true,
   });
@@ -67,7 +69,7 @@ export const InfiniteScrollTweets: React.FC<InfiniteScrollTweetsProps> = ({
     setFilteredTweets(filtered);
   }, [tweets, categoryFilter, countryFilter]);
 
-  // Set up intersection observer for infinite scroll
+  // Set up intersection observer for infinite scroll with preloading
   const setupObserver = useCallback(() => {
     if (observerRef.current) {
       observerRef.current.disconnect();
@@ -77,12 +79,13 @@ export const InfiniteScrollTweets: React.FC<InfiniteScrollTweetsProps> = ({
       (entries) => {
         const target = entries[0];
         if (target.isIntersecting && hasMore && !loading) {
+          console.log('🔄 Loading more tweets via scroll...');
           loadMore();
         }
       },
       {
         threshold: 0.1,
-        rootMargin: '100px', // Start loading 100px before reaching the bottom
+        rootMargin: '300px', // Start loading 300px before reaching the bottom for better UX
       }
     );
 

@@ -5,12 +5,13 @@ import type { RealtimeChannel } from '@supabase/supabase-js';
 
 interface UseLazyTweetsOptions {
   pageSize?: number;
+  initialPageSize?: number;
   initialLoad?: boolean;
   followingOnly?: boolean;
 }
 
 export const useLazyTweets = (options: UseLazyTweetsOptions = {}) => {
-  const { pageSize = 15, initialLoad = true, followingOnly = false } = options;
+  const { pageSize = 15, initialPageSize, initialLoad = true, followingOnly = false } = options;
   
   const [tweets, setTweets] = useState<Tweet[]>([]);
   const [loading, setLoading] = useState(false);
@@ -186,7 +187,16 @@ export const useLazyTweets = (options: UseLazyTweetsOptions = {}) => {
       setLoading(true);
       setError(null);
 
-      console.log('🔄 Loading tweets...', { offset: offsetRef.current, followingOnly });
+      // Determine page size: use initialPageSize for first load, pageSize for subsequent
+      const isFirstLoad = offsetRef.current === 0;
+      const currentPageSize = isFirstLoad && initialPageSize ? initialPageSize : pageSize;
+
+      console.log('🔄 Loading tweets...', { 
+        offset: offsetRef.current, 
+        pageSize: currentPageSize,
+        isFirstLoad,
+        followingOnly 
+      });
 
       // Build optimized query - minimal joins
       let query = supabase
@@ -221,7 +231,7 @@ export const useLazyTweets = (options: UseLazyTweetsOptions = {}) => {
         `)
         .is('reply_to', null)
         .order('created_at', { ascending: false })
-        .range(offsetRef.current, offsetRef.current + pageSize - 1);
+        .range(offsetRef.current, offsetRef.current + currentPageSize - 1);
 
       // Handle following filter
       if (followingOnly) {
@@ -256,7 +266,8 @@ export const useLazyTweets = (options: UseLazyTweetsOptions = {}) => {
       const tweetsData = Array.isArray(data) ? data : [];
       console.log('✅ Loaded tweets:', tweetsData.length);
 
-      if (tweetsData.length < pageSize) {
+      // Check if we have more data based on current page size
+      if (tweetsData.length < currentPageSize) {
         setHasMore(false);
       }
 
@@ -327,7 +338,7 @@ export const useLazyTweets = (options: UseLazyTweetsOptions = {}) => {
       setLoading(false);
       loadingRef.current = false;
     }
-  }, [hasMore, pageSize, followingOnly, formatTweetData, updateUserInteractions]);
+  }, [hasMore, pageSize, initialPageSize, followingOnly, formatTweetData, updateUserInteractions]);
 
   const reset = useCallback(() => {
     console.log('🔄 Resetting tweets...');
