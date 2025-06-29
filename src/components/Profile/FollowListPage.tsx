@@ -26,6 +26,11 @@ export const FollowListPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  // Update activeTab when URL parameter changes
+  useEffect(() => {
+    setActiveTab(tab === 'following' ? 'following' : 'followers');
+  }, [tab]);
+
   // Fetch profile id first
   useEffect(() => {
     const fetchProfile = async () => {
@@ -113,9 +118,9 @@ export const FollowListPage: React.FC = () => {
   }
 
   return (
-    <div className="flex flex-col h-screen">
+    <div className="flex flex-col h-screen bg-white">
       {/* Header */}
-      <div className="flex items-center px-4 py-3 border-b border-gray-200 bg-white/80 backdrop-blur-md">
+      <div className="flex items-center px-4 py-3 border-b border-gray-200 bg-white/80 backdrop-blur-md flex-shrink-0">
         <Button variant="ghost" size="sm" onClick={() => navigate(-1)} className="p-2">
           <ArrowLeft className="h-5 w-5" />
         </Button>
@@ -123,13 +128,13 @@ export const FollowListPage: React.FC = () => {
       </div>
 
       {/* Tabs */}
-      <div className="flex border-b border-gray-200">
+      <div className="flex border-b border-gray-200 flex-shrink-0">
         {(['followers', 'following'] as const).map(t => (
           <Button
             key={t}
             variant="ghost"
-            className={`flex-1 py-3 font-bold rounded-none border-b-2 ${activeTab === t ? 'border-blue-500' : 'border-transparent text-gray-500'}`}
-            onClick={() => setActiveTab(t)}
+            className={`flex-1 py-3 font-bold rounded-none border-b-2 transition-colors ${activeTab === t ? 'border-blue-500 text-black' : 'border-transparent text-gray-500 hover:bg-gray-50'}`}
+            onClick={() => navigate(`/profile/${username}/${t}`)}
           >
             {t.charAt(0).toUpperCase() + t.slice(1)}
           </Button>
@@ -139,44 +144,81 @@ export const FollowListPage: React.FC = () => {
       {/* List */}
       <div className="flex-1 overflow-y-auto">
         {loading ? (
-          <div className="p-8 text-center">Loading…</div>
-        ) : users.length === 0 ? (
-          <div className="p-8 text-center">No users</div>
-        ) : (
-          users.map(u => (
-            <div key={u.id} className="flex items-center px-4 py-3 border-b border-gray-100">
-              <Avatar className="w-10 h-10 mr-3">
-                <AvatarImage src={u.avatar ? storageService.getOptimizedImageUrl(u.avatar, { width:80, quality:80 }) : undefined} />
-                <AvatarFallback>{u.displayName[0]}</AvatarFallback>
-              </Avatar>
-              <div className="flex-1 min-w-0">
-                <Link to={`/profile/${u.username}`} className="font-bold hover:underline truncate block">
-                  {u.displayName}
-                </Link>
-                <span className="text-sm text-gray-500 truncate block">@{u.username}</span>
-              </div>
-              {currentUser && currentUser.id !== u.id && (
-                <Button
-                  variant={isFollowing(u.id) ? 'outline' : 'default'}
-                  size="sm"
-                  disabled={followLoading}
-                  onClick={() => handleFollowToggle(u.id)}
-                >
-                  {isFollowing(u.id) ? (
-                    <>
-                      <UserMinus className="w-4 h-4 mr-1" /> Following
-                    </>
-                  ) : (
-                    <>
-                      <UserPlus className="w-4 h-4 mr-1" /> Follow
-                    </>
-                  )}
-                </Button>
-              )}
+          <div className="flex items-center justify-center p-8">
+            <div className="text-center">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto mb-4"></div>
+              <p className="text-gray-500">Loading users...</p>
             </div>
-          ))
+          </div>
+        ) : users.length === 0 ? (
+          <div className="flex items-center justify-center p-8">
+            <div className="text-center">
+              <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <span className="text-gray-400 text-2xl">👥</span>
+              </div>
+              <p className="text-gray-500 text-lg mb-2">
+                {activeTab === 'followers' ? 'No followers yet' : 'Not following anyone yet'}
+              </p>
+              <p className="text-gray-400 text-sm">
+                {activeTab === 'followers' 
+                  ? 'When people follow this user, they\'ll show up here.' 
+                  : 'When this user follows people, they\'ll show up here.'
+                }
+              </p>
+            </div>
+          </div>
+        ) : (
+          <div className="divide-y divide-gray-100">
+            {users.map(u => (
+              <div key={u.id} className="flex items-center px-4 py-3 hover:bg-gray-50 transition-colors">
+                <Avatar className="w-12 h-12 mr-3 flex-shrink-0">
+                  <AvatarImage src={u.avatar ? storageService.getOptimizedImageUrl(u.avatar, { width:96, quality:80 }) : undefined} />
+                  <AvatarFallback className="text-sm font-medium">{u.displayName[0]}</AvatarFallback>
+                </Avatar>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center space-x-1 mb-1">
+                    <Link to={`/profile/${u.username}`} className="font-bold text-gray-900 hover:underline truncate">
+                      {u.displayName}
+                    </Link>
+                    {u.verified && (
+                      <div className="w-4 h-4 bg-blue-500 rounded-full flex items-center justify-center flex-shrink-0">
+                        <span className="text-white text-xs">✓</span>
+                      </div>
+                    )}
+                  </div>
+                  <p className="text-sm text-gray-500 truncate">@{u.username}</p>
+                  <p className="text-xs text-gray-400 mt-1">
+                    {u.followers.toLocaleString()} followers
+                  </p>
+                </div>
+                {currentUser && currentUser.id !== u.id && (
+                  <Button
+                    variant={isFollowing(u.id) ? 'outline' : 'default'}
+                    size="sm"
+                    disabled={followLoading}
+                    onClick={() => handleFollowToggle(u.id)}
+                    className={`ml-3 flex-shrink-0 ${
+                      isFollowing(u.id) 
+                        ? 'border-gray-300 text-gray-700 hover:bg-red-50 hover:text-red-600 hover:border-red-300' 
+                        : 'bg-blue-500 text-white hover:bg-blue-600'
+                    }`}
+                  >
+                    {isFollowing(u.id) ? (
+                      <>
+                        <UserMinus className="w-4 h-4 mr-1" /> Following
+                      </>
+                    ) : (
+                      <>
+                        <UserPlus className="w-4 h-4 mr-1" /> Follow
+                      </>
+                    )}
+                  </Button>
+                )}
+              </div>
+            ))}
+          </div>
         )}
       </div>
     </div>
   );
-}; 
+};

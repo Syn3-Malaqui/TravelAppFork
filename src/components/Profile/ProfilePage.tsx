@@ -8,7 +8,6 @@ import { MobileTweetCard } from '../Tweet/MobileTweetCard';
 import { ProfileSkeleton } from './ProfileSkeleton';
 import { TweetSkeletonList } from '../Tweet/TweetSkeleton';
 import { TrendingSidebar } from '../Layout/TrendingSidebar';
-import { FollowListModal } from './FollowListModal';
 import { useAuth } from '../../hooks/useAuth';
 import { useFollow } from '../../hooks/useFollow';
 import { useMessages } from '../../hooks/useMessages';
@@ -37,8 +36,6 @@ export const ProfilePage: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'tweets' | 'replies' | 'media' | 'likes'>('tweets');
   const [showSidebar, setShowSidebar] = useState(true);
   const [messageLoading, setMessageLoading] = useState(false);
-  const [followModalOpen, setFollowModalOpen] = useState(false);
-  const [followModalType, setFollowModalType] = useState<'followers' | 'following'>('followers');
 
   // Handle profile updates via real-time sync
   useProfileSync((profileUpdate) => {
@@ -921,15 +918,6 @@ export const ProfilePage: React.FC = () => {
           </div>
         </div>
       </div>
-
-      {/* Follow List Modal */}
-      <FollowListModal
-        isOpen={followModalOpen}
-        onClose={() => setFollowModalOpen(false)}
-        userId={profile.id}
-        type={followModalType}
-        username={profile.username}
-      />
     </div>
   );
 };

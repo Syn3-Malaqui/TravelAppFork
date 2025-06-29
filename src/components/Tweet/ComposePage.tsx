@@ -137,9 +137,8 @@ export const ComposePage: React.FC = () => {
     setError('');
     
     try {
-      // Combine categories and countries into tags
-      const allTags = [...selectedCategories, ...selectedCountries];
-      await createTweet(content, images, allTags);
+      // Create tweet with categories only (as expected by createTweet function)
+      await createTweet(content, images, selectedCategories);
       
       // Reset form
       setContent('');
@@ -153,6 +152,11 @@ export const ComposePage: React.FC = () => {
           const existing = JSON.parse(sessionStorage.getItem('recent_tweet_countries') || '[]');
           const merged = Array.from(new Set([...existing, ...selectedCountries]));
           sessionStorage.setItem('recent_tweet_countries', JSON.stringify(merged));
+          
+          // Dispatch custom event to notify Timeline of country changes
+          window.dispatchEvent(new CustomEvent('countriesUpdated', { 
+            detail: { countries: merged } 
+          }));
         }
       } catch (e) {
         console.debug('Could not store recent tweet countries', e);

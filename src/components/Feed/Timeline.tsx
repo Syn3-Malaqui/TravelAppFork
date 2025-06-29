@@ -170,6 +170,60 @@ export const Timeline: React.FC = () => {
     fetchAvailableCountries();
   }, []);
 
+  // Refresh available countries when user returns from composing (check sessionStorage changes)
+  useEffect(() => {
+    const handleStorageChange = () => {
+      try {
+        const recent = JSON.parse(sessionStorage.getItem('recent_tweet_countries') || '[]');
+        if (recent.length > 0) {
+          // Merge recent countries into current available countries
+          const currentCodes = new Set(availableCountries.map(c => c.code));
+          const newCountries = recent
+            .filter((code: string) => !currentCodes.has(code))
+            .map((code: string) => FILTER_COUNTRIES.find(c => c.code === code))
+            .filter(Boolean)
+            .map((country: any) => ({
+              code: country.code,
+              name: getLocalizedCountryName(country, language)
+            }));
+
+          if (newCountries.length > 0) {
+            setAvailableCountries(prev => {
+              const allFirst = prev.filter(c => c.code === 'ALL');
+              const others = [...prev.filter(c => c.code !== 'ALL'), ...newCountries]
+                .sort((a, b) => a.name.localeCompare(b.name));
+              return [...allFirst, ...others];
+            });
+          }
+        }
+      } catch (error) {
+        console.debug('Error handling storage change:', error);
+      }
+    };
+
+    // Check for changes when the component gains focus (user returns from compose page)
+    const handleFocus = () => {
+      handleStorageChange();
+    };
+
+    // Listen for custom countries updated event from ComposePage
+    const handleCountriesUpdated = () => {
+      handleStorageChange();
+    };
+
+    window.addEventListener('focus', handleFocus);
+    window.addEventListener('countriesUpdated', handleCountriesUpdated);
+    
+    // Also check periodically in case the user navigates back quickly
+    const interval = setInterval(handleStorageChange, 2000);
+
+    return () => {
+      window.removeEventListener('focus', handleFocus);
+      window.removeEventListener('countriesUpdated', handleCountriesUpdated);
+      clearInterval(interval);
+    };
+  }, [availableCountries, language]);
+
   // Fetch user profile data for the composer
   useEffect(() => {
     const fetchUserProfile = async () => {

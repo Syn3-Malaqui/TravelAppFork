@@ -9,7 +9,6 @@ import { EditProfileModal } from './EditProfileModal';
 import { ProfileSkeleton } from './ProfileSkeleton';
 import { TweetSkeletonList } from '../Tweet/TweetSkeleton';
 import { TrendingSidebar } from '../Layout/TrendingSidebar';
-import { FollowListModal } from './FollowListModal';
 import { useAuth } from '../../hooks/useAuth';
 import { supabase } from '../../lib/supabase';
 import { storageService } from '../../lib/storage';
@@ -28,8 +27,6 @@ export const UserProfilePage: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'tweets' | 'replies' | 'media' | 'likes'>('tweets');
   const [showEditModal, setShowEditModal] = useState(false);
   const [showSidebar, setShowSidebar] = useState(true);
-  const [followModalOpen, setFollowModalOpen] = useState(false);
-  const [followModalType, setFollowModalType] = useState<'followers' | 'following'>('followers');
 
   // Handle window resize to show/hide sidebar
   useEffect(() => {
@@ -254,13 +251,11 @@ export const UserProfilePage: React.FC = () => {
   };
 
   const handleFollowersClick = () => {
-    setFollowModalType('followers');
-    setFollowModalOpen(true);
+    if (profile) navigate(`/profile/${profile.username}/followers`);
   };
 
   const handleFollowingClick = () => {
-    setFollowModalType('following');
-    setFollowModalOpen(true);
+    if (profile) navigate(`/profile/${profile.username}/following`);
   };
 
   const getCurrentTabTweets = () => {
@@ -699,15 +694,6 @@ export const UserProfilePage: React.FC = () => {
           coverImage: profile.coverImage,
         }}
         onProfileUpdate={handleProfileUpdate}
-      />
-
-      {/* Follow List Modal */}
-      <FollowListModal
-        isOpen={followModalOpen}
-        onClose={() => setFollowModalOpen(false)}
-        userId={profile.id}
-        type={followModalType}
-        username={profile.username}
       />
     </div>
   );
