@@ -314,18 +314,27 @@ export const useAuth = () => {
       const { error } = await supabase.auth.signOut();
       
       if (error) {
-        console.error('❌ Sign out error:', error.message);
-        throw error;
+        console.warn('Supabase signOut returned error:', error.message, '- proceeding to clear client session anyway');
       }
 
-      // Clear local state
+      // Clear local state regardless of Supabase response
       setSession(null);
       setUser(null);
       setUserProfile(null);
+      sessionStorage.removeItem('preloaded_user_profile');
+      sessionStorage.removeItem('preloaded_notifications');
+      sessionStorage.removeItem('preloaded_user_suggestions');
       
-      console.log('✅ Sign out successful');
+      console.log('✅ Local session cleared');
     } catch (error: any) {
-      setError(error.message);
+      console.error('❌ Sign out error:', error.message);
+      // Fallback: force-clear local state even on unexpected error
+      setSession(null);
+      setUser(null);
+      setUserProfile(null);
+      sessionStorage.removeItem('preloaded_user_profile');
+      sessionStorage.removeItem('preloaded_notifications');
+      sessionStorage.removeItem('preloaded_user_suggestions');
       throw error;
     }
   };
