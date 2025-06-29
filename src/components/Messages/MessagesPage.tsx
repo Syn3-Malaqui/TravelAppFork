@@ -7,12 +7,15 @@ import { useMessages, Conversation, Message } from '../../hooks/useMessages';
 import { useAuth } from '../../hooks/useAuth';
 import { storageService } from '../../lib/storage';
 import { formatDistanceToNow } from 'date-fns';
+import { arSA, enUS } from 'date-fns/locale';
 import { supabase } from '../../lib/supabase';
 import { User as UserType } from '../../types';
+import { useLanguageStore } from '../../store/useLanguageStore';
 
 export const MessagesPage: React.FC = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { language, isRTL } = useLanguageStore();
   const { 
     conversations, 
     messages, 
@@ -320,7 +323,10 @@ export const MessagesPage: React.FC = () => {
                               {conversation.lastMessage.content}
                             </p>
                             <span className="text-gray-400 text-xs ml-2 flex-shrink-0">
-                              {formatDistanceToNow(conversation.lastMessage.createdAt, { addSuffix: true }).replace('about ', '')}
+                              {formatDistanceToNow(conversation.lastMessage.createdAt, { 
+                                addSuffix: true, 
+                                locale: language === 'ar' ? arSA : enUS 
+                              }).replace(language === 'ar' ? 'منذ حوالي ' : 'about ', '')}
                             </span>
                           </div>
                         )}
@@ -382,7 +388,10 @@ export const MessagesPage: React.FC = () => {
                       <p className={`text-xs mt-1 ${
                         message.senderId === user?.id ? 'text-blue-100' : 'text-gray-500'
                       }`}>
-                        {formatDistanceToNow(message.createdAt, { addSuffix: true }).replace('about ', '')}
+                        {formatDistanceToNow(message.createdAt, { 
+                          addSuffix: true, 
+                          locale: language === 'ar' ? arSA : enUS 
+                        }).replace(language === 'ar' ? 'منذ حوالي ' : 'about ', '')}
                       </p>
                     </div>
                   </div>
@@ -555,7 +564,10 @@ export const MessagesPage: React.FC = () => {
                                 {conversation.lastMessage.content}
                               </p>
                               <span className="text-gray-400 text-xs ml-2 flex-shrink-0">
-                                {formatDistanceToNow(conversation.lastMessage.createdAt, { addSuffix: true }).replace('about ', '')}
+                                {formatDistanceToNow(conversation.lastMessage.createdAt, { 
+                                  addSuffix: true, 
+                                  locale: language === 'ar' ? arSA : enUS 
+                                }).replace(language === 'ar' ? 'منذ حوالي ' : 'about ', '')}
                               </span>
                             </div>
                           )}
@@ -622,7 +634,10 @@ export const MessagesPage: React.FC = () => {
                     <p className={`text-xs mt-1 ${
                       message.senderId === user?.id ? 'text-blue-100' : 'text-gray-500'
                     }`}>
-                      {formatDistanceToNow(message.createdAt, { addSuffix: true }).replace('about ', '')}
+                      {formatDistanceToNow(message.createdAt, { 
+                        addSuffix: true, 
+                        locale: language === 'ar' ? arSA : enUS 
+                      }).replace(language === 'ar' ? 'منذ حوالي ' : 'about ', '')}
                     </p>
                   </div>
                 </div>

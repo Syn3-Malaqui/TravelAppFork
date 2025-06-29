@@ -205,46 +205,10 @@ export const AdminPanel: React.FC = () => {
             <div className="divide-y divide-gray-100">
               {filteredUsers.map((userProfile) => (
                 <div key={userProfile.id} className="p-4 hover:bg-gray-50 transition-colors">
-                  <div className={`flex items-center justify-between ${isRTL ? 'flex-row-reverse' : ''}`}>
-                    <div className={`flex items-center ${isRTL ? 'space-x-reverse space-x-3' : 'space-x-3'}`}>
-                      <LazyAvatar
-                        src={userProfile.avatar_url}
-                        fallback={userProfile.display_name[0]?.toUpperCase() || 'U'}
-                        className="w-12 h-12"
-                        size={96}
-                      />
-                      
-                      <div className={`flex-1 ${isRTL ? 'text-right' : 'text-left'}`}>
-                        <div className={`flex items-center ${isRTL ? 'space-x-reverse space-x-2' : 'space-x-2'}`}>
-                          <h3 className="font-semibold text-gray-900">{userProfile.display_name}</h3>
-                          {userProfile.verified && (
-                            <div className="w-4 h-4 bg-blue-500 rounded-full flex items-center justify-center">
-                              <Check className="w-2.5 h-2.5 text-white" />
-                            </div>
-                          )}
-                          {userProfile.role === 'admin' && (
-                            <Crown className="w-4 h-4 text-yellow-500" />
-                          )}
-                          {userProfile.role === 'moderator' && (
-                            <div className="text-xs px-2 py-1 bg-orange-100 text-orange-700 rounded">
-                              {language === 'en' ? 'Mod' : 'مشرف'}
-                            </div>
-                          )}
-                        </div>
-                        <p className="text-sm text-gray-500">@{userProfile.username}</p>
-                        {userProfile.bio && (
-                          <p className="text-sm text-gray-600 mt-1 line-clamp-2">{userProfile.bio}</p>
-                        )}
-                        <p className="text-xs text-gray-400 mt-1">
-                          {userProfile.followers_count} {language === 'en' ? 'followers' : 'متابع'} • 
-                          {' '}{language === 'en' ? 'Joined' : 'انضم'} {new Date(userProfile.created_at).toLocaleDateString()}
-                        </p>
-                      </div>
-                    </div>
-
-                    {/* Action Buttons */}
-                    {user?.id !== userProfile.id && (
-                      <div className={`flex ${isRTL ? 'space-x-reverse space-x-2' : 'space-x-2'}`}>
+                  <div className="flex items-center justify-between">
+                    {/* Action Buttons - Show first in RTL */}
+                    {isRTL && user?.id !== userProfile.id && (
+                      <div className="flex space-x-reverse space-x-2">
                         <Button
                           variant={userProfile.verified ? "outline" : "default"}
                           size="sm"
@@ -260,12 +224,12 @@ export const AdminPanel: React.FC = () => {
                             '...'
                           ) : userProfile.verified ? (
                             <>
-                              <X className={`w-3 h-3 ${isRTL ? 'ml-1' : 'mr-1'}`} />
+                              <X className="w-3 h-3 ml-1" />
                               {language === 'en' ? 'Unverify' : 'إلغاء التوثيق'}
                             </>
                           ) : (
                             <>
-                              <Check className={`w-3 h-3 ${isRTL ? 'ml-1' : 'mr-1'}`} />
+                              <Check className="w-3 h-3 ml-1" />
                               {language === 'en' ? 'Verify' : 'توثيق'}
                             </>
                           )}
@@ -290,19 +254,128 @@ export const AdminPanel: React.FC = () => {
                             <>
                               {userProfile.role === 'admin' && (
                                 <>
-                                  <Crown className={`w-3 h-3 ${isRTL ? 'ml-1' : 'mr-1'}`} />
+                                  <Crown className="w-3 h-3 ml-1" />
                                   {language === 'en' ? 'Admin' : 'مدير'}
                                 </>
                               )}
                               {userProfile.role === 'moderator' && (
                                 <>
-                                  <Settings className={`w-3 h-3 ${isRTL ? 'ml-1' : 'mr-1'}`} />
+                                  <Settings className="w-3 h-3 ml-1" />
                                   {language === 'en' ? 'Moderator' : 'مشرف'}
                                 </>
                               )}
                               {userProfile.role === 'user' && (
                                 <>
-                                  <User className={`w-3 h-3 ${isRTL ? 'ml-1' : 'mr-1'}`} />
+                                  <User className="w-3 h-3 ml-1" />
+                                  {language === 'en' ? 'User' : 'مستخدم'}
+                                </>
+                              )}
+                            </>
+                          )}
+                        </Button>
+                      </div>
+                    )}
+
+                    {/* User Info Section */}
+                    <div className={`flex items-center ${isRTL ? 'space-x-reverse space-x-3' : 'space-x-3'} ${isRTL ? 'flex-1' : ''}`}>
+                      {/* User Details - Show first in RTL */}
+                      <div className={`flex-1 ${isRTL ? 'text-right' : 'text-left'} ${isRTL ? 'order-1' : 'order-2'}`}>
+                        <div className={`flex items-center ${isRTL ? 'justify-end space-x-reverse space-x-2' : 'space-x-2'}`}>
+                          <h3 className="font-semibold text-gray-900">{userProfile.display_name}</h3>
+                          {userProfile.verified && (
+                            <div className="w-4 h-4 bg-blue-500 rounded-full flex items-center justify-center">
+                              <Check className="w-2.5 h-2.5 text-white" />
+                            </div>
+                          )}
+                          {userProfile.role === 'admin' && (
+                            <Crown className="w-4 h-4 text-yellow-500" />
+                          )}
+                          {userProfile.role === 'moderator' && (
+                            <div className="text-xs px-2 py-1 bg-orange-100 text-orange-700 rounded">
+                              {language === 'en' ? 'Mod' : 'مشرف'}
+                            </div>
+                          )}
+                        </div>
+                        <p className="text-sm text-gray-500">@{userProfile.username}</p>
+                        {userProfile.bio && (
+                          <p className="text-sm text-gray-600 mt-1 line-clamp-2">{userProfile.bio}</p>
+                        )}
+                        <p className="text-xs text-gray-400 mt-1">
+                          {userProfile.followers_count} {language === 'en' ? 'followers' : 'متابع'} • 
+                          {' '}{language === 'en' ? 'Joined' : 'انضم'} {new Date(userProfile.created_at).toLocaleDateString()}
+                        </p>
+                      </div>
+
+                      {/* Avatar - Show second in RTL (right side) */}
+                      <LazyAvatar
+                        src={userProfile.avatar_url}
+                        fallback={userProfile.display_name[0]?.toUpperCase() || 'U'}
+                        className={`w-12 h-12 ${isRTL ? 'order-2' : 'order-1'}`}
+                        size={96}
+                      />
+                    </div>
+
+                    {/* Action Buttons - Show last in LTR */}
+                    {!isRTL && user?.id !== userProfile.id && (
+                      <div className="flex space-x-2">
+                        <Button
+                          variant={userProfile.verified ? "outline" : "default"}
+                          size="sm"
+                          onClick={() => toggleVerifiedStatus(userProfile.id, userProfile.verified)}
+                          disabled={updating === userProfile.id}
+                          className={`text-xs ${
+                            userProfile.verified 
+                              ? 'border-blue-300 text-blue-700 hover:bg-blue-50' 
+                              : 'bg-blue-500 text-white hover:bg-blue-600'
+                          }`}
+                        >
+                          {updating === userProfile.id ? (
+                            '...'
+                          ) : userProfile.verified ? (
+                            <>
+                              <X className="w-3 h-3 mr-1" />
+                              {language === 'en' ? 'Unverify' : 'إلغاء التوثيق'}
+                            </>
+                          ) : (
+                            <>
+                              <Check className="w-3 h-3 mr-1" />
+                              {language === 'en' ? 'Verify' : 'توثيق'}
+                            </>
+                          )}
+                        </Button>
+
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => toggleAdminStatus(userProfile.id, userProfile.role)}
+                          disabled={updating === userProfile.id}
+                          className={`text-xs ${
+                            userProfile.role === 'admin' 
+                              ? 'border-yellow-300 text-yellow-700 hover:bg-yellow-50' 
+                              : userProfile.role === 'moderator'
+                              ? 'border-orange-300 text-orange-700 hover:bg-orange-50'
+                              : 'border-gray-300 text-gray-700 hover:bg-gray-50'
+                          }`}
+                        >
+                          {updating === userProfile.id ? (
+                            '...'
+                          ) : (
+                            <>
+                              {userProfile.role === 'admin' && (
+                                <>
+                                  <Crown className="w-3 h-3 mr-1" />
+                                  {language === 'en' ? 'Admin' : 'مدير'}
+                                </>
+                              )}
+                              {userProfile.role === 'moderator' && (
+                                <>
+                                  <Settings className="w-3 h-3 mr-1" />
+                                  {language === 'en' ? 'Moderator' : 'مشرف'}
+                                </>
+                              )}
+                              {userProfile.role === 'user' && (
+                                <>
+                                  <User className="w-3 h-3 mr-1" />
                                   {language === 'en' ? 'User' : 'مستخدم'}
                                 </>
                               )}

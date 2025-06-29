@@ -11,10 +11,12 @@ import { TrendingSidebar } from '../Layout/TrendingSidebar';
 import { useAuth } from '../../hooks/useAuth';
 import { useTweets } from '../../hooks/useTweets';
 import { useTweetViews } from '../../hooks/useTweetViews';
+import { useLanguageStore } from '../../store/useLanguageStore';
 import { supabase } from '../../lib/supabase';
 import { storageService } from '../../lib/storage';
 import { Tweet, TweetWithProfile } from '../../types';
 import { formatDistanceToNow } from 'date-fns';
+import { arSA, enUS } from 'date-fns/locale';
 
 // Function to detect if text contains Arabic characters
 const isArabicText = (text: string): boolean => {
@@ -33,6 +35,7 @@ export const TweetDetailPage: React.FC = () => {
   const { user } = useAuth();
   const { replies, fetchReplies, likeTweet, unlikeTweet } = useTweets();
   const { recordView } = useTweetViews();
+  const { language, isRTL } = useLanguageStore();
   
   const [tweet, setTweet] = useState<Tweet | null>(null);
   const [parentTweet, setParentTweet] = useState<Tweet | null>(null);
@@ -511,7 +514,10 @@ export const TweetDetailPage: React.FC = () => {
                           </span>
                           <span className="text-gray-500 text-sm">·</span>
                           <span className="text-gray-500 text-sm">
-                            {formatDistanceToNow(parentTweet.createdAt, { addSuffix: true })}
+                            {formatDistanceToNow(parentTweet.createdAt, { 
+                              addSuffix: true, 
+                              locale: language === 'ar' ? arSA : enUS 
+                            })}
                           </span>
                         </div>
                         <p 
@@ -803,7 +809,10 @@ export const TweetDetailPage: React.FC = () => {
                         </span>
                         <span className="text-gray-500 text-xs">·</span>
                         <span className="text-gray-500 text-xs">
-                          {formatDistanceToNow(parentTweet.createdAt, { addSuffix: true }).replace('about ', '')}
+                          {formatDistanceToNow(parentTweet.createdAt, { 
+                            addSuffix: true, 
+                            locale: language === 'ar' ? arSA : enUS 
+                          }).replace(language === 'ar' ? 'منذ حوالي ' : 'about ', '')}
                         </span>
                       </div>
                       <p className="text-gray-900 text-xs line-clamp-2">

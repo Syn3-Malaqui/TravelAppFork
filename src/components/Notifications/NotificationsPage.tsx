@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { formatDistanceToNow } from 'date-fns';
+import { arSA, enUS } from 'date-fns/locale';
 import { 
   Heart, 
   Repeat2, 
@@ -257,7 +258,10 @@ export const NotificationsPage: React.FC = () => {
                         </p>
                         
                         <p className="text-sm text-gray-500 mt-1">
-                          {formatDistanceToNow(notification.createdAt, { addSuffix: true })}
+                          {formatDistanceToNow(notification.createdAt, { 
+                            addSuffix: true, 
+                            locale: language === 'ar' ? arSA : enUS 
+                          })}
                         </p>
 
                         {/* Tweet content preview for tweet-related notifications */}
