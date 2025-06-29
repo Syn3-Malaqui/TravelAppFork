@@ -146,15 +146,7 @@ export const useAuth = () => {
     const initAuth = async () => {
       if (!mounted) return;
       
-      // Force-clear any existing session so users must log in each page load
-      try {
-        await supabase.auth.signOut();
-        localStorage.clear();
-        sessionStorage.clear();
-        console.log('🔄 Forced sign-out on page load');
-      } catch (err) {
-        console.debug('Forced sign-out error (ignored):', err);
-      }
+      // Removed aggressive forced sign-out (it was logging users out right after login)
       
       try {
         console.log('🔐 Initializing authentication...');
