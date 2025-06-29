@@ -8,11 +8,137 @@ interface AuthMetadata {
   country?: string;
 }
 
+interface UserProfile {
+  id: string;
+  username: string;
+  displayName: string;
+  avatar: string;
+  bio: string;
+  verified: boolean;
+  followers: number;
+  following: number;
+  country: string;
+  joinedDate: Date;
+  role: string;
+  coverImage?: string;
+}
+
 export const useAuth = () => {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
+
+  // Get preloaded profile data if available
+  const getPreloadedProfile = () => {
+    try {
+      const stored = sessionStorage.getItem('preloaded_user_profile');
+      if (!stored) return null;
+
+      const parsed = JSON.parse(stored);
+      
+      // Check if data has expired
+      if (Date.now() > parsed.expiry) {
+        sessionStorage.removeItem('preloaded_user_profile');
+        return null;
+      }
+
+      return parsed.data;
+    } catch (error) {
+      console.debug('Error getting preloaded profile:', error);
+      return null;
+    }
+  };
+
+  // Load user profile data
+  const loadUserProfile = async (userId: string) => {
+    try {
+      // Check for preloaded data first
+      const preloadedData = getPreloadedProfile();
+      if (preloadedData && preloadedData.id === userId) {
+        console.log('⚡ Using preloaded profile data for:', preloadedData.username);
+        
+        const profile: UserProfile = {
+          id: preloadedData.id,
+          username: preloadedData.username,
+          displayName: preloadedData.display_name || preloadedData.username,
+          avatar: preloadedData.avatar_url || '',
+          bio: preloadedData.bio || '',
+          verified: preloadedData.verified || false,
+          followers: preloadedData.followers_count || 0,
+          following: preloadedData.following_count || 0,
+          country: preloadedData.country || 'US',
+          joinedDate: new Date(preloadedData.created_at),
+          role: preloadedData.role || 'user',
+          coverImage: preloadedData.cover_image,
+        };
+        
+        setUserProfile(profile);
+        return profile;
+      }
+
+      // No preloaded data, fetch from database
+      console.log('🔄 Fetching profile data for user:', userId);
+      
+      const { data, error } = await supabase
+        .from('profiles')
+        .select(`
+          id,
+          username,
+          display_name,
+          avatar_url,
+          bio,
+          verified,
+          followers_count,
+          following_count,
+          created_at,
+          cover_image,
+          country,
+          role
+        `)
+        .eq('id', userId)
+        .single();
+
+      if (error) {
+        console.error('❌ Error fetching profile:', error);
+        return null;
+      }
+
+      if (data) {
+        const profile: UserProfile = {
+          id: data.id,
+          username: data.username,
+          displayName: data.display_name || data.username,
+          avatar: data.avatar_url || '',
+          bio: data.bio || '',
+          verified: data.verified || false,
+          followers: data.followers_count || 0,
+          following: data.following_count || 0,
+          country: data.country || 'US',
+          joinedDate: new Date(data.created_at),
+          role: data.role || 'user',
+          coverImage: data.cover_image,
+        };
+        
+        setUserProfile(profile);
+        
+        // Cache the profile data
+        sessionStorage.setItem('preloaded_user_profile', JSON.stringify({
+          data,
+          timestamp: Date.now(),
+          expiry: Date.now() + 10 * 60 * 1000 // 10 minutes
+        }));
+        
+        console.log('✅ Profile loaded and cached:', data.username);
+        return profile;
+      }
+    } catch (error) {
+      console.error('❌ Error loading user profile:', error);
+    }
+    
+    return null;
+  };
 
   useEffect(() => {
     let mounted = true;
@@ -30,16 +156,21 @@ export const useAuth = () => {
           console.log('✅ Found existing session');
           setSession(currentSession);
           setUser(currentSession.user);
+          
+          // Load profile data immediately
+          await loadUserProfile(currentSession.user.id);
         } else {
           console.log('ℹ️ No existing session');
           setSession(null);
           setUser(null);
+          setUserProfile(null);
         }
       } catch (error: any) {
         console.warn('⚠️ Auth initialization error:', error);
         setError(error.message);
         setSession(null);
         setUser(null);
+        setUserProfile(null);
       } finally {
         if (mounted) {
           setLoading(false);
@@ -62,6 +193,15 @@ export const useAuth = () => {
       setLoading(false);
       setError(null);
 
+      if (session?.user) {
+        // Load profile data for authenticated user
+        await loadUserProfile(session.user.id);
+      } else {
+        // Clear profile data when user logs out
+        setUserProfile(null);
+        sessionStorage.removeItem('preloaded_user_profile');
+      }
+
       // Handle profile creation for new users
       if (event === 'SIGNED_IN' && session?.user) {
         console.log('✅ User signed in');
@@ -77,19 +217,22 @@ export const useAuth = () => {
 
             if (!profile) {
               console.log('📝 Creating user profile...');
-              await supabase
-                .from('profiles')
-                .insert({
-                  username: session.user.user_metadata?.username || session.user.email?.split('@')[0] || 'user',
-                  display_name: session.user.user_metadata?.display_name || session.user.email?.split('@')[0] || 'User',
-                  bio: '',
-                  verified: false,
-                  role: 'user',
-                  followers_count: 0,
-                  following_count: 0,
-                  country: session.user.user_metadata?.country || 'US'
-                });
+              const newProfile = {
+                username: session.user.user_metadata?.username || session.user.email?.split('@')[0] || 'user',
+                display_name: session.user.user_metadata?.display_name || session.user.email?.split('@')[0] || 'User',
+                bio: '',
+                verified: false,
+                role: 'user',
+                followers_count: 0,
+                following_count: 0,
+                country: session.user.user_metadata?.country || 'US'
+              };
+              
+              await supabase.from('profiles').insert(newProfile);
               console.log('✅ Profile created');
+              
+              // Reload profile data
+              await loadUserProfile(session.user.id);
             }
           } catch (error) {
             console.warn('Profile creation error:', error);
@@ -178,6 +321,7 @@ export const useAuth = () => {
       // Clear local state
       setSession(null);
       setUser(null);
+      setUserProfile(null);
       
       console.log('✅ Sign out successful');
     } catch (error: any) {
@@ -201,6 +345,7 @@ export const useAuth = () => {
 
   return {
     user,
+    userProfile,
     session,
     loading,
     error,
@@ -209,5 +354,6 @@ export const useAuth = () => {
     signOut,
     updatePassword,
     clearError,
+    loadUserProfile,
   };
 };

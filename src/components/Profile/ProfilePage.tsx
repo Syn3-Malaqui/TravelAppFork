@@ -23,7 +23,7 @@ import { arSA, enUS } from 'date-fns/locale';
 export const ProfilePage: React.FC = () => {
   const { username } = useParams<{ username: string }>();
   const navigate = useNavigate();
-  const { user: currentUser } = useAuth();
+  const { user: currentUser, userProfile: currentUserProfile } = useAuth();
   const { followUser, unfollowUser, isFollowing, loading: followLoading } = useFollow();
   const { createConversation } = useMessages();
   const { language, isRTL } = useLanguageStore();
@@ -81,6 +81,32 @@ export const ProfilePage: React.FC = () => {
 
       console.log('🔄 Loading profile for:', username);
 
+      // Check if this is the current user's profile and we have preloaded data
+      if (currentUserProfile && currentUserProfile.username === username) {
+        console.log('⚡ Using preloaded profile data for current user');
+        
+        const formattedProfile: User = {
+          id: currentUserProfile.id,
+          username: currentUserProfile.username,
+          displayName: currentUserProfile.displayName,
+          avatar: currentUserProfile.avatar,
+          bio: currentUserProfile.bio,
+          verified: currentUserProfile.verified,
+          followers: currentUserProfile.followers,
+          following: currentUserProfile.following,
+          joinedDate: currentUserProfile.joinedDate,
+          coverImage: currentUserProfile.coverImage,
+          country: currentUserProfile.country,
+        };
+
+        setProfile(formattedProfile);
+        setLoading(false);
+
+        // Load tweets in background
+        loadUserTweets(formattedProfile.id, formattedProfile);
+        return;
+      }
+
       // Fast profile query - essential data only
       const { data: profileData, error: profileError } = await supabase
         .from('profiles')
@@ -123,6 +149,22 @@ export const ProfilePage: React.FC = () => {
       };
 
       setProfile(formattedProfile);
+      setLoading(false);
+
+      // Load tweets
+      await loadUserTweets(profileData.id, formattedProfile);
+
+    } catch (err: any) {
+      setError(err.message);
+      console.error('Error fetching profile:', err);
+      setLoading(false);
+    }
+  }, [username, currentUser, currentUserProfile]);
+
+  // Separate function to load user tweets
+  const loadUserTweets = async (userId: string, profileData: User) => {
+    try {
+      console.log('🔄 Loading tweets for user:', userId);
 
       // Load tweets quickly with simplified queries
       const [tweetsResult, repliesResult, likesResult] = await Promise.all([
@@ -142,7 +184,7 @@ export const ProfilePage: React.FC = () => {
             views_count,
             created_at
           `)
-          .eq('author_id', profileData.id)
+          .eq('author_id', userId)
           .is('reply_to', null)
           .order('created_at', { ascending: false })
           .limit(20),
@@ -163,7 +205,7 @@ export const ProfilePage: React.FC = () => {
             views_count,
             created_at
           `)
-          .eq('author_id', profileData.id)
+          .eq('author_id', userId)
           .not('reply_to', 'is', null)
           .order('created_at', { ascending: false })
           .limit(20),
@@ -189,7 +231,7 @@ export const ProfilePage: React.FC = () => {
               author_id
             )
           `)
-          .eq('user_id', profileData.id)
+          .eq('user_id', userId)
           .order('created_at', { ascending: false })
           .limit(20)
       ]);
@@ -233,16 +275,16 @@ export const ProfilePage: React.FC = () => {
 
       // Format tweets quickly
       const formattedTweets: Tweet[] = (tweetsResult.data || []).map(tweetData => 
-        formatQuickTweetData(tweetData, formattedProfile)
+        formatQuickTweetData(tweetData, profileData)
       );
       
       const formattedReplies: Tweet[] = (repliesResult.data || []).map(tweetData => 
-        formatQuickTweetData(tweetData, formattedProfile)
+        formatQuickTweetData(tweetData, profileData)
       );
       
       const formattedLikes: Tweet[] = (likesResult.data || [])
         .filter((like: any) => like.tweets)
-        .map((like: any) => formatQuickTweetData(like.tweets, formattedProfile));
+        .map((like: any) => formatQuickTweetData(like.tweets, profileData));
 
       setTweets(formattedTweets);
       setReplies(formattedReplies);
@@ -286,13 +328,10 @@ export const ProfilePage: React.FC = () => {
           }
         }, 200);
       }
-    } catch (err: any) {
-      setError(err.message);
-      console.error('Error fetching profile:', err);
-    } finally {
-      setLoading(false);
+    } catch (error) {
+      console.error('Error loading user tweets:', error);
     }
-  }, [username, currentUser]);
+  };
 
   // Simplified profile loading
   useEffect(() => {

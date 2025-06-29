@@ -419,13 +419,111 @@ export const useNotifications = () => {
   // Initial fetch - immediate, no throttling
   useEffect(() => {
     if (user) {
-      fetchNotifications(true); // Mark as initial fetch
+      // Check for preloaded data first
+      const preloadedData = getPreloadedNotifications();
+      if (preloadedData && preloadedData.notifications.length > 0) {
+        console.log('⚡ Using preloaded notifications:', preloadedData.notifications.length);
+        // Use preloaded data immediately
+        usePreloadedNotifications(preloadedData);
+        setLoading(false);
+        initialFetchDoneRef.current = true;
+        
+        // Fetch fresh data in background after a short delay
+        setTimeout(() => {
+          fetchNotifications(false);
+        }, 2000);
+      } else {
+        // No preloaded data, fetch normally
+        fetchNotifications(true);
+      }
     } else {
       setNotifications([]);
       setUnreadCount(0);
       setLoading(false);
     }
   }, [user]); // Only depend on user, not fetchNotifications to avoid loops
+
+  // Helper function to get preloaded notifications
+  const getPreloadedNotifications = () => {
+    try {
+      const stored = sessionStorage.getItem('preloaded_notifications');
+      if (!stored) return null;
+
+      const parsed = JSON.parse(stored);
+      
+      // Check if data has expired
+      if (Date.now() > parsed.expiry) {
+        sessionStorage.removeItem('preloaded_notifications');
+        return null;
+      }
+
+      return parsed;
+    } catch (error) {
+      console.debug('Error getting preloaded notifications:', error);
+      return null;
+    }
+  };
+
+  // Helper function to use preloaded notifications data
+  const usePreloadedNotifications = async (preloadedData: any) => {
+    try {
+      const { notifications: notificationsData, actors: actorIds } = preloadedData;
+      
+      // Get actor profiles that we may not have cached
+      const { data: actorProfiles } = await supabase
+        .from('profiles')
+        .select(`
+          id,
+          username,
+          display_name,
+          avatar_url,
+          verified,
+          bio,
+          followers_count,
+          following_count,
+          country,
+          created_at
+        `)
+        .in('id', actorIds);
+
+      // Create actor lookup map
+      const actorMap = new Map(actorProfiles?.map(profile => [profile.id, profile]) || []);
+
+      // Format preloaded notifications
+      const formattedNotifications: Notification[] = notificationsData
+        .map((notifData: any) => {
+          const actor = actorMap.get(notifData.actor_id);
+          if (!actor) return null;
+
+          return {
+            id: notifData.id,
+            type: notifData.type,
+            actor: {
+              id: actor.id,
+              username: actor.username,
+              displayName: actor.display_name || actor.username,
+              avatar: actor.avatar_url || '',
+              bio: actor.bio || '',
+              verified: actor.verified || false,
+              followers: actor.followers_count || 0,
+              following: actor.following_count || 0,
+              country: actor.country || '',
+              joinedDate: new Date(actor.created_at),
+            },
+            createdAt: new Date(notifData.created_at),
+            read: notifData.read,
+          };
+        })
+        .filter(Boolean) as Notification[];
+
+      setNotifications(formattedNotifications);
+      setUnreadCount(formattedNotifications.filter(n => !n.read).length);
+    } catch (error) {
+      console.warn('Error using preloaded notifications:', error);
+      // Fall back to normal fetch
+      fetchNotifications(true);
+    }
+  };
 
   return {
     notifications,
