@@ -388,13 +388,11 @@ export const ProfilePage: React.FC = () => {
   };
 
   const handleFollowersClick = () => {
-    setFollowModalType('followers');
-    setFollowModalOpen(true);
+    if (profile) navigate(`/profile/${profile.username}/followers`);
   };
 
   const handleFollowingClick = () => {
-    setFollowModalType('following');
-    setFollowModalOpen(true);
+    if (profile) navigate(`/profile/${profile.username}/following`);
   };
 
   // Function to refresh profile data (called when new tweets are added)

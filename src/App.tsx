@@ -21,6 +21,7 @@ import {
   LazyHashtagPage,
   LazyNotificationsPage,
   LazyMessagesPage,
+  LazyFollowListPage,
 } from './components/LazyComponents';
 
 function App() {
@@ -112,6 +113,14 @@ function App() {
                       <LazyMessagesPage />
                     </LazyLoadWrapper>
                   } 
+                />
+                <Route 
+                  path="/profile/:username/:tab"
+                  element={
+                    <LazyLoadWrapper>
+                      <LazyFollowListPage />
+                    </LazyLoadWrapper>
+                  }
                 />
                 <Route 
                   path="/profile/:username" 

@@ -36,3 +36,7 @@ export const LazyMessagesPage = lazy(() =>
 export const LazyEditProfileModal = lazy(() => 
   import('./Profile/EditProfileModal').then(module => ({ default: module.EditProfileModal }))
 );
+
+export const LazyFollowListPage = lazy(() => 
+  import('./Profile/FollowListPage').then(module => ({ default: module.FollowListPage }))
+);

@@ -40,6 +40,14 @@ export const Timeline: React.FC = () => {
         'AU', 'CA', 'EG', 'TR', 'TH', 'SG'
       ];
       
+      // Merge in any countries stored after composing a tweet
+      try {
+        const recent = JSON.parse(sessionStorage.getItem('recent_tweet_countries') || '[]');
+        recent.forEach((c: string) => {
+          if (!popularCountries.includes(c)) popularCountries.push(c);
+        });
+      } catch {}
+      
       return popularCountries
         .map(code => FILTER_COUNTRIES.find(c => c.code === code))
         .filter(Boolean)
@@ -114,7 +122,12 @@ export const Timeline: React.FC = () => {
         if (error) throw error;
 
         // Get unique countries from the database
-        const uniqueCountries = [...new Set(data.map(profile => profile.country))];
+        let uniqueCountries = [...new Set(data.map(profile => profile.country))];
+        // Merge recently tweeted countries so they always appear
+        try {
+          const recent = JSON.parse(sessionStorage.getItem('recent_tweet_countries') || '[]');
+          uniqueCountries = Array.from(new Set([...uniqueCountries, ...recent]));
+        } catch {}
         
         // Map to our country format, including only countries that exist in our predefined list
         const mappedCountries = uniqueCountries

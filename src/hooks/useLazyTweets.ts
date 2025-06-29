@@ -6,12 +6,13 @@ import type { RealtimeChannel } from '@supabase/supabase-js';
 interface UseLazyTweetsOptions {
   pageSize?: number;
   initialPageSize?: number;
+  initialFirstChunk?: number;
   initialLoad?: boolean;
   followingOnly?: boolean;
 }
 
 export const useLazyTweets = (options: UseLazyTweetsOptions = {}) => {
-  const { pageSize = 15, initialPageSize, initialLoad = true, followingOnly = false } = options;
+  const { pageSize = 15, initialPageSize, initialFirstChunk = 20, initialLoad = true, followingOnly = false } = options;
   
   const [tweets, setTweets] = useState<Tweet[]>([]);
   const [loading, setLoading] = useState(false);
@@ -189,7 +190,7 @@ export const useLazyTweets = (options: UseLazyTweetsOptions = {}) => {
 
       // Determine page size: use initialPageSize for first load, pageSize for subsequent
       const isFirstLoad = offsetRef.current === 0;
-      const currentPageSize = isFirstLoad && initialPageSize ? initialPageSize : pageSize;
+      const currentPageSize = isFirstLoad && initialPageSize ? Math.min(initialFirstChunk, initialPageSize) : pageSize;
 
       console.log('🔄 Loading tweets...', { 
         offset: offsetRef.current, 
@@ -329,6 +330,34 @@ export const useLazyTweets = (options: UseLazyTweetsOptions = {}) => {
         // Update interactions asynchronously (non-blocking)
         const tweetIds = formattedTweets.map(t => t.id);
         setTimeout(() => updateUserInteractions(tweetIds), 100);
+
+        // If this was first chunk and we still need to fetch the remaining of initialPageSize, do it in background
+        if (isFirstLoad && initialPageSize && initialPageSize > initialFirstChunk) {
+          const remaining = initialPageSize - initialFirstChunk;
+          setTimeout(async () => {
+            try {
+              console.log('🔄 Loading remaining initial tweets...', { remaining });
+              const { data: moreData, error: moreError, count: moreCount } = await supabase
+                .from('tweets')
+                .select(
+                  `*, profiles(*), original_tweet:tweets(*, profiles(*))`,
+                  { count: 'exact' }
+                )
+                .order('created_at', { ascending: false })
+                .range(offsetRef.current, offsetRef.current + remaining - 1);
+
+              if (moreError) throw moreError;
+
+              const moreFormatted = (moreData as TweetWithProfile[]).map(formatTweetData);
+              offsetRef.current += moreFormatted.length;
+              setTweets(prev => [...prev, ...moreFormatted]);
+              cacheTweets([...tweets, ...moreFormatted]);
+              updateUserInteractions([...tweets, ...moreFormatted].map(t => t.id));
+            } catch (err) {
+              console.warn('Failed to load remaining initial tweets:', err);
+            }
+          }, 10); // minimal delay to yield to rendering
+        }
       }
 
     } catch (err: any) {
@@ -338,7 +367,7 @@ export const useLazyTweets = (options: UseLazyTweetsOptions = {}) => {
       setLoading(false);
       loadingRef.current = false;
     }
-  }, [hasMore, pageSize, initialPageSize, followingOnly, formatTweetData, updateUserInteractions]);
+  }, [hasMore, pageSize, initialFirstChunk, initialPageSize, followingOnly, formatTweetData, updateUserInteractions]);
 
   const reset = useCallback(() => {
     console.log('🔄 Resetting tweets...');

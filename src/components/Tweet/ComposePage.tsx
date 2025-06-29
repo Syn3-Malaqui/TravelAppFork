@@ -147,6 +147,17 @@ export const ComposePage: React.FC = () => {
       setSelectedCategories([]);
       setSelectedCountries([]);
       
+      // Store selected countries to make them appear in country filter immediately
+      try {
+        if (selectedCountries.length > 0) {
+          const existing = JSON.parse(sessionStorage.getItem('recent_tweet_countries') || '[]');
+          const merged = Array.from(new Set([...existing, ...selectedCountries]));
+          sessionStorage.setItem('recent_tweet_countries', JSON.stringify(merged));
+        }
+      } catch (e) {
+        console.debug('Could not store recent tweet countries', e);
+      }
+      
       // Navigate back to timeline
       navigate('/');
     } catch (err: any) {
