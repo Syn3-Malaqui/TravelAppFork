@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ArrowLeft, Crown, User, Search, Check, X, Settings } from 'lucide-react';
+import { ArrowLeft, Crown, User, Search, Check, X, Settings, RefreshCw } from 'lucide-react';
 import { Button } from './ui/button';
 import { LazyAvatar } from './ui/LazyAvatar';
 import { useNavigate } from 'react-router-dom';
@@ -29,9 +29,41 @@ export const AdminPanel: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [filteredUsers, setFilteredUsers] = useState<UserProfile[]>([]);
   const [updating, setUpdating] = useState<string | null>(null);
+  const [refreshing, setRefreshing] = useState(false);
 
   useEffect(() => {
     fetchUsers();
+  }, []);
+
+  // Set up real-time subscription for profile changes
+  useEffect(() => {
+    const channel = supabase
+      .channel('admin_profile_changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'profiles',
+        },
+        (payload) => {
+          console.log('🔄 Real-time profile update:', payload);
+          
+          if (payload.eventType === 'UPDATE') {
+            const updatedProfile = payload.new as UserProfile;
+            setUsers(prev => prev.map(user => 
+              user.id === updatedProfile.id 
+                ? { ...user, ...updatedProfile }
+                : user
+            ));
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, []);
 
   useEffect(() => {
@@ -51,12 +83,19 @@ export const AdminPanel: React.FC = () => {
   const fetchUsers = async () => {
     try {
       setLoading(true);
+      console.log('🔍 Fetching users from database...');
+      
       const { data, error } = await supabase
         .from('profiles')
         .select('*')
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
+      if (error) {
+        console.error('❌ Error fetching users:', error);
+        throw error;
+      }
+      
+      console.log('✅ Fetched users:', data?.length || 0);
       setUsers(data || []);
       setFilteredUsers(data || []);
     } catch (error) {
@@ -69,6 +108,7 @@ export const AdminPanel: React.FC = () => {
   const toggleAdminStatus = async (userId: string, currentRole: 'user' | 'moderator' | 'admin') => {
     try {
       setUpdating(userId);
+      console.log(`🔄 Updating role for user ${userId} from ${currentRole}`);
       
       // Cycle through roles: user -> moderator -> admin -> user
       let newRole: 'user' | 'moderator' | 'admin';
@@ -80,21 +120,61 @@ export const AdminPanel: React.FC = () => {
         newRole = 'user';
       }
       
-      const { error } = await supabase
+      console.log(`➡️ Setting new role to: ${newRole}`);
+      
+      const { data, error } = await supabase
         .from('profiles')
-        .update({ role: newRole })
-        .eq('id', userId);
+        .update({ 
+          role: newRole,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', userId)
+        .select('*')
+        .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error('❌ Database update error:', error);
+        throw error;
+      }
 
-      // Update local state
+      console.log('✅ Role updated successfully:', data);
+
+      // Update local state immediately
       setUsers(prev => prev.map(user => 
         user.id === userId 
           ? { ...user, role: newRole }
           : user
       ));
-    } catch (error) {
-      console.error('Error updating user role:', error);
+
+      // Verify the update by re-fetching the specific user
+      setTimeout(async () => {
+        try {
+          const { data: verifyData, error: verifyError } = await supabase
+            .from('profiles')
+            .select('role')
+            .eq('id', userId)
+            .single();
+          
+          if (!verifyError && verifyData) {
+            console.log('🔍 Verification check - role in database:', verifyData.role);
+            if (verifyData.role !== newRole) {
+              console.warn('⚠️ Role mismatch detected, refreshing data...');
+              await fetchUsers();
+            }
+          }
+        } catch (verifyErr) {
+          console.error('❌ Verification failed:', verifyErr);
+        }
+      }, 1000);
+
+    } catch (error: any) {
+      console.error('❌ Error updating user role:', error);
+      
+      // Show user-friendly error message
+      alert(`Failed to update role: ${error.message || 'Unknown error'}`);
+      
+      // Refresh data to show current state
+      await fetchUsers();
     } finally {
       setUpdating(null);
     }
@@ -103,20 +183,26 @@ export const AdminPanel: React.FC = () => {
   const toggleVerifiedStatus = async (userId: string, currentStatus: boolean) => {
     try {
       setUpdating(userId);
+      console.log(`🔄 Updating verification for user ${userId} from ${currentStatus}`);
       
       const newVerifiedStatus = !currentStatus;
       
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from('profiles')
         .update({ 
           verified: newVerifiedStatus,
           updated_at: new Date().toISOString()
         })
-        .eq('id', userId);
+        .eq('id', userId)
+        .select('*')
+        .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error('❌ Database update error:', error);
+        throw error;
+      }
 
-      console.log(`✅ Admin Panel: Updated verification status for user ${userId} to ${newVerifiedStatus}`);
+      console.log(`✅ Verification updated successfully:`, data);
 
       // Update local state
       setUsers(prev => prev.map(user => 
@@ -124,10 +210,26 @@ export const AdminPanel: React.FC = () => {
           ? { ...user, verified: newVerifiedStatus }
           : user
       ));
-    } catch (error) {
-      console.error('Error updating verified status:', error);
+
+    } catch (error: any) {
+      console.error('❌ Error updating verified status:', error);
+      alert(`Failed to update verification: ${error.message || 'Unknown error'}`);
+      await fetchUsers();
     } finally {
       setUpdating(null);
+    }
+  };
+
+  const handleRefresh = async () => {
+    try {
+      setRefreshing(true);
+      console.log('🔄 Manual refresh triggered');
+      await fetchUsers();
+      console.log('✅ Manual refresh completed');
+    } catch (error) {
+      console.error('❌ Manual refresh failed:', error);
+    } finally {
+      setRefreshing(false);
     }
   };
 
@@ -165,6 +267,17 @@ export const AdminPanel: React.FC = () => {
                 {language === 'en' ? 'Manage users and permissions' : 'إدارة المستخدمين والصلاحيات'}
               </p>
             </div>
+          </div>
+          <div>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleRefresh}
+              disabled={refreshing}
+              className="p-2"
+            >
+              <RefreshCw className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
+            </Button>
           </div>
         </div>
 
