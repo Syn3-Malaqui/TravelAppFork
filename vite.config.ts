@@ -1,5 +1,6 @@
 import react from "@vitejs/plugin-react";
 import tailwind from "tailwindcss";
+import autoprefixer from "autoprefixer";
 import { defineConfig } from "vite";
 
 // https://vite.dev/config/
@@ -8,7 +9,7 @@ export default defineConfig(({ mode }) => ({
   base: "/",
   css: {
     postcss: {
-      plugins: [tailwind()],
+      plugins: [tailwind(), autoprefixer()],
     },
   },
   build: {
@@ -36,10 +37,24 @@ export default defineConfig(({ mode }) => ({
           ],
           'supabase': ['@supabase/supabase-js'],
         },
+        // Ensure CSS files are properly generated
+        assetFileNames: (assetInfo) => {
+          const info = assetInfo.name.split('.');
+          const extType = info[info.length - 1];
+          if (/png|jpe?g|svg|gif|tiff|bmp|ico/i.test(extType)) {
+            return `assets/images/[name]-[hash][extname]`;
+          }
+          if (/css/i.test(extType)) {
+            return `assets/css/[name]-[hash][extname]`;
+          }
+          return `assets/[name]-[hash][extname]`;
+        },
       },
     },
     // Optimize for Vercel's build limits
     chunkSizeWarningLimit: 1000,
+    // Ensure assets are copied correctly
+    assetsDir: 'assets',
   },
   optimizeDeps: {
     include: [
