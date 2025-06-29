@@ -58,16 +58,11 @@ async function fetchWithRetry(url: RequestInfo, init?: RequestInit, retries = 3,
   }
 }
 
-// Add a session refresh on page load
-export const refreshAuthSession = async () => {
-  try {
-    const { data, error } = await supabase.auth.refreshSession();
-    if (error) {
-      console.warn('Session refresh failed:', error.message);
-    }
-    return data;
-  } catch (error) {
-    console.error('Error refreshing session:', error);
-    return null;
-  }
+// Helper function to check if user is authenticated
+export const isAuthenticated = () => {
+  return new Promise((resolve) => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      resolve(!!session);
+    });
+  });
 };

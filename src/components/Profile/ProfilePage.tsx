@@ -216,7 +216,7 @@ export const ProfilePage: React.FC = () => {
         const allTweetIds = [
           ...(tweetsResult.data?.map(t => t.id) || []),
           ...(repliesResult.data?.map(t => t.id) || []),
-          ...(likesResult.data?.map(l => l.tweets.id) || [])
+          ...(likesResult.data?.map((l: any) => l.tweets?.id).filter(Boolean) || [])
         ];
 
         if (allTweetIds.length > 0) {
@@ -443,20 +443,86 @@ export const ProfilePage: React.FC = () => {
     }
   };
 
+  // Show loading state
   if (loading && profile === null) {
     return <ProfileSkeleton isMobile={window.innerWidth < 768} />;
   }
 
+  // Show error state with better error handling
   if (error || !profile) {
+    console.error('ProfilePage Error:', { error, profile, username, currentUser });
+    
     return (
       <div className="min-h-screen bg-white flex flex-col">
-        <div className="flex flex-col items-center justify-center py-12 px-4">
-          <div className="text-center">
-            <p className="text-lg font-semibold mb-2 text-gray-900">Profile not found</p>
-            <p className="text-sm text-gray-600 mb-4">{error || 'This user does not exist.'}</p>
-            <Button onClick={() => navigate('/')} variant="outline">
-              Go back home
-            </Button>
+        {/* Header */}
+        <div className="bg-white/80 backdrop-blur-md border-b border-gray-200 px-4 py-3 flex items-center z-10 flex-shrink-0">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => navigate('/')}
+            className="p-2"
+          >
+            <ArrowLeft className="h-5 w-5" />
+          </Button>
+          <div className="ml-4">
+            <h1 className="text-lg font-bold">Profile Error</h1>
+          </div>
+        </div>
+
+        {/* Error Content */}
+        <div className="flex-1 flex flex-col items-center justify-center py-12 px-4">
+          <div className="text-center max-w-md">
+            <div className="mb-6">
+              <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <span className="text-red-600 text-2xl">⚠️</span>
+              </div>
+              <h2 className="text-xl font-semibold mb-2 text-gray-900">
+                {error?.includes('not found') || error?.includes('PGRST116') 
+                  ? 'Profile not found' 
+                  : 'Error loading profile'
+                }
+              </h2>
+              <p className="text-sm text-gray-600 mb-6">
+                {error?.includes('not found') || error?.includes('PGRST116')
+                  ? `The user @${username} does not exist or their profile is not accessible.`
+                  : error || 'Something went wrong while loading this profile. Please try again.'
+                }
+              </p>
+            </div>
+            
+            <div className="space-y-3">
+              <Button 
+                onClick={() => {
+                  console.log('🔄 Retrying profile fetch...');
+                  fetchProfile();
+                }} 
+                className="w-full bg-blue-500 hover:bg-blue-600 text-white"
+              >
+                Try Again
+              </Button>
+              <Button 
+                onClick={() => navigate('/')} 
+                variant="outline"
+                className="w-full"
+              >
+                Go back home
+              </Button>
+            </div>
+
+            {/* Debug info for development */}
+            {process.env.NODE_ENV === 'development' && (
+              <details className="mt-6 text-left">
+                <summary className="text-xs text-gray-500 cursor-pointer">Debug Info</summary>
+                <pre className="text-xs text-gray-400 mt-2 p-2 bg-gray-50 rounded overflow-auto">
+                  {JSON.stringify({ 
+                    error, 
+                    username, 
+                    currentUser: currentUser?.id,
+                    timestamp: new Date().toISOString()
+                  }, null, 2)}
+                </pre>
+              </details>
+            )}
           </div>
         </div>
       </div>
