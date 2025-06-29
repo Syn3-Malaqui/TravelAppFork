@@ -277,10 +277,17 @@ export const AdminPanel: React.FC = () => {
                     )}
 
                     {/* User Info Section */}
-                    <div className={`flex items-center flex-1 ${isRTL ? 'flex-row-reverse space-x-3 space-x-reverse' : 'space-x-3'}`}>
+                    <div className={`flex items-center flex-1 ${isRTL ? 'space-x-reverse space-x-3' : 'space-x-3'}`}>
+                      {/* Avatar for LTR, appears second in RTL via order class */}
+                      <LazyAvatar
+                        src={userProfile.avatar_url}
+                        fallback={userProfile.display_name[0]?.toUpperCase() || 'U'}
+                        className={`w-12 h-12 ${isRTL ? 'order-2' : 'order-1'}`}
+                        size={96}
+                      />
                       {/* Details */}
-                      <div className={`flex-1 ${isRTL ? 'text-right' : 'text-left'}`}>
-                        <div className={`flex items-center ${isRTL ? 'justify-end space-x-reverse' : ''} space-x-2`}>
+                      <div className={`flex-1 ${isRTL ? 'text-right' : 'text-left'}`}> 
+                        <div className={`flex items-center ${isRTL ? 'justify-end space-x-reverse space-x-2' : 'space-x-2'}`}>  
                           <h3 className="font-semibold text-gray-900">{userProfile.display_name}</h3>
                           {userProfile.verified && (
                             <div className="w-4 h-4 bg-blue-500 rounded-full flex items-center justify-center">
@@ -305,13 +312,6 @@ export const AdminPanel: React.FC = () => {
                           {language === 'en' ? 'Joined' : 'انضم'} {new Date(userProfile.created_at).toLocaleDateString()}
                         </p>
                       </div>
-                      {/* Avatar */}
-                      <LazyAvatar
-                        src={userProfile.avatar_url}
-                        fallback={userProfile.display_name[0]?.toUpperCase() || 'U'}
-                        className="w-12 h-12"
-                        size={96}
-                      />
                     </div>
 
                     {/* Action Buttons - Show last in LTR */}
