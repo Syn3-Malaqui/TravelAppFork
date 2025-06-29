@@ -94,12 +94,17 @@ export const AuthPage: React.FC = () => {
         <div className="w-full max-w-sm">
           {/* Logo */}
           <div className="text-center mb-12">
-            <div className="w-20 h-20 mx-auto mb-8">
-              <img 
-                src="https://i.ibb.co/3YPVCWX2/Website-Logo.jpg" 
-                alt="Logo" 
-                className="w-full h-full object-contain"
-              />
+            <div className={`flex items-center justify-center ${isRTL ? 'space-x-reverse space-x-3' : 'space-x-3'} mb-8`}>
+              <div className="w-20 h-20">
+                <img 
+                  src="https://i.ibb.co/3YPVCWX2/Website-Logo.jpg" 
+                  alt="Logo" 
+                  className="w-full h-full object-contain"
+                />
+              </div>
+              <h2 className="text-4xl font-bold text-black">
+                {language === 'en' ? 'Travel' : 'سافر'}
+              </h2>
             </div>
             <h1 className="text-3xl font-bold text-black mb-2">
               {language === 'en' ? 'Welcome!' : 'مرحباً!'}
@@ -167,12 +172,17 @@ export const AuthPage: React.FC = () => {
         >
           <ArrowLeft className={`h-5 w-5 ${isRTL ? 'rotate-180' : ''}`} />
         </Button>
-        <div className="w-10 h-10">
-          <img 
-            src="https://i.ibb.co/3YPVCWX2/Website-Logo.jpg" 
-            alt="Logo" 
-            className="w-full h-full object-contain"
-          />
+        <div className={`flex items-center ${isRTL ? 'space-x-reverse space-x-2' : 'space-x-2'}`}>
+          <div className="w-10 h-10">
+            <img 
+              src="https://i.ibb.co/3YPVCWX2/Website-Logo.jpg" 
+              alt="Logo" 
+              className="w-full h-full object-contain"
+            />
+          </div>
+          <h2 className="text-xl font-bold text-black">
+            {language === 'en' ? 'Travel' : 'سافر'}
+          </h2>
         </div>
         <div className="w-9"></div> {/* Spacer for centering */}
       </div>
