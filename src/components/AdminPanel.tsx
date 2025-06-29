@@ -85,10 +85,21 @@ export const AdminPanel: React.FC = () => {
       setLoading(true);
       console.log('🔍 Fetching users from database...');
       
+      // Optimized query - only essential fields and limited results
       const { data, error } = await supabase
         .from('profiles')
-        .select('*')
-        .order('created_at', { ascending: false });
+        .select(`
+          id,
+          username,
+          display_name,
+          avatar_url,
+          verified,
+          role,
+          followers_count,
+          created_at
+        `)
+        .order('created_at', { ascending: false })
+        .limit(100); // Limit to 100 users for better performance
 
       if (error) {
         console.error('❌ Error fetching users:', error);
@@ -96,8 +107,16 @@ export const AdminPanel: React.FC = () => {
       }
       
       console.log('✅ Fetched users:', data?.length || 0);
-      setUsers(data || []);
-      setFilteredUsers(data || []);
+      
+      // Add missing fields with defaults
+      const usersWithDefaults = (data || []).map(user => ({
+        ...user,
+        bio: '', // Don't load bio initially
+        following_count: 0
+      }));
+      
+      setUsers(usersWithDefaults);
+      setFilteredUsers(usersWithDefaults);
     } catch (error) {
       console.error('Error fetching users:', error);
     } finally {

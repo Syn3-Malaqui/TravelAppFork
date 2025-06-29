@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '../lib/supabase';
-import { Notification, NotificationWithProfile } from '../types';
+import { Notification } from '../types';
 import type { RealtimeChannel } from '@supabase/supabase-js';
 import { useAuth } from './useAuth';
 
@@ -15,60 +15,7 @@ export const useNotifications = () => {
   const lastFetchRef = useRef<number>(0);
   const initialFetchDoneRef = useRef<boolean>(false);
 
-  const formatNotificationData = (notificationData: NotificationWithProfile): Notification => {
-    const notification: Notification = {
-      id: notificationData.id,
-      type: notificationData.type,
-      actor: {
-        id: notificationData.actor_profile.id,
-        username: notificationData.actor_profile.username,
-        displayName: notificationData.actor_profile.display_name,
-        avatar: notificationData.actor_profile.avatar_url || '',
-        bio: notificationData.actor_profile.bio || '',
-        verified: notificationData.actor_profile.verified || false,
-        followers: notificationData.actor_profile.followers_count || 0,
-        following: notificationData.actor_profile.following_count || 0,
-        country: notificationData.actor_profile.country || '',
-        joinedDate: new Date(notificationData.actor_profile.created_at),
-      },
-      createdAt: new Date(notificationData.created_at),
-      read: notificationData.read,
-    };
 
-    // Add minimal tweet data if available
-    if (notificationData.tweet) {
-      notification.tweet = {
-        id: notificationData.tweet.id,
-        content: notificationData.tweet.content,
-        author: {
-          id: notificationData.tweet.profiles.id,
-          username: notificationData.tweet.profiles.username,
-          displayName: notificationData.tweet.profiles.display_name,
-          avatar: notificationData.tweet.profiles.avatar_url || '',
-          bio: notificationData.tweet.profiles.bio || '',
-          verified: notificationData.tweet.profiles.verified || false,
-          followers: notificationData.tweet.profiles.followers_count || 0,
-          following: notificationData.tweet.profiles.following_count || 0,
-          country: notificationData.tweet.profiles.country || '',
-          joinedDate: new Date(notificationData.tweet.profiles.created_at),
-        },
-        createdAt: new Date(notificationData.tweet.created_at),
-        likes: notificationData.tweet.likes_count || 0,
-        retweets: notificationData.tweet.retweets_count || 0,
-        replies: notificationData.tweet.replies_count || 0,
-        views: notificationData.tweet.views_count || 0,
-        images: notificationData.tweet.image_urls || [],
-        isLiked: false,
-        isRetweeted: false,
-        isBookmarked: false,
-        hashtags: notificationData.tweet.hashtags || [],
-        mentions: notificationData.tweet.mentions || [],
-        tags: notificationData.tweet.tags || [],
-      };
-    }
-
-    return notification;
-  };
 
   // Optimized fetch with minimal data
   const fetchNotifications = useCallback(async (isInitialFetch = false) => {
@@ -95,27 +42,72 @@ export const useNotifications = () => {
         return;
       }
 
-      // Optimized query with minimal data
-      const { data, error } = await supabase
+      console.log('🔄 Fetching notifications for user:', user.id);
+
+      // Simplified query - get notifications first, then actor profiles separately
+      const { data: notificationsData, error: notificationsError } = await supabase
         .from('notifications')
         .select(`
           id,
           type,
           read,
           created_at,
-          actor_profile:actor_id (
-            id,
-            username,
-            display_name,
-            avatar_url,
-            verified,
-            bio,
-            followers_count,
-            following_count,
-            country,
-            created_at
-          ),
-          tweet:tweet_id (
+          actor_id,
+          tweet_id
+        `)
+        .eq('recipient_id', user.id)
+        .order('created_at', { ascending: false })
+        .limit(50); // Increased limit
+
+      if (notificationsError) {
+        console.error('❌ Notifications query error:', notificationsError);
+        throw notificationsError;
+      }
+
+      console.log('✅ Notifications data loaded:', notificationsData?.length || 0);
+
+      if (!notificationsData || notificationsData.length === 0) {
+        setNotifications([]);
+        setUnreadCount(0);
+        setLoading(false);
+        return;
+      }
+
+      // Get unique actor IDs and tweet IDs
+      const actorIds = [...new Set(notificationsData.map(n => n.actor_id))];
+      const tweetIds = [...new Set(notificationsData.filter(n => n.tweet_id).map(n => n.tweet_id))];
+
+      console.log('🔄 Fetching actor profiles:', actorIds.length);
+      console.log('🔄 Fetching tweet data:', tweetIds.length);
+
+      // Fetch actor profiles in parallel
+      const { data: actorProfiles, error: actorError } = await supabase
+        .from('profiles')
+        .select(`
+          id,
+          username,
+          display_name,
+          avatar_url,
+          verified,
+          bio,
+          followers_count,
+          following_count,
+          country,
+          created_at
+        `)
+        .in('id', actorIds);
+
+      if (actorError) {
+        console.error('❌ Actor profiles error:', actorError);
+        throw actorError;
+      }
+
+      // Fetch tweet data in parallel (only if we have tweet IDs)
+      let tweetData: any[] = [];
+      if (tweetIds.length > 0) {
+        const { data: tweets, error: tweetsError } = await supabase
+          .from('tweets')
+          .select(`
             id,
             content,
             likes_count,
@@ -127,7 +119,8 @@ export const useNotifications = () => {
             mentions,
             tags,
             created_at,
-            profiles (
+            author_id,
+            profiles!tweets_author_id_fkey (
               id,
               username,
               display_name,
@@ -139,17 +132,92 @@ export const useNotifications = () => {
               country,
               created_at
             )
-          )
-        `)
-        .eq('recipient_id', user.id)
-        .order('created_at', { ascending: false })
-        .limit(25); // Reasonable limit
+          `)
+          .in('id', tweetIds);
 
-      if (error) throw error;
+        if (tweetsError) {
+          console.error('❌ Tweets error:', tweetsError);
+          // Don't throw - tweets are optional
+        } else {
+          tweetData = tweets || [];
+        }
+      }
 
-      const formattedNotifications: Notification[] = (data as NotificationWithProfile[]).map(
-        formatNotificationData
-      );
+      console.log('✅ Actor profiles loaded:', actorProfiles?.length || 0);
+      console.log('✅ Tweet data loaded:', tweetData.length);
+
+      // Create lookup maps for efficient data assembly
+      const actorMap = new Map(actorProfiles?.map(profile => [profile.id, profile]) || []);
+      const tweetMap = new Map(tweetData.map(tweet => [tweet.id, tweet]));
+
+      // Assemble notifications with related data
+      const formattedNotifications: Notification[] = notificationsData
+        .map(notifData => {
+          const actor = actorMap.get(notifData.actor_id);
+          if (!actor) {
+            console.warn('⚠️ Missing actor profile for notification:', notifData.id);
+            return null;
+          }
+
+          const notification: Notification = {
+            id: notifData.id,
+            type: notifData.type,
+            actor: {
+              id: actor.id,
+              username: actor.username,
+              displayName: actor.display_name || actor.username,
+              avatar: actor.avatar_url || '',
+              bio: actor.bio || '',
+              verified: actor.verified || false,
+              followers: actor.followers_count || 0,
+              following: actor.following_count || 0,
+              country: actor.country || '',
+              joinedDate: new Date(actor.created_at),
+            },
+            createdAt: new Date(notifData.created_at),
+            read: notifData.read,
+          };
+
+          // Add tweet data if available
+          if (notifData.tweet_id) {
+            const tweet = tweetMap.get(notifData.tweet_id);
+            if (tweet && tweet.profiles) {
+              notification.tweet = {
+                id: tweet.id,
+                content: tweet.content,
+                author: {
+                  id: tweet.profiles.id,
+                  username: tweet.profiles.username,
+                  displayName: tweet.profiles.display_name || tweet.profiles.username,
+                  avatar: tweet.profiles.avatar_url || '',
+                  bio: tweet.profiles.bio || '',
+                  verified: tweet.profiles.verified || false,
+                  followers: tweet.profiles.followers_count || 0,
+                  following: tweet.profiles.following_count || 0,
+                  country: tweet.profiles.country || '',
+                  joinedDate: new Date(tweet.profiles.created_at),
+                },
+                createdAt: new Date(tweet.created_at),
+                likes: tweet.likes_count || 0,
+                retweets: tweet.retweets_count || 0,
+                replies: tweet.replies_count || 0,
+                views: tweet.views_count || 0,
+                images: tweet.image_urls || [],
+                isLiked: false,
+                isRetweeted: false,
+                isBookmarked: false,
+                hashtags: tweet.hashtags || [],
+                mentions: tweet.mentions || [],
+                tags: tweet.tags || [],
+              };
+            }
+          }
+
+          return notification;
+        })
+        .filter(Boolean) as Notification[]; // Remove null entries
+
+      console.log('✅ Formatted notifications:', formattedNotifications.length);
 
       setNotifications(formattedNotifications);
       setUnreadCount(formattedNotifications.filter(n => !n.read).length);
@@ -158,8 +226,8 @@ export const useNotifications = () => {
         initialFetchDoneRef.current = true;
       }
     } catch (err: any) {
+      console.error('❌ Error fetching notifications:', err);
       setError(err.message);
-      console.error('Error fetching notifications:', err);
     } finally {
       // Always set loading to false after fetch completes
       setLoading(false);

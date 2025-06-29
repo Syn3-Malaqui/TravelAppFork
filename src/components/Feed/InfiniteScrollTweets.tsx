@@ -29,14 +29,14 @@ export const InfiniteScrollTweets: React.FC<InfiniteScrollTweetsProps> = ({
   
   // Use different hooks based on feed type with optimized page sizes
   const forYouFeed = useLazyTweets({
-    pageSize: 15, // Subsequent loads
-    initialPageSize: 30, // Initial load
+    pageSize: 20, // Subsequent loads
+    initialPageSize: 50, // Initial load
     initialLoad: feedType === 'for-you',
   });
   
   const followingFeed = useLazyTweets({
-    pageSize: 15, // Subsequent loads  
-    initialPageSize: 30, // Initial load
+    pageSize: 20, // Subsequent loads  
+    initialPageSize: 50, // Initial load
     initialLoad: feedType === 'following',
     followingOnly: true,
   });
