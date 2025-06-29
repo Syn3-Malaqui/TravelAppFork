@@ -143,7 +143,7 @@ export const AdminPanel: React.FC = () => {
   }
 
   return (
-    <div className="h-screen bg-white flex flex-col" dir={isRTL ? 'rtl' : 'ltr'}>
+    <div className={`h-screen bg-white flex flex-col ${language === 'ar' ? 'font-arabic' : ''}`} dir={isRTL ? 'rtl' : 'ltr'}>
       {/* Header */}
       <div className="flex-shrink-0 bg-white/95 backdrop-blur-md border-b border-gray-200 z-10">
         <div className="flex items-center justify-between p-4">
@@ -260,12 +260,12 @@ export const AdminPanel: React.FC = () => {
                             '...'
                           ) : userProfile.verified ? (
                             <>
-                              <X className="w-3 h-3 mr-1" />
+                              <X className={`w-3 h-3 ${isRTL ? 'ml-1' : 'mr-1'}`} />
                               {language === 'en' ? 'Unverify' : 'إلغاء التوثيق'}
                             </>
                           ) : (
                             <>
-                              <Check className="w-3 h-3 mr-1" />
+                              <Check className={`w-3 h-3 ${isRTL ? 'ml-1' : 'mr-1'}`} />
                               {language === 'en' ? 'Verify' : 'توثيق'}
                             </>
                           )}
@@ -290,19 +290,19 @@ export const AdminPanel: React.FC = () => {
                             <>
                               {userProfile.role === 'admin' && (
                                 <>
-                                  <Crown className="w-3 h-3 mr-1" />
+                                  <Crown className={`w-3 h-3 ${isRTL ? 'ml-1' : 'mr-1'}`} />
                                   {language === 'en' ? 'Admin' : 'مدير'}
                                 </>
                               )}
                               {userProfile.role === 'moderator' && (
                                 <>
-                                  <Settings className="w-3 h-3 mr-1" />
+                                  <Settings className={`w-3 h-3 ${isRTL ? 'ml-1' : 'mr-1'}`} />
                                   {language === 'en' ? 'Moderator' : 'مشرف'}
                                 </>
                               )}
                               {userProfile.role === 'user' && (
                                 <>
-                                  <User className="w-3 h-3 mr-1" />
+                                  <User className={`w-3 h-3 ${isRTL ? 'ml-1' : 'mr-1'}`} />
                                   {language === 'en' ? 'User' : 'مستخدم'}
                                 </>
                               )}
