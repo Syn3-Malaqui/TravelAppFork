@@ -13,10 +13,12 @@ import { useAuth } from '../../hooks/useAuth';
 import { useFollow } from '../../hooks/useFollow';
 import { useMessages } from '../../hooks/useMessages';
 import { useProfileSync } from '../../hooks/useProfileSync';
+import { useLanguageStore } from '../../store/useLanguageStore';
 import { supabase } from '../../lib/supabase';
 import { storageService } from '../../lib/storage';
 import { Tweet, User } from '../../types';
 import { formatDistanceToNow } from 'date-fns';
+import { arSA, enUS } from 'date-fns/locale';
 
 export const ProfilePage: React.FC = () => {
   const { username } = useParams<{ username: string }>();
@@ -24,6 +26,7 @@ export const ProfilePage: React.FC = () => {
   const { user: currentUser } = useAuth();
   const { followUser, unfollowUser, isFollowing, loading: followLoading } = useFollow();
   const { createConversation } = useMessages();
+  const { language, isRTL } = useLanguageStore();
   
   const [profile, setProfile] = useState<User | null>(null);
   const [tweets, setTweets] = useState<Tweet[]>([]);
@@ -582,28 +585,33 @@ export const ProfilePage: React.FC = () => {
                   )}
 
                   {/* Join Date */}
-                  <div className="flex items-center space-x-4 text-gray-500 text-sm mb-3">
-                    <div className="flex items-center space-x-1">
+                  <div className={`flex items-center text-gray-500 text-sm mb-3 ${isRTL ? 'space-x-reverse space-x-4 text-right' : 'space-x-4 text-left'}`}>
+                    <div className={`flex items-center ${isRTL ? 'space-x-reverse space-x-1' : 'space-x-1'}`}>
                       <Calendar className="w-4 h-4" />
-                      <span>Joined {profile.joinedDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}</span>
+                      <span>
+                        {language === 'en' 
+                          ? `Joined ${profile.joinedDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}`
+                          : `انضم في ${profile.joinedDate.toLocaleDateString('ar-SA', { month: 'long', year: 'numeric' })}`
+                        }
+                      </span>
                     </div>
                   </div>
 
                   {/* Follow Stats */}
-                  <div className="flex space-x-6">
+                  <div className={`flex ${isRTL ? 'space-x-reverse space-x-6 text-right' : 'space-x-6 text-left'}`}>
                     <div 
-                      className="flex items-center space-x-1 cursor-pointer hover:underline"
+                      className={`flex items-center cursor-pointer hover:underline ${isRTL ? 'space-x-reverse space-x-1' : 'space-x-1'}`}
                       onClick={handleFollowingClick}
                     >
-                      <span className="font-bold text-gray-900">{profile.following.toLocaleString()}</span>
-                      <span className="text-gray-500">Following</span>
+                      <span className="font-bold text-gray-900">{profile.following.toLocaleString(language === 'ar' ? 'ar-SA' : 'en-US')}</span>
+                      <span className="text-gray-500">{language === 'en' ? 'Following' : 'متابَع'}</span>
                     </div>
                     <div 
-                      className="flex items-center space-x-1 cursor-pointer hover:underline"
+                      className={`flex items-center cursor-pointer hover:underline ${isRTL ? 'space-x-reverse space-x-1' : 'space-x-1'}`}
                       onClick={handleFollowersClick}
                     >
-                      <span className="font-bold text-gray-900">{profile.followers.toLocaleString()}</span>
-                      <span className="text-gray-500">Followers</span>
+                      <span className="font-bold text-gray-900">{profile.followers.toLocaleString(language === 'ar' ? 'ar-SA' : 'en-US')}</span>
+                      <span className="text-gray-500">{language === 'en' ? 'Followers' : 'متابِع'}</span>
                     </div>
                   </div>
                 </div>
@@ -614,10 +622,10 @@ export const ProfilePage: React.FC = () => {
             <div className="border-b border-gray-200 sticky top-0 bg-white z-10">
               <div className="flex">
                 {[
-                  { id: 'tweets', label: 'Tweets', count: tweets.length },
-                  { id: 'replies', label: 'Replies', count: replies.length },
-                  { id: 'media', label: 'Media', count: tweets.filter(t => t.images && t.images.length > 0).length },
-                  { id: 'likes', label: 'Likes', count: likes.length },
+                  { id: 'tweets', label: language === 'en' ? 'Tweets' : 'التغريدات', count: tweets.length },
+                  { id: 'replies', label: language === 'en' ? 'Replies' : 'الردود', count: replies.length },
+                  { id: 'media', label: language === 'en' ? 'Media' : 'الوسائط', count: tweets.filter(t => t.images && t.images.length > 0).length },
+                  { id: 'likes', label: language === 'en' ? 'Likes' : 'الإعجابات', count: likes.length },
                 ].map((tab) => (
                   <Button
                     key={tab.id}
@@ -647,13 +655,15 @@ export const ProfilePage: React.FC = () => {
               {currentTabTweets.length === 0 ? (
                 <div className="text-center py-12 text-gray-500">
                   <p className="text-lg">
-                    {activeTab === 'tweets' && 'No tweets yet'}
-                    {activeTab === 'replies' && 'No replies yet'}
-                    {activeTab === 'media' && 'No media tweets yet'}
-                    {activeTab === 'likes' && 'No liked tweets yet'}
+                    {activeTab === 'tweets' && (language === 'en' ? 'No tweets yet' : 'لا توجد تغريدات بعد')}
+                    {activeTab === 'replies' && (language === 'en' ? 'No replies yet' : 'لا توجد ردود بعد')}
+                    {activeTab === 'media' && (language === 'en' ? 'No media tweets yet' : 'لا توجد تغريدات وسائط بعد')}
+                    {activeTab === 'likes' && (language === 'en' ? 'No liked tweets yet' : 'لا توجد تغريدات معجب بها بعد')}
                   </p>
                   {isOwnProfile && activeTab === 'tweets' && (
-                    <p className="text-sm mt-2">Share your first thought!</p>
+                    <p className="text-sm mt-2">
+                      {language === 'en' ? 'Share your first thought!' : 'شارك أول فكرة لك!'}
+                    </p>
                   )}
                 </div>
               ) : (
@@ -774,28 +784,33 @@ export const ProfilePage: React.FC = () => {
                 )}
 
                 {/* Join Date */}
-                <div className="flex items-center space-x-3 text-gray-500 text-xs mb-2">
-                  <div className="flex items-center space-x-1">
+                <div className={`flex items-center text-gray-500 text-xs mb-2 ${isRTL ? 'space-x-reverse space-x-3 text-right' : 'space-x-3 text-left'}`}>
+                  <div className={`flex items-center ${isRTL ? 'space-x-reverse space-x-1' : 'space-x-1'}`}>
                     <Calendar className="w-3 h-3" />
-                    <span>Joined {profile.joinedDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}</span>
+                    <span>
+                      {language === 'en' 
+                        ? `Joined ${profile.joinedDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}`
+                        : `انضم في ${profile.joinedDate.toLocaleDateString('ar-SA', { month: 'long', year: 'numeric' })}`
+                      }
+                    </span>
                   </div>
                 </div>
 
                 {/* Follow Stats */}
-                <div className="flex space-x-4">
+                <div className={`flex ${isRTL ? 'space-x-reverse space-x-4 text-right' : 'space-x-4 text-left'}`}>
                   <div 
-                    className="flex items-center space-x-1 cursor-pointer hover:underline"
+                    className={`flex items-center cursor-pointer hover:underline ${isRTL ? 'space-x-reverse space-x-1' : 'space-x-1'}`}
                     onClick={handleFollowingClick}
                   >
-                    <span className="font-bold text-gray-900 text-sm">{profile.following.toLocaleString()}</span>
-                    <span className="text-gray-500 text-xs">Following</span>
+                    <span className="font-bold text-gray-900 text-sm">{profile.following.toLocaleString(language === 'ar' ? 'ar-SA' : 'en-US')}</span>
+                    <span className="text-gray-500 text-xs">{language === 'en' ? 'Following' : 'متابَع'}</span>
                   </div>
                   <div 
-                    className="flex items-center space-x-1 cursor-pointer hover:underline"
+                    className={`flex items-center cursor-pointer hover:underline ${isRTL ? 'space-x-reverse space-x-1' : 'space-x-1'}`}
                     onClick={handleFollowersClick}
                   >
-                    <span className="font-bold text-gray-900 text-sm">{profile.followers.toLocaleString()}</span>
-                    <span className="text-gray-500 text-xs">Followers</span>
+                    <span className="font-bold text-gray-900 text-sm">{profile.followers.toLocaleString(language === 'ar' ? 'ar-SA' : 'en-US')}</span>
+                    <span className="text-gray-500 text-xs">{language === 'en' ? 'Followers' : 'متابِع'}</span>
                   </div>
                 </div>
               </div>
@@ -806,10 +821,10 @@ export const ProfilePage: React.FC = () => {
           <div className="border-b border-gray-200 sticky top-0 bg-white z-10">
             <div className="flex">
               {[
-                { id: 'tweets', label: 'Tweets', count: tweets.length },
-                { id: 'replies', label: 'Replies', count: replies.length },
-                { id: 'media', label: 'Media', count: tweets.filter(t => t.images && t.images.length > 0).length },
-                { id: 'likes', label: 'Likes', count: likes.length },
+                { id: 'tweets', label: language === 'en' ? 'Tweets' : 'التغريدات', count: tweets.length },
+                { id: 'replies', label: language === 'en' ? 'Replies' : 'الردود', count: replies.length },
+                { id: 'media', label: language === 'en' ? 'Media' : 'الوسائط', count: tweets.filter(t => t.images && t.images.length > 0).length },
+                { id: 'likes', label: language === 'en' ? 'Likes' : 'الإعجابات', count: likes.length },
               ].map((tab) => (
                 <Button
                   key={tab.id}
@@ -839,13 +854,15 @@ export const ProfilePage: React.FC = () => {
             {currentTabTweets.length === 0 ? (
               <div className="text-center py-12 text-gray-500">
                 <p className="text-lg">
-                  {activeTab === 'tweets' && 'No tweets yet'}
-                  {activeTab === 'replies' && 'No replies yet'}
-                  {activeTab === 'media' && 'No media tweets yet'}
-                  {activeTab === 'likes' && 'No liked tweets yet'}
+                  {activeTab === 'tweets' && (language === 'en' ? 'No tweets yet' : 'لا توجد تغريدات بعد')}
+                  {activeTab === 'replies' && (language === 'en' ? 'No replies yet' : 'لا توجد ردود بعد')}
+                  {activeTab === 'media' && (language === 'en' ? 'No media tweets yet' : 'لا توجد تغريدات وسائط بعد')}
+                  {activeTab === 'likes' && (language === 'en' ? 'No liked tweets yet' : 'لا توجد تغريدات معجب بها بعد')}
                 </p>
                 {isOwnProfile && activeTab === 'tweets' && (
-                  <p className="text-sm mt-2">Share your first thought!</p>
+                  <p className="text-sm mt-2">
+                    {language === 'en' ? 'Share your first thought!' : 'شارك أول فكرة لك!'}
+                  </p>
                 )}
               </div>
             ) : (

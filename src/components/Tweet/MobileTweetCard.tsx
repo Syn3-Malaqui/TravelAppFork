@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { formatDistanceToNow } from 'date-fns';
+import { arSA, enUS } from 'date-fns/locale';
 import { 
   Heart, 
   MessageCircle, 
@@ -27,6 +28,7 @@ import { useNavigate } from 'react-router-dom';
 import { ReplyComposer } from './ReplyComposer';
 import { useTweets } from '../../hooks/useTweets';
 import { useTweetViews } from '../../hooks/useTweetViews';
+import { useLanguageStore } from '../../store/useLanguageStore';
 import { supabase } from '../../lib/supabase';
 
 interface MobileTweetCardProps {
@@ -68,6 +70,7 @@ export const MobileTweetCard: React.FC<MobileTweetCardProps> = ({
   const [replyingToTweetId, setReplyingToTweetId] = useState<string | null>(null);
   const { replies, fetchReplies, createRetweet, removeRetweet } = useTweets();
   const { observeTweet, unobserveTweet, recordView } = useTweetViews();
+  const { language, isRTL } = useLanguageStore();
   const tweetRef = useRef<HTMLDivElement>(null);
 
   // Set up view tracking
@@ -484,13 +487,19 @@ export const MobileTweetCard: React.FC<MobileTweetCardProps> = ({
                 className="hover:underline cursor-pointer"
                 onClick={handleRetweeterProfileClick}
               >
-                <span className="font-medium">{tweet.retweetedBy.displayName}</span> retweeted
+                <span className="font-medium">{tweet.retweetedBy.displayName}</span>
+                {language === 'en' ? ' retweeted' : ' أعاد التغريد'}
               </span>
               {tweet.retweetedBy.verified && (
                 <CheckCircle className="w-3 h-3 text-blue-500 fill-current" />
               )}
               <span>·</span>
-              <span>{formatDistanceToNow(tweet.retweetedAt!, { addSuffix: true }).replace('about ', '')}</span>
+              <span>
+                {formatDistanceToNow(tweet.retweetedAt!, { 
+                  addSuffix: true, 
+                  locale: language === 'ar' ? arSA : enUS 
+                }).replace('about ', '')}
+              </span>
             </div>
           </div>
         )}
@@ -548,7 +557,10 @@ export const MobileTweetCard: React.FC<MobileTweetCardProps> = ({
                   </span>
                   <span className="text-gray-500 text-sm">·</span>
                   <span className="text-gray-500 text-sm flex-shrink-0">
-                    {formatDistanceToNow(tweet.createdAt, { addSuffix: true }).replace('about ', '')}
+                    {formatDistanceToNow(tweet.createdAt, { 
+                      addSuffix: true, 
+                      locale: language === 'ar' ? arSA : enUS 
+                    }).replace('about ', '')}
                   </span>
                 </div>
 
@@ -635,7 +647,10 @@ export const MobileTweetCard: React.FC<MobileTweetCardProps> = ({
                         </span>
                         <span className="text-gray-500 text-xs">·</span>
                         <span className="text-gray-500 text-xs flex-shrink-0">
-                          {formatDistanceToNow(originalTweet.createdAt, { addSuffix: true }).replace('about ', '')}
+                          {formatDistanceToNow(originalTweet.createdAt, { 
+                        addSuffix: true, 
+                        locale: language === 'ar' ? arSA : enUS 
+                      }).replace('about ', '')}
                         </span>
                       </div>
                       <p 

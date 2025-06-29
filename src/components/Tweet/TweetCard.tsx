@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { formatDistanceToNow } from 'date-fns';
+import { arSA, enUS } from 'date-fns/locale';
 import { 
   Heart, 
   MessageCircle, 
@@ -29,6 +30,7 @@ import { ReplyComposer } from './ReplyComposer';
 import { useTweets } from '../../hooks/useTweets';
 import { useTweetViews } from '../../hooks/useTweetViews';
 import { useProfileSync } from '../../hooks/useProfileSync';
+import { useLanguageStore } from '../../store/useLanguageStore';
 import { supabase } from '../../lib/supabase';
 
 interface TweetCardProps {
@@ -71,6 +73,7 @@ export const TweetCard: React.FC<TweetCardProps> = ({
   const [localTweet, setLocalTweet] = useState<Tweet>(tweet);
   const { replies, fetchReplies, createRetweet, removeRetweet } = useTweets();
   const { observeTweet, unobserveTweet, recordView } = useTweetViews();
+  const { language, isRTL } = useLanguageStore();
   const tweetRef = useRef<HTMLDivElement>(null);
 
   // Sync local tweet state with prop changes
@@ -534,13 +537,19 @@ export const TweetCard: React.FC<TweetCardProps> = ({
                 className="hover:underline cursor-pointer"
                 onClick={handleRetweeterProfileClick}
               >
-                <span className="font-medium">{localTweet.retweetedBy.displayName}</span> retweeted
+                <span className="font-medium">{localTweet.retweetedBy.displayName}</span>
+                {language === 'en' ? ' retweeted' : ' أعاد التغريد'}
               </span>
               {localTweet.retweetedBy.verified && (
                 <CheckCircle className="w-4 h-4 text-blue-500 fill-current" />
               )}
               <span>·</span>
-              <span>{formatDistanceToNow(localTweet.retweetedAt!, { addSuffix: true })}</span>
+              <span>
+                {formatDistanceToNow(localTweet.retweetedAt!, { 
+                  addSuffix: true, 
+                  locale: language === 'ar' ? arSA : enUS 
+                })}
+              </span>
             </div>
           </div>
         )}
@@ -550,12 +559,17 @@ export const TweetCard: React.FC<TweetCardProps> = ({
           <div className="px-4 pt-2 pb-0.5">
             <div className="flex items-center space-x-2 text-gray-500 text-sm">
               <CornerUpLeft className="w-4 h-4" />
-              <span>Replying to</span>
+              <span>{language === 'en' ? 'Replying to' : 'رداً على'}</span>
               <button
                 onClick={handleReplyToClick}
                 className="text-blue-500 hover:text-blue-600 hover:underline font-medium transition-colors"
               >
-                {loadingOriginal ? 'Loading...' : originalTweet ? `@${originalTweet.author.username}` : 'a tweet'}
+                {loadingOriginal 
+                  ? (language === 'en' ? 'Loading...' : 'جاري التحميل...') 
+                  : originalTweet 
+                    ? `@${originalTweet.author.username}` 
+                    : (language === 'en' ? 'a tweet' : 'تغريدة')
+                }
               </button>
             </div>
           </div>
@@ -598,7 +612,10 @@ export const TweetCard: React.FC<TweetCardProps> = ({
                   </span>
                   <span className="text-gray-500">·</span>
                   <span className="text-gray-500 hover:underline cursor-pointer text-sm flex-shrink-0">
-                    {formatDistanceToNow(localTweet.createdAt, { addSuffix: true })}
+                    {formatDistanceToNow(localTweet.createdAt, { 
+                      addSuffix: true, 
+                      locale: language === 'ar' ? arSA : enUS 
+                    })}
                   </span>
                 </div>
                 
@@ -685,7 +702,10 @@ export const TweetCard: React.FC<TweetCardProps> = ({
                         </span>
                         <span className="text-gray-500 text-sm">·</span>
                         <span className="text-gray-500 text-sm flex-shrink-0">
-                          {formatDistanceToNow(originalTweet.createdAt, { addSuffix: true })}
+                          {formatDistanceToNow(originalTweet.createdAt, { 
+                            addSuffix: true, 
+                            locale: language === 'ar' ? arSA : enUS 
+                          })}
                         </span>
                       </div>
                       <p 
