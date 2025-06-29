@@ -20,12 +20,7 @@ export const supabase = createClient<Database>(cleanUrl, supabaseAnonKey || '', 
     detectSessionInUrl: false, // Disable to prevent URL issues
     flowType: 'pkce'
   },
-  // Minimal realtime config to prevent WebSocket errors
-  realtime: {
-    params: {
-      eventsPerSecond: 1
-    }
-  },
+  // Use default realtime settings (custom params removed to avoid 400 errors)
   global: {
     headers: {
       'X-Client-Info': 'travel-app'
