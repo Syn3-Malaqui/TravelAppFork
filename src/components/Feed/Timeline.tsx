@@ -15,6 +15,7 @@ import {
   DropdownMenuTrigger,
 } from '../ui/dropdown-menu';
 import { useAuth } from '../../hooks/useAuth';
+import { useTweets } from '../../hooks/useTweets';
 import { supabase } from '../../lib/supabase';
 import { FILTER_COUNTRIES, getLocalizedCountryName } from '../../types';
 import { X, ChevronDown, Check, ChevronLeft, ChevronRight } from 'lucide-react';
@@ -36,10 +37,19 @@ export const Timeline: React.FC = () => {
     { code: 'ALL', name: 'All Countries' }
   ]);
   const { user } = useAuth();
+  const { createTweet } = useTweets();
   const [userProfile, setUserProfile] = useState<{
     displayName: string;
     username: string;
     avatar: string;
+  } | null>(null);
+
+  // Debug state for development
+  const [debugInfo, setDebugInfo] = useState<{
+    totalTweets: number;
+    tweetsWithTags: number;
+    allTags: string[];
+    countryCodes: string[];
   } | null>(null);
 
   // Scroll refs and state for navigation arrows
@@ -73,24 +83,38 @@ export const Timeline: React.FC = () => {
   useEffect(() => {
     const fetchAvailableCountries = async () => {
       try {
+        console.log('🔍 Fetching available countries from tweet tags...');
+        
         // Query tweets to get all unique tags (which include country codes)
         const { data, error } = await supabase
           .from('tweets')
-          .select('tags')
+          .select('id, tags, content, created_at')
           .not('tags', 'is', null);
 
         if (error) throw error;
 
+        console.log('📊 Database tweets found:', data.length);
+        console.log('📋 Sample tweets with tags:', data.slice(0, 5).map(tweet => ({
+          id: tweet.id,
+          content: tweet.content.substring(0, 50) + '...',
+          tags: tweet.tags,
+          created_at: tweet.created_at
+        })));
+
         // Extract all country codes from tweet tags
         const allTags = data.flatMap(tweet => tweet.tags || []);
+        console.log('🏷️ All tags found:', allTags);
         
         // Filter only valid country codes (that exist in our FILTER_COUNTRIES list)
         const countryCodesInTweets = [...new Set(allTags)]
           .filter(tag => FILTER_COUNTRIES.find(c => c.code === tag && c.code !== 'ALL'));
         
+        console.log('🌍 Valid country codes in tweets:', countryCodesInTweets);
+        
         // Merge recently tweeted countries so they always appear
         try {
           const recent = JSON.parse(sessionStorage.getItem('recent_tweet_countries') || '[]');
+          console.log('💾 Recent tweet countries from sessionStorage:', recent);
           const recentCountries = recent.filter((code: string) => 
             FILTER_COUNTRIES.find(c => c.code === code && c.code !== 'ALL')
           );
@@ -99,6 +123,7 @@ export const Timeline: React.FC = () => {
         
         // Remove duplicates and get unique country codes
         const uniqueCountryCodes = [...new Set(countryCodesInTweets)];
+        console.log('🎯 Final unique country codes:', uniqueCountryCodes);
         
         // Map to our country format with localized names
         const mappedCountries = uniqueCountryCodes
@@ -118,9 +143,11 @@ export const Timeline: React.FC = () => {
         
         setAvailableCountries(finalCountries);
         
-        console.log(`✅ Found ${mappedCountries.length} countries with tweets`);
+        console.log(`✅ Found ${mappedCountries.length} countries with tweets:`, 
+          mappedCountries.map(c => `${c.code} (${c.name})`));
+        console.log('🎉 Final available countries:', finalCountries);
       } catch (error) {
-        console.error('Error fetching countries from tweets:', error);
+        console.error('❌ Error fetching countries from tweets:', error);
         
         // Fallback: Use a minimal set of popular countries if the database query fails
         const fallbackCountries = [
@@ -133,12 +160,12 @@ export const Timeline: React.FC = () => {
          }));
          
         setAvailableCountries(fallbackCountries);
-        console.log('Using fallback countries due to query error');
+        console.log('🔄 Using fallback countries due to query error:', fallbackCountries);
       }
     };
 
     fetchAvailableCountries();
-  }, [language]); // Add language as dependency so it updates when language changes
+  }, [language]);
 
   // Refresh available countries when user returns from composing (check sessionStorage changes)
   useEffect(() => {
@@ -360,7 +387,100 @@ export const Timeline: React.FC = () => {
 
   const selectedCountryData = availableCountries.find(c => c.code === countryFilter) || availableCountries[0];
 
+  // Temporary debug panel (only in development)
+  const DebugPanel = () => {
+    if (process.env.NODE_ENV !== 'development') return null;
+    
+    const createTestTweet = async (countryCode: string) => {
+      try {
+        const testContent = `Test tweet for ${countryCode} 🌍 This is a sample travel post!`;
+        await createTweet(testContent, [], ['General Discussions'], [countryCode]);
+        alert(`Created test tweet for ${countryCode}`);
+        // Refresh the debug info
+        await fetchDebugInfo();
+      } catch (error) {
+        console.error('Error creating test tweet:', error);
+        alert('Error creating test tweet');
+      }
+    };
 
+    const fetchDebugInfo = async () => {
+      try {
+        // Get all tweets
+        const { data: allTweets } = await supabase
+          .from('tweets')
+          .select('id, tags, content');
+        
+        // Get tweets with tags
+        const { data: tweetsWithTags } = await supabase
+          .from('tweets')
+          .select('id, tags')
+          .not('tags', 'is', null);
+        
+        const allTags = (tweetsWithTags || []).flatMap(tweet => tweet.tags || []);
+        const countryCodes = [...new Set(allTags)]
+          .filter(tag => FILTER_COUNTRIES.find(c => c.code === tag && c.code !== 'ALL'));
+        
+        setDebugInfo({
+          totalTweets: allTweets?.length || 0,
+          tweetsWithTags: tweetsWithTags?.length || 0,
+          allTags,
+          countryCodes
+        });
+      } catch (error) {
+        console.error('Error fetching debug info:', error);
+      }
+    };
+
+    useEffect(() => {
+      fetchDebugInfo();
+    }, []);
+
+    return (
+      <div className="bg-yellow-50 border border-yellow-200 p-4 m-4 rounded-lg">
+        <h3 className="font-bold text-yellow-800 mb-2">🐛 Debug Panel (Development Only)</h3>
+        {debugInfo && (
+          <div className="text-sm space-y-2">
+            <p><strong>Total Tweets:</strong> {debugInfo.totalTweets}</p>
+            <p><strong>Tweets with Tags:</strong> {debugInfo.tweetsWithTags}</p>
+            <p><strong>All Tags:</strong> {debugInfo.allTags.join(', ') || 'None'}</p>
+            <p><strong>Country Codes Found:</strong> {debugInfo.countryCodes.join(', ') || 'None'}</p>
+            <p><strong>Available Countries Length:</strong> {availableCountries.length}</p>
+          </div>
+        )}
+        <div className="mt-3 space-x-2">
+          <Button 
+            size="sm" 
+            onClick={() => createTestTweet('US')} 
+            className="bg-blue-500 text-white"
+          >
+            Create US Test Tweet
+          </Button>
+          <Button 
+            size="sm" 
+            onClick={() => createTestTweet('GB')} 
+            className="bg-green-500 text-white"
+          >
+            Create UK Test Tweet
+          </Button>
+          <Button 
+            size="sm" 
+            onClick={() => createTestTweet('JP')} 
+            className="bg-red-500 text-white"
+          >
+            Create Japan Test Tweet
+          </Button>
+          <Button 
+            size="sm" 
+            onClick={fetchDebugInfo} 
+            variant="outline"
+          >
+            Refresh Debug Info
+          </Button>
+        </div>
+      </div>
+    );
+  };
 
   return (
     <div className="h-full flex">
@@ -505,6 +625,9 @@ export const Timeline: React.FC = () => {
             />
           </div>
         </div>
+
+        {/* Debug Panel - Mobile */}
+        <DebugPanel />
       </div>
 
       {/* Desktop Layout - Only visible on desktop screens */}
@@ -706,6 +829,9 @@ export const Timeline: React.FC = () => {
         {/* Right Sidebar - Conditionally Rendered */}
         {showSidebar && <TrendingSidebar />}
       </div>
+
+      {/* Debug Panel - Conditionally Rendered */}
+      <DebugPanel />
     </div>
   );
 };

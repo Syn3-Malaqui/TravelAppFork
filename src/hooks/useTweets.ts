@@ -942,7 +942,7 @@ export const useTweets = () => {
     }
   };
 
-  const createTweet = async (content: string, imageUrls: string[] = [], categories: TweetCategory[] = []) => {
+  const createTweet = async (content: string, imageUrls: string[] = [], categories: TweetCategory[] = [], countries: string[] = []) => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('User not authenticated');
@@ -955,6 +955,12 @@ export const useTweets = () => {
       console.log('Tweet content:', content);
       console.log('Hashtag matches:', hashtagMatches);
       console.log('Extracted hashtags:', hashtags);
+      console.log('Categories:', categories);
+      console.log('Countries:', countries);
+
+      // Combine categories and countries into tags
+      const allTags = [...categories, ...countries];
+      console.log('Combined tags:', allTags);
 
       const { data, error } = await supabase
         .from('tweets')
@@ -964,7 +970,7 @@ export const useTweets = () => {
           image_urls: imageUrls,
           hashtags,
           mentions,
-          tags: categories,
+          tags: allTags, // Store both categories and countries
         })
         .select(`
           id,

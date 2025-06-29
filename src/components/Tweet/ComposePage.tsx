@@ -137,8 +137,8 @@ export const ComposePage: React.FC = () => {
     setError('');
     
     try {
-      // Create tweet with categories only (as expected by createTweet function)
-      await createTweet(content, images, selectedCategories);
+      // Create tweet with both categories and countries
+      await createTweet(content, images, selectedCategories, selectedCountries);
       
       // Reset form
       setContent('');

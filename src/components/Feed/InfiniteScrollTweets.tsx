@@ -62,7 +62,7 @@ export const InfiniteScrollTweets: React.FC<InfiniteScrollTweetsProps> = ({
     // Filter by country
     if (countryFilter && countryFilter !== 'ALL') {
       filtered = filtered.filter(tweet => 
-        tweet.author.country === countryFilter
+        tweet.tags && tweet.tags.includes(countryFilter)
       );
     }
 
