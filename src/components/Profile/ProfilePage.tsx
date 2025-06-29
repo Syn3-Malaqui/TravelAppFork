@@ -79,7 +79,9 @@ export const ProfilePage: React.FC = () => {
       setLoading(true);
       setError(null);
 
-      // Optimized profile query - minimal data first
+      console.log('🔄 Loading profile for:', username);
+
+      // Fast profile query - essential data only
       const { data: profileData, error: profileError } = await supabase
         .from('profiles')
         .select(`
@@ -98,13 +100,18 @@ export const ProfilePage: React.FC = () => {
         .eq('username', username)
         .single();
 
-      if (profileError) throw profileError;
+      if (profileError) {
+        console.error('❌ Profile error:', profileError);
+        throw profileError;
+      }
+
+      console.log('✅ Profile data loaded:', profileData.username);
 
       // Format profile data immediately
       const formattedProfile: User = {
         id: profileData.id,
         username: profileData.username,
-        displayName: profileData.display_name,
+        displayName: profileData.display_name || profileData.username,
         avatar: profileData.avatar_url || '',
         bio: profileData.bio || '',
         verified: profileData.verified || false,
@@ -112,12 +119,12 @@ export const ProfilePage: React.FC = () => {
         following: profileData.following_count || 0,
         joinedDate: new Date(profileData.created_at),
         coverImage: profileData.cover_image,
-        country: profileData.country,
+        country: profileData.country || 'US',
       };
 
       setProfile(formattedProfile);
 
-      // Fetch tweets in parallel with reduced data
+      // Load tweets quickly with simplified queries
       const [tweetsResult, repliesResult, likesResult] = await Promise.all([
         // User's tweets (excluding replies) - minimal data
         supabase
@@ -133,19 +140,12 @@ export const ProfilePage: React.FC = () => {
             retweets_count,
             replies_count,
             views_count,
-            created_at,
-            profiles!tweets_author_id_fkey (
-              id,
-              username,
-              display_name,
-              avatar_url,
-              verified
-            )
+            created_at
           `)
           .eq('author_id', profileData.id)
           .is('reply_to', null)
           .order('created_at', { ascending: false })
-          .limit(10), // Reduced limit
+          .limit(20),
 
         // User's replies - minimal data
         supabase
@@ -161,21 +161,14 @@ export const ProfilePage: React.FC = () => {
             retweets_count,
             replies_count,
             views_count,
-            created_at,
-            profiles!tweets_author_id_fkey (
-              id,
-              username,
-              display_name,
-              avatar_url,
-              verified
-            )
+            created_at
           `)
           .eq('author_id', profileData.id)
           .not('reply_to', 'is', null)
           .order('created_at', { ascending: false })
-          .limit(10), // Reduced limit
+          .limit(20),
 
-        // User's liked tweets - minimal data
+        // User's liked tweets - simplified
         supabase
           .from('likes')
           .select(`
@@ -193,60 +186,35 @@ export const ProfilePage: React.FC = () => {
               replies_count,
               views_count,
               created_at,
-              profiles!tweets_author_id_fkey (
-                id,
-                username,
-                display_name,
-                avatar_url,
-                verified
-              )
+              author_id
             )
           `)
           .eq('user_id', profileData.id)
           .order('created_at', { ascending: false })
-          .limit(10) // Reduced limit
+          .limit(20)
       ]);
 
-      // Get current user's interactions only if authenticated
-      let userLikes: string[] = [];
-      let userRetweets: string[] = [];
-      let userBookmarks: string[] = [];
-      
-      if (currentUser) {
-        const allTweetIds = [
-          ...(tweetsResult.data?.map(t => t.id) || []),
-          ...(repliesResult.data?.map(t => t.id) || []),
-          ...(likesResult.data?.map((l: any) => l.tweets?.id).filter(Boolean) || [])
-        ];
+      console.log('✅ Tweets loaded:', {
+        tweets: tweetsResult.data?.length || 0,
+        replies: repliesResult.data?.length || 0,
+        likes: likesResult.data?.length || 0
+      });
 
-        if (allTweetIds.length > 0) {
-          const [likesRes, retweetsRes, bookmarksRes] = await Promise.all([
-            supabase.from('likes').select('tweet_id').eq('user_id', currentUser.id).in('tweet_id', allTweetIds),
-            supabase.from('retweets').select('tweet_id').eq('user_id', currentUser.id).in('tweet_id', allTweetIds),
-            supabase.from('bookmarks').select('tweet_id').eq('user_id', currentUser.id).in('tweet_id', allTweetIds)
-          ]);
-          
-          userLikes = likesRes.data?.map(like => like.tweet_id) || [];
-          userRetweets = retweetsRes.data?.map(retweet => retweet.tweet_id) || [];
-          userBookmarks = bookmarksRes.data?.map(bookmark => bookmark.tweet_id) || [];
-        }
-      }
-
-      // Format tweet data with minimal processing
-      const formatTweetData = (tweetData: any): Tweet => ({
+      // Quick format function - no interactions initially
+      const formatQuickTweetData = (tweetData: any, authorProfile: any): Tweet => ({
         id: tweetData.id,
         content: tweetData.content,
         author: {
-          id: tweetData.profiles.id,
-          username: tweetData.profiles.username,
-          displayName: tweetData.profiles.display_name,
-          avatar: tweetData.profiles.avatar_url || '',
-          bio: '',
-          verified: tweetData.profiles.verified || false,
-          followers: 0,
-          following: 0,
-          country: '',
-          joinedDate: new Date(),
+          id: authorProfile.id,
+          username: authorProfile.username,
+          displayName: authorProfile.displayName,
+          avatar: authorProfile.avatar,
+          bio: authorProfile.bio,
+          verified: authorProfile.verified,
+          followers: authorProfile.followers,
+          following: authorProfile.following,
+          country: authorProfile.country,
+          joinedDate: authorProfile.joinedDate,
         },
         createdAt: new Date(tweetData.created_at),
         likes: tweetData.likes_count || 0,
@@ -254,42 +222,69 @@ export const ProfilePage: React.FC = () => {
         replies: tweetData.replies_count || 0,
         views: tweetData.views_count || 0,
         images: tweetData.image_urls || [],
-        isLiked: userLikes.includes(tweetData.id),
-        isRetweeted: userRetweets.includes(tweetData.id),
-        isBookmarked: userBookmarks.includes(tweetData.id),
+        isLiked: false, // Will be updated async
+        isRetweeted: false, // Will be updated async
+        isBookmarked: false, // Will be updated async
         hashtags: tweetData.hashtags || [],
         mentions: tweetData.mentions || [],
         tags: tweetData.tags || [],
         replyTo: tweetData.reply_to,
       });
 
-      const formattedTweets: Tweet[] = (tweetsResult.data || []).map(formatTweetData);
-      const formattedReplies: Tweet[] = (repliesResult.data || []).map(formatTweetData);
-      const formattedLikes: Tweet[] = (likesResult.data || []).map(like => formatTweetData(like.tweets));
+      // Format tweets quickly
+      const formattedTweets: Tweet[] = (tweetsResult.data || []).map(tweetData => 
+        formatQuickTweetData(tweetData, formattedProfile)
+      );
+      
+      const formattedReplies: Tweet[] = (repliesResult.data || []).map(tweetData => 
+        formatQuickTweetData(tweetData, formattedProfile)
+      );
+      
+      const formattedLikes: Tweet[] = (likesResult.data || [])
+        .filter((like: any) => like.tweets)
+        .map((like: any) => formatQuickTweetData(like.tweets, formattedProfile));
 
       setTweets(formattedTweets);
       setReplies(formattedReplies);
       setLikes(formattedLikes);
 
-      // Cache the profile data and mark as loaded in session
-      try {
-        sessionStorage.setItem(`profile_${username}`, JSON.stringify({
-          profile: formattedProfile,
-          tweets: formattedTweets,
-          replies: formattedReplies,
-          likes: formattedLikes,
-          timestamp: Date.now()
-        }));
-        
-        // Mark this profile as loaded in the current session
-        const sessionLoadedProfiles = sessionStorage.getItem('loaded_profiles');
-        const loadedInSession = sessionLoadedProfiles ? JSON.parse(sessionLoadedProfiles) : [];
-        if (!loadedInSession.includes(username)) {
-          loadedInSession.push(username);
-          sessionStorage.setItem('loaded_profiles', JSON.stringify(loadedInSession));
-        }
-      } catch (error) {
-        console.warn('Failed to cache profile data:', error);
+      // Update interactions asynchronously (non-blocking)
+      if (currentUser && (formattedTweets.length > 0 || formattedReplies.length > 0 || formattedLikes.length > 0)) {
+        setTimeout(async () => {
+          try {
+            const allTweetIds = [
+              ...formattedTweets.map(t => t.id),
+              ...formattedReplies.map(t => t.id),
+              ...formattedLikes.map(t => t.id)
+            ];
+
+            if (allTweetIds.length > 0) {
+              const [likesRes, retweetsRes, bookmarksRes] = await Promise.all([
+                supabase.from('likes').select('tweet_id').eq('user_id', currentUser.id).in('tweet_id', allTweetIds),
+                supabase.from('retweets').select('tweet_id').eq('user_id', currentUser.id).in('tweet_id', allTweetIds),
+                supabase.from('bookmarks').select('tweet_id').eq('user_id', currentUser.id).in('tweet_id', allTweetIds)
+              ]);
+              
+              const userLikes = new Set(likesRes.data?.map(like => like.tweet_id) || []);
+              const userRetweets = new Set(retweetsRes.data?.map(retweet => retweet.tweet_id) || []);
+              const userBookmarks = new Set(bookmarksRes.data?.map(bookmark => bookmark.tweet_id) || []);
+
+              // Update tweet states
+              const updateInteractions = (tweets: Tweet[]) => tweets.map(tweet => ({
+                ...tweet,
+                isLiked: userLikes.has(tweet.id),
+                isRetweeted: userRetweets.has(tweet.id),
+                isBookmarked: userBookmarks.has(tweet.id),
+              }));
+
+              setTweets(prev => updateInteractions(prev));
+              setReplies(prev => updateInteractions(prev));
+              setLikes(prev => updateInteractions(prev));
+            }
+          } catch (error) {
+            console.warn('Failed to update interactions:', error);
+          }
+        }, 200);
       }
     } catch (err: any) {
       setError(err.message);
@@ -299,57 +294,11 @@ export const ProfilePage: React.FC = () => {
     }
   }, [username, currentUser]);
 
-  // Fetch profile data when username changes - with persistent session caching
+  // Simplified profile loading
   useEffect(() => {
     if (!username) return;
-
-    // Check if this profile was already loaded in this session
-    const sessionLoadedProfiles = sessionStorage.getItem('loaded_profiles');
-    const loadedInSession = sessionLoadedProfiles ? JSON.parse(sessionLoadedProfiles) : [];
     
-    // Check if we have cached data for this profile
-    const cachedProfile = sessionStorage.getItem(`profile_${username}`);
-    
-    if (cachedProfile && loadedInSession.includes(username)) {
-      // Profile was loaded in this session and we have cached data
-      try {
-        const parsed = JSON.parse(cachedProfile);
-        // Use longer cache for session-loaded profiles (until page refresh)
-        if (Date.now() - parsed.timestamp < 60 * 60 * 1000) { // 1 hour cache for session profiles
-          setProfile(parsed.profile);
-          setTweets(parsed.tweets || []);
-          setReplies(parsed.replies || []);
-          setLikes(parsed.likes || []);
-          setLoading(false);
-          return;
-        }
-      } catch (error) {
-        console.error('Error parsing cached profile:', error);
-      }
-    }
-    
-    // If not in session cache, check for fresh cached data
-    if (cachedProfile) {
-      try {
-        const parsed = JSON.parse(cachedProfile);
-        if (Date.now() - parsed.timestamp < 5 * 60 * 1000) { // 5 minute cache for fresh loads
-          setProfile(parsed.profile);
-          setTweets(parsed.tweets || []);
-          setReplies(parsed.replies || []);
-          setLikes(parsed.likes || []);
-          setLoading(false);
-          
-          // Mark as loaded in this session
-          const updatedLoaded = [...loadedInSession, username];
-          sessionStorage.setItem('loaded_profiles', JSON.stringify(updatedLoaded));
-          return;
-        }
-      } catch (error) {
-        console.error('Error parsing cached profile:', error);
-      }
-    }
-    
-    // Need to fetch fresh data
+    console.log('🔄 Profile page mounted for:', username);
     fetchProfile();
   }, [username, fetchProfile]);
 
@@ -412,18 +361,6 @@ export const ProfilePage: React.FC = () => {
   // Function to refresh profile data (called when new tweets are added)
   const refreshProfileData = () => {
     if (username) {
-      // Remove from session loaded profiles to force refresh
-      const sessionLoadedProfiles = sessionStorage.getItem('loaded_profiles');
-      if (sessionLoadedProfiles) {
-        const loadedInSession = JSON.parse(sessionLoadedProfiles);
-        const updatedLoaded = loadedInSession.filter((u: string) => u !== username);
-        sessionStorage.setItem('loaded_profiles', JSON.stringify(updatedLoaded));
-      }
-      
-      // Remove cached profile data
-      sessionStorage.removeItem(`profile_${username}`);
-      
-      // Fetch fresh data
       fetchProfile();
     }
   };
