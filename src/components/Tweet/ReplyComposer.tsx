@@ -180,7 +180,7 @@ export const ReplyComposer: React.FC<ReplyComposerProps> = ({
           <textarea
             value={content}
             onChange={(e) => setContent(e.target.value)}
-            placeholder={replyingToReply ? "Add to this conversation..." : "Tweet your reply"}
+            placeholder={replyingToReply ? "Add to this conversation..." : "Post your reply"}
             className={`w-full text-lg placeholder-gray-500 border-none outline-none resize-none min-h-[80px] bg-transparent focus:ring-0 focus:border-none focus:outline-none ${
               isOverLimit ? 'text-red-600' : ''
             }`}

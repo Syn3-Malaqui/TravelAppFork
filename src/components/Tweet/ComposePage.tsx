@@ -114,12 +114,12 @@ export const ComposePage: React.FC = () => {
 
   const handleSubmit = async () => {
     if (!content.trim()) {
-      setError('Tweet content cannot be empty');
+      setError('Post content cannot be empty');
       return;
     }
 
     if (content.length > 200) {
-      setError('Tweet cannot exceed 200 characters');
+      setError('Post cannot exceed 200 characters');
       return;
     }
 
@@ -165,7 +165,7 @@ export const ComposePage: React.FC = () => {
       // Navigate back to timeline
       navigate('/');
     } catch (err: any) {
-      setError(err.message || 'Failed to create tweet');
+      setError(err.message || 'Failed to create post');
     } finally {
       setLoading(false);
     }
@@ -177,7 +177,7 @@ export const ComposePage: React.FC = () => {
 
     // Check if adding these images would exceed the limit
     if (images.length + files.length > 4) {
-      setError('You can only attach up to 4 images per tweet');
+      setError('You can only attach up to 4 images per post');
       return;
     }
 
@@ -360,13 +360,13 @@ export const ComposePage: React.FC = () => {
           </Button>
           <h1 className={`font-semibold ${isMobile ? 'text-lg' : 'text-lg'} ${isRTL ? 'text-right' : 'text-left'}`}>
             {language === 'en' 
-              ? (isMobile ? 'New Tweet' : 'Compose Tweet')
+              ? (isMobile ? 'New Post' : 'Compose Post')
               : (isMobile ? 'تغريدة جديدة' : 'إنشاء تغريدة')
             }
           </h1>
         </div>
         
-        {/* Character Count and Tweet Button */}
+        {/* Character Count and Post Button */}
         <div className={`flex items-center ${isRTL ? 'space-x-reverse space-x-3' : 'space-x-3'}`}>
           {!isMobile && (
             <div className={`text-sm font-bold ${
@@ -387,7 +387,7 @@ export const ComposePage: React.FC = () => {
           >
             {loading 
               ? (language === 'en' ? 'Posting...' : 'جاري النشر...')
-              : (language === 'en' ? 'Tweet' : 'تغريد')
+              : (language === 'en' ? 'Post' : 'تغريد')
             }
           </Button>
         </div>
@@ -484,7 +484,7 @@ export const ComposePage: React.FC = () => {
                 <div className="mt-2 flex items-center justify-between">
                   <div className="text-xs text-gray-500">
                     {content.length === 0 ? (
-                      'Start typing your tweet...'
+                      'Start typing your post...'
                     ) : (
                       `${content.split(' ').length} words`
                     )}
@@ -522,7 +522,7 @@ export const ComposePage: React.FC = () => {
                 <div className="mt-4 flex items-center justify-between">
                   <div className="text-sm text-gray-500">
                     {content.length === 0 ? (
-                      'Start typing your tweet...'
+                      'Start typing your post...'
                     ) : (
                       `${content.split(' ').length} words`
                     )}
@@ -732,7 +732,7 @@ export const ComposePage: React.FC = () => {
                 <div className="mt-4 p-3 bg-amber-50 border border-amber-200 rounded-lg">
                   <p className="text-amber-700 text-sm font-medium">
                     📝 {language === 'en' 
-                      ? 'Please select at least one category and one country before posting your tweet.'
+                      ? 'Please select at least one category and one country before posting your post.'
                       : 'يرجى اختيار فئة واحدة على الأقل وبلد واحد قبل نشر تغريدتك.'
                     }
                   </p>

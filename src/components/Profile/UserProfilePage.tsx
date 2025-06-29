@@ -313,7 +313,7 @@ export const UserProfilePage: React.FC = () => {
             </Button>
             <div className="ml-4">
               <h1 className="text-lg font-bold">{profile.displayName}</h1>
-              <p className="text-sm text-gray-500">{tweets.length} tweets</p>
+              <p className="text-sm text-gray-500">{tweets.length} posts</p>
             </div>
           </div>
 
@@ -422,7 +422,7 @@ export const UserProfilePage: React.FC = () => {
             <div className="border-b border-gray-200 sticky top-0 bg-white z-10">
               <div className="flex">
                 {[
-                  { id: 'tweets', label: 'Tweets', count: tweets.length },
+                  { id: 'tweets', label: 'Posts', count: tweets.length },
                   { id: 'replies', label: 'Replies', count: replies.length },
                   { id: 'media', label: 'Media', count: tweets.filter(t => t.images && t.images.length > 0).length },
                   { id: 'likes', label: 'Likes', count: likes.length },
@@ -455,10 +455,10 @@ export const UserProfilePage: React.FC = () => {
               {currentTabTweets.length === 0 ? (
                 <div className="text-center py-12 text-gray-500">
                   <p className="text-lg">
-                    {activeTab === 'tweets' && 'No tweets yet'}
+                    {activeTab === 'tweets' && 'No posts yet'}
                     {activeTab === 'replies' && 'No replies yet'}
-                    {activeTab === 'media' && 'No media tweets yet'}
-                    {activeTab === 'likes' && 'No liked tweets yet'}
+                    {activeTab === 'media' && 'No media posts yet'}
+                    {activeTab === 'likes' && 'No liked posts yet'}
                   </p>
                   {activeTab === 'tweets' && (
                     <>
@@ -467,7 +467,7 @@ export const UserProfilePage: React.FC = () => {
                         onClick={() => navigate('/compose')}
                         className="mt-4 bg-blue-500 hover:bg-blue-600 text-white px-6 py-2 rounded-full font-medium"
                       >
-                        Tweet now
+                        Post now
                       </Button>
                     </>
                   )}
@@ -507,7 +507,7 @@ export const UserProfilePage: React.FC = () => {
           </Button>
           <div className="ml-3">
             <h1 className="text-base font-bold">{profile.displayName}</h1>
-            <p className="text-xs text-gray-500">{tweets.length} tweets</p>
+            <p className="text-xs text-gray-500">{tweets.length} posts</p>
           </div>
         </div>
 
@@ -616,7 +616,7 @@ export const UserProfilePage: React.FC = () => {
           <div className="border-b border-gray-200 sticky top-0 bg-white z-10">
             <div className="flex">
               {[
-                { id: 'tweets', label: 'Tweets', count: tweets.length },
+                { id: 'tweets', label: 'Posts', count: tweets.length },
                 { id: 'replies', label: 'Replies', count: replies.length },
                 { id: 'media', label: 'Media', count: tweets.filter(t => t.images && t.images.length > 0).length },
                 { id: 'likes', label: 'Likes', count: likes.length },
@@ -649,10 +649,10 @@ export const UserProfilePage: React.FC = () => {
             {currentTabTweets.length === 0 ? (
               <div className="text-center py-12 text-gray-500">
                 <p className="text-lg">
-                  {activeTab === 'tweets' && 'No tweets yet'}
+                  {activeTab === 'tweets' && 'No posts yet'}
                   {activeTab === 'replies' && 'No replies yet'}
-                  {activeTab === 'media' && 'No media tweets yet'}
-                  {activeTab === 'likes' && 'No liked tweets yet'}
+                  {activeTab === 'media' && 'No media posts yet'}
+                  {activeTab === 'likes' && 'No liked posts yet'}
                 </p>
                 {activeTab === 'tweets' && (
                   <>
@@ -661,7 +661,7 @@ export const UserProfilePage: React.FC = () => {
                       onClick={() => navigate('/compose')}
                       className="mt-4 bg-blue-500 hover:bg-blue-600 text-white px-6 py-2 rounded-full font-medium"
                     >
-                      Tweet now
+                      Post now
                     </Button>
                   </>
                 )}

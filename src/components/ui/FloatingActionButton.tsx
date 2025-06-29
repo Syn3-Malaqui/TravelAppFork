@@ -20,7 +20,7 @@ export const FloatingActionButton: React.FC = () => {
     <Button
       onClick={handleClick}
       className="md:hidden fixed bottom-20 right-4 w-14 h-14 rounded-full bg-blue-500 hover:bg-blue-600 text-white shadow-lg z-40 p-0 flex items-center justify-center"
-      aria-label="Compose tweet"
+      aria-label="Compose post"
     >
       <PenSquare className="h-6 w-6" />
     </Button>

@@ -522,7 +522,7 @@ export const ProfilePage: React.FC = () => {
             </Button>
             <div className="ml-4">
               <h1 className="text-lg font-bold">{profile.displayName}</h1>
-              <p className="text-sm text-gray-500">{tweets.length} tweets</p>
+              <p className="text-sm text-gray-500">{tweets.length} posts</p>
             </div>
           </div>
 
@@ -659,7 +659,7 @@ export const ProfilePage: React.FC = () => {
             <div className="border-b border-gray-200 sticky top-0 bg-white z-10">
               <div className="flex">
                 {[
-                  { id: 'tweets', label: language === 'en' ? 'Tweets' : 'التغريدات', count: tweets.length },
+                  { id: 'tweets', label: language === 'en' ? 'Posts' : 'التغريدات', count: tweets.length },
                   { id: 'replies', label: language === 'en' ? 'Replies' : 'الردود', count: replies.length },
                   { id: 'media', label: language === 'en' ? 'Media' : 'الوسائط', count: tweets.filter(t => t.images && t.images.length > 0).length },
                   { id: 'likes', label: language === 'en' ? 'Likes' : 'الإعجابات', count: likes.length },
@@ -692,10 +692,10 @@ export const ProfilePage: React.FC = () => {
               {currentTabTweets.length === 0 ? (
                 <div className="text-center py-12 text-gray-500">
                   <p className="text-lg">
-                    {activeTab === 'tweets' && (language === 'en' ? 'No tweets yet' : 'لا توجد تغريدات بعد')}
+                    {activeTab === 'tweets' && (language === 'en' ? 'No posts yet' : 'لا توجد تغريدات بعد')}
                     {activeTab === 'replies' && (language === 'en' ? 'No replies yet' : 'لا توجد ردود بعد')}
-                    {activeTab === 'media' && (language === 'en' ? 'No media tweets yet' : 'لا توجد تغريدات وسائط بعد')}
-                    {activeTab === 'likes' && (language === 'en' ? 'No liked tweets yet' : 'لا توجد تغريدات معجب بها بعد')}
+                    {activeTab === 'media' && (language === 'en' ? 'No media posts yet' : 'لا توجد تغريدات وسائط بعد')}
+                    {activeTab === 'likes' && (language === 'en' ? 'No liked posts yet' : 'لا توجد تغريدات معجب بها بعد')}
                   </p>
                   {isOwnProfile && activeTab === 'tweets' && (
                     <p className="text-sm mt-2">
@@ -738,7 +738,7 @@ export const ProfilePage: React.FC = () => {
           </Button>
           <div className="ml-3">
             <h1 className="text-base font-bold">{profile.displayName}</h1>
-            <p className="text-xs text-gray-500">{tweets.length} tweets</p>
+            <p className="text-xs text-gray-500">{tweets.length} posts</p>
           </div>
         </div>
 
@@ -858,7 +858,7 @@ export const ProfilePage: React.FC = () => {
           <div className="border-b border-gray-200 sticky top-0 bg-white z-10">
             <div className="flex">
               {[
-                { id: 'tweets', label: language === 'en' ? 'Tweets' : 'التغريدات', count: tweets.length },
+                { id: 'tweets', label: language === 'en' ? 'Posts' : 'التغريدات', count: tweets.length },
                 { id: 'replies', label: language === 'en' ? 'Replies' : 'الردود', count: replies.length },
                 { id: 'media', label: language === 'en' ? 'Media' : 'الوسائط', count: tweets.filter(t => t.images && t.images.length > 0).length },
                 { id: 'likes', label: language === 'en' ? 'Likes' : 'الإعجابات', count: likes.length },
@@ -891,10 +891,10 @@ export const ProfilePage: React.FC = () => {
             {currentTabTweets.length === 0 ? (
               <div className="text-center py-12 text-gray-500">
                 <p className="text-lg">
-                  {activeTab === 'tweets' && (language === 'en' ? 'No tweets yet' : 'لا توجد تغريدات بعد')}
+                  {activeTab === 'tweets' && (language === 'en' ? 'No posts yet' : 'لا توجد تغريدات بعد')}
                   {activeTab === 'replies' && (language === 'en' ? 'No replies yet' : 'لا توجد ردود بعد')}
-                  {activeTab === 'media' && (language === 'en' ? 'No media tweets yet' : 'لا توجد تغريدات وسائط بعد')}
-                  {activeTab === 'likes' && (language === 'en' ? 'No liked tweets yet' : 'لا توجد تغريدات معجب بها بعد')}
+                  {activeTab === 'media' && (language === 'en' ? 'No media posts yet' : 'لا توجد تغريدات وسائط بعد')}
+                  {activeTab === 'likes' && (language === 'en' ? 'No liked posts yet' : 'لا توجد تغريدات معجب بها بعد')}
                 </p>
                 {isOwnProfile && activeTab === 'tweets' && (
                   <p className="text-sm mt-2">
