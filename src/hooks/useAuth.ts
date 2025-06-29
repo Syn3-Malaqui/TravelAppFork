@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { User, Session } from '@supabase/supabase-js';
-import { supabase } from '../lib/supabase';
+import { supabase, getCurrentSession } from '../lib/supabase';
 
 interface AuthMetadata {
   username?: string;
@@ -20,33 +20,24 @@ export const useAuth = () => {
     const initAuth = async () => {
       if (!mounted) return;
       
-      setLoading(true);
-      setError(null);
-      
       try {
         console.log('🔐 Initializing authentication...');
         
-        // Get current session without refreshing first
-        const { data: { session: currentSession }, error: sessionError } = await supabase.auth.getSession();
+        // Simple session check
+        const currentSession = await getCurrentSession();
         
-        if (sessionError) {
-          console.warn('⚠️ Session error:', sessionError.message);
-          // Don't throw here, just log the error
-        }
-
         if (currentSession && mounted) {
           console.log('✅ Found existing session');
           setSession(currentSession);
           setUser(currentSession.user);
         } else {
-          console.log('ℹ️ No existing session found');
+          console.log('ℹ️ No existing session');
           setSession(null);
           setUser(null);
         }
       } catch (error: any) {
-        console.error('❌ Auth initialization error:', error);
+        console.warn('⚠️ Auth initialization error:', error);
         setError(error.message);
-        // Reset auth state on error
         setSession(null);
         setUser(null);
       } finally {
@@ -58,65 +49,52 @@ export const useAuth = () => {
 
     initAuth();
 
-    // Listen for auth changes
+    // Simplified auth state listener
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (!mounted) return;
 
-      console.log('🔄 Auth state change:', event, session?.user?.email || 'no user');
+      console.log('🔄 Auth state change:', event);
       
       setSession(session);
       setUser(session?.user ?? null);
       setLoading(false);
       setError(null);
 
-      // Handle specific events
+      // Handle profile creation for new users
       if (event === 'SIGNED_IN' && session?.user) {
-        console.log('✅ User signed in:', session.user.email);
+        console.log('✅ User signed in');
         
-        // Ensure user profile exists
-        try {
-          const { data: profile, error: profileError } = await supabase
-            .from('profiles')
-            .select('id')
-            .eq('id', session.user.id)
-            .single();
-
-          if (profileError && profileError.code === 'PGRST116') {
-            // Profile doesn't exist, create it
-            console.log('📝 Creating missing profile...');
-            const { error: createError } = await supabase
+        // Check if profile exists, create if missing
+        setTimeout(async () => {
+          try {
+            const { data: profile } = await supabase
               .from('profiles')
-              .insert({
-                id: session.user.id,
-                username: session.user.user_metadata?.username || session.user.email?.split('@')[0] || 'user',
-                display_name: session.user.user_metadata?.display_name || session.user.email?.split('@')[0] || 'User',
-                bio: '',
-                verified: false,
-                role: 'user',
-                followers_count: 0,
-                following_count: 0,
-                country: session.user.user_metadata?.country || 'US'
-              });
+              .select('*')
+              .eq('id', session.user.id)
+              .maybeSingle();
 
-            if (createError) {
-              console.error('❌ Failed to create profile:', createError);
-            } else {
-              console.log('✅ Profile created successfully');
+            if (!profile) {
+              console.log('📝 Creating user profile...');
+              await supabase
+                .from('profiles')
+                .insert({
+                  username: session.user.user_metadata?.username || session.user.email?.split('@')[0] || 'user',
+                  display_name: session.user.user_metadata?.display_name || session.user.email?.split('@')[0] || 'User',
+                  bio: '',
+                  verified: false,
+                  role: 'user',
+                  followers_count: 0,
+                  following_count: 0,
+                  country: session.user.user_metadata?.country || 'US'
+                });
+              console.log('✅ Profile created');
             }
+          } catch (error) {
+            console.warn('Profile creation error:', error);
           }
-        } catch (profileCheckError) {
-          console.warn('⚠️ Profile check failed:', profileCheckError);
-        }
-      }
-
-      if (event === 'SIGNED_OUT') {
-        console.log('👋 User signed out');
-      }
-
-      if (event === 'TOKEN_REFRESHED') {
-        console.log('🔄 Token refreshed');
+        }, 1000); // Delay to avoid race conditions
       }
     });
 
@@ -129,10 +107,11 @@ export const useAuth = () => {
   const signIn = async (email: string, password: string) => {
     try {
       setError(null);
-      console.log('🔐 Signing in user...');
+      setLoading(true);
+      console.log('🔐 Signing in...');
       
       const { data, error } = await supabase.auth.signInWithPassword({
-        email,
+        email: email.trim(),
         password,
       });
 
@@ -146,16 +125,19 @@ export const useAuth = () => {
     } catch (error: any) {
       setError(error.message);
       throw error;
+    } finally {
+      setLoading(false);
     }
   };
 
   const signUp = async (email: string, password: string, metadata?: AuthMetadata) => {
     try {
       setError(null);
-      console.log('📝 Signing up user...');
+      setLoading(true);
+      console.log('📝 Signing up...');
       
       const { data, error } = await supabase.auth.signUp({
-        email,
+        email: email.trim(),
         password,
         options: {
           data: {
@@ -176,13 +158,15 @@ export const useAuth = () => {
     } catch (error: any) {
       setError(error.message);
       throw error;
+    } finally {
+      setLoading(false);
     }
   };
 
   const signOut = async () => {
     try {
       setError(null);
-      console.log('👋 Signing out user...');
+      console.log('👋 Signing out...');
       
       const { error } = await supabase.auth.signOut();
       
@@ -191,21 +175,11 @@ export const useAuth = () => {
         throw error;
       }
 
+      // Clear local state
+      setSession(null);
+      setUser(null);
+      
       console.log('✅ Sign out successful');
-    } catch (error: any) {
-      setError(error.message);
-      throw error;
-    }
-  };
-
-  const resetPassword = async (email: string) => {
-    try {
-      setError(null);
-      const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${window.location.origin}/reset-password`,
-      });
-
-      if (error) throw error;
     } catch (error: any) {
       setError(error.message);
       throw error;
@@ -233,7 +207,6 @@ export const useAuth = () => {
     signIn,
     signUp,
     signOut,
-    resetPassword,
     updatePassword,
     clearError,
   };

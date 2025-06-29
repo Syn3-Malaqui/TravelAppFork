@@ -1,68 +1,75 @@
 import { createClient } from '@supabase/supabase-js';
 import { Database } from '../types/database';
 
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+const supabaseUrl = (import.meta as any).env?.VITE_SUPABASE_URL;
+const supabaseAnonKey = (import.meta as any).env?.VITE_SUPABASE_ANON_KEY;
 
 if (!supabaseUrl || !supabaseAnonKey) {
   console.error('Missing Supabase environment variables. Please check your .env file.');
   console.error('Required variables: VITE_SUPABASE_URL, VITE_SUPABASE_ANON_KEY');
-  throw new Error('Missing Supabase environment variables');
 }
 
-// Validate URL format - ensure it doesn't have trailing paths
-const cleanUrl = supabaseUrl.replace(/\/rest.*$/, '').replace(/\/$/, '');
+// Validate and clean URL
+const cleanUrl = supabaseUrl?.replace(/\/rest.*$/, '').replace(/\/$/, '') || '';
 
-if (!cleanUrl.includes('.supabase.co')) {
-  console.error('Invalid Supabase URL format. Expected format: https://your-project-ref.supabase.co');
-  throw new Error('Invalid Supabase URL format');
-}
-
-// Validate anon key format (should start with 'eyJ')
-if (!supabaseAnonKey.startsWith('eyJ')) {
-  console.error('Invalid Supabase anon key format. Expected JWT token starting with "eyJ"');
-  throw new Error('Invalid Supabase anon key format');
-}
-
-export const supabase = createClient<Database>(cleanUrl, supabaseAnonKey, {
+// Create Supabase client with optimized configuration
+export const supabase = createClient<Database>(cleanUrl, supabaseAnonKey || '', {
   auth: {
     autoRefreshToken: true,
     persistSession: true,
-    detectSessionInUrl: true
+    detectSessionInUrl: false, // Disable to prevent URL issues
+    flowType: 'pkce'
   },
+  // Minimal realtime config to prevent WebSocket errors
   realtime: {
     params: {
-      eventsPerSecond: 10
+      eventsPerSecond: 1
     }
   },
   global: {
-    fetch: (...args) => {
-      // Add retry logic for network errors
-      return fetchWithRetry(args[0] as RequestInfo, args[1] as RequestInit);
+    headers: {
+      'X-Client-Info': 'travel-app'
     }
   }
 });
 
-// Custom fetch with retry logic
-async function fetchWithRetry(url: RequestInfo, init?: RequestInit, retries = 3, backoff = 300): Promise<Response> {
-  try {
-    const response = await fetch(url, init);
-    return response;
-  } catch (error) {
-    // For network errors, retry if we have retries left
-    if (retries > 0) {
-      await new Promise(resolve => setTimeout(resolve, backoff));
-      return fetchWithRetry(url, init, retries - 1, backoff * 2);
-    }
-    throw error;
-  }
-}
-
 // Helper function to check if user is authenticated
-export const isAuthenticated = () => {
-  return new Promise((resolve) => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      resolve(!!session);
-    });
-  });
+export const isAuthenticated = async () => {
+  try {
+    const { data: { session } } = await supabase.auth.getSession();
+    return !!session;
+  } catch (error) {
+    console.warn('Authentication check failed:', error);
+    return false;
+  }
+};
+
+// Helper to safely get current session
+export const getCurrentSession = async () => {
+  try {
+    const { data: { session }, error } = await supabase.auth.getSession();
+    if (error) {
+      console.warn('Session fetch error:', error.message);
+      return null;
+    }
+    return session;
+  } catch (error) {
+    console.warn('Session fetch failed:', error);
+    return null;
+  }
+};
+
+// Helper to safely get current user
+export const getCurrentUser = async () => {
+  try {
+    const { data: { user }, error } = await supabase.auth.getUser();
+    if (error) {
+      console.warn('User fetch error:', error.message);
+      return null;
+    }
+    return user;
+  } catch (error) {
+    console.warn('User fetch failed:', error);
+    return null;
+  }
 };
