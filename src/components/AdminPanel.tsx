@@ -277,10 +277,10 @@ export const AdminPanel: React.FC = () => {
                     )}
 
                     {/* User Info Section */}
-                    <div className={`flex items-center ${isRTL ? 'space-x-reverse space-x-3' : 'space-x-3'} ${isRTL ? 'flex-1' : ''}`}>
-                      {/* User Details - Show first in RTL */}
-                      <div className={`flex-1 ${isRTL ? 'text-right' : 'text-left'} ${isRTL ? 'order-1' : 'order-2'}`}>
-                        <div className={`flex items-center ${isRTL ? 'justify-end space-x-reverse space-x-2' : 'space-x-2'}`}>
+                    <div className={`flex items-center flex-1 ${isRTL ? 'flex-row-reverse space-x-3 space-x-reverse' : 'space-x-3'}`}>
+                      {/* Details */}
+                      <div className={`flex-1 ${isRTL ? 'text-right' : 'text-left'}`}>
+                        <div className={`flex items-center ${isRTL ? 'justify-end space-x-reverse' : ''} space-x-2`}>
                           <h3 className="font-semibold text-gray-900">{userProfile.display_name}</h3>
                           {userProfile.verified && (
                             <div className="w-4 h-4 bg-blue-500 rounded-full flex items-center justify-center">
@@ -301,16 +301,15 @@ export const AdminPanel: React.FC = () => {
                           <p className="text-sm text-gray-600 mt-1 line-clamp-2">{userProfile.bio}</p>
                         )}
                         <p className="text-xs text-gray-400 mt-1">
-                          {userProfile.followers_count} {language === 'en' ? 'followers' : 'متابع'} • 
-                          {' '}{language === 'en' ? 'Joined' : 'انضم'} {new Date(userProfile.created_at).toLocaleDateString()}
+                          {userProfile.followers_count} {language === 'en' ? 'followers' : 'متابع'} •{' '}
+                          {language === 'en' ? 'Joined' : 'انضم'} {new Date(userProfile.created_at).toLocaleDateString()}
                         </p>
                       </div>
-
-                      {/* Avatar - Show second in RTL (right side) */}
+                      {/* Avatar */}
                       <LazyAvatar
                         src={userProfile.avatar_url}
                         fallback={userProfile.display_name[0]?.toUpperCase() || 'U'}
-                        className={`w-12 h-12 ${isRTL ? 'order-2' : 'order-1'}`}
+                        className="w-12 h-12"
                         size={96}
                       />
                     </div>
