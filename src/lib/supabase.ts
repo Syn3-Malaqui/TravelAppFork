@@ -15,8 +15,8 @@ const cleanUrl = supabaseUrl?.replace(/\/rest.*$/, '').replace(/\/$/, '') || '';
 // Create Supabase client with optimized configuration
 export const supabase = createClient<Database>(cleanUrl, supabaseAnonKey || '', {
   auth: {
-    autoRefreshToken: true,
-    persistSession: true,
+    autoRefreshToken: false,
+    persistSession: false,
     detectSessionInUrl: false, // Disable to prevent URL issues
     flowType: 'pkce'
   },
