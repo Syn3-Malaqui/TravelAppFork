@@ -4,6 +4,7 @@ import {
   Home, 
   Search, 
   Bell, 
+  MessageCircle,
   User, 
   LogOut,
   Languages,
@@ -20,7 +21,7 @@ import { storageService } from '../../lib/storage';
 import { supabase } from '../../lib/supabase';
 import { useLanguageStore } from '../../store/useLanguageStore';
 import { LanguageSelector } from '../ui/LanguageSelector';
-import { AdminSetupButton } from '../AdminSetupButton';
+
 
 const getSidebarItems = (language: string, isAdmin: boolean = false) => {
   console.log('🔍 getSidebarItems called with isAdmin:', isAdmin);
@@ -29,6 +30,7 @@ const getSidebarItems = (language: string, isAdmin: boolean = false) => {
     { icon: Home, label: language === 'en' ? 'Home' : 'الرئيسية', path: '/' },
     { icon: Search, label: language === 'en' ? 'Explore' : 'استكشف', path: '/search' },
     { icon: Bell, label: language === 'en' ? 'Notifications' : 'الإشعارات', path: '/notifications' },
+    { icon: MessageCircle, label: language === 'en' ? 'Messages' : 'الرسائل', path: '/messages' },
     { icon: User, label: language === 'en' ? 'Profile' : 'الملف الشخصي', path: '/profile' },
     { icon: Languages, label: language === 'en' ? 'Language' : 'اللغة', path: '/language' },
   ];
@@ -284,8 +286,7 @@ export const Sidebar: React.FC = () => {
         </Button>
       </div>
 
-      {/* Admin Setup Button - Temporary Debug */}
-      <AdminSetupButton />
+
 
       {/* Language Selector Modal */}
       <LanguageSelector 

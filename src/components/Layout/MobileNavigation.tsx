@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Search, Bell, User, Settings, LogOut, Home, Languages } from 'lucide-react';
+import { Search, Bell, MessageCircle, User, Settings, LogOut, Home, Languages } from 'lucide-react';
 import { Button } from '../ui/button';
 import { 
   DropdownMenu,
@@ -39,16 +39,16 @@ export const MobileNavigation: React.FC = () => {
     <>
       <div className={`md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 py-4 z-50 shadow-lg ${isRTL ? 'font-arabic' : ''}`}>
         <div className="flex items-center justify-around px-4">
-          {/* Search */}
+          {/* Messages */}
           <Button
             variant="ghost"
             size="lg"
             className={`p-3 min-w-0 rounded-xl transition-colors ${
-              location.pathname === '/search' ? 'text-blue-500 bg-blue-50' : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
+              location.pathname === '/messages' ? 'text-blue-500 bg-blue-50' : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
             }`}
-            onClick={() => handleNavClick('/search')}
+            onClick={() => handleNavClick('/messages')}
           >
-            <Search className="w-7 h-7" />
+            <MessageCircle className="w-7 h-7" />
           </Button>
 
           {/* Notifications */}
@@ -113,6 +113,16 @@ export const MobileNavigation: React.FC = () => {
               avoidCollisions={true}
               collisionPadding={8}
             >
+              <DropdownMenuItem 
+                onClick={() => {
+                  handleNavClick('/search');
+                  setSettingsOpen(false);
+                }} 
+                className="cursor-pointer"
+              >
+                <Search className={`h-4 w-4 ${isRTL ? 'ml-2' : 'mr-2'}`} />
+                {language === 'en' ? 'Search' : 'البحث'}
+              </DropdownMenuItem>
               <DropdownMenuItem 
                 onClick={() => {
                   setLanguageSelectorOpen(true);

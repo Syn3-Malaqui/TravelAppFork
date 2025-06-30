@@ -296,11 +296,11 @@ export const UserProfilePage: React.FC = () => {
   const currentTabTweets = getCurrentTabTweets();
 
   return (
-    <div className="min-h-screen bg-white flex h-screen overflow-hidden">
+    <div className="min-h-screen bg-white flex h-screen">
       {/* Desktop Layout with Conditional Sidebar */}
-      <div className="hidden md:flex flex-1">
+      <div className="hidden md:flex flex-1 min-w-0">
         {/* Main Content */}
-        <div className={`flex-1 border-r border-gray-200 flex flex-col ${showSidebar ? '' : 'border-r-0'}`}>
+        <div className={`flex-1 border-r border-gray-200 flex flex-col min-w-0 ${showSidebar ? '' : 'border-r-0'}`}>
           {/* Header */}
           <div className="bg-white/80 backdrop-blur-md border-b border-gray-200 px-4 py-3 flex items-center z-10 flex-shrink-0">
             <Button
@@ -494,7 +494,7 @@ export const UserProfilePage: React.FC = () => {
       </div>
 
       {/* Mobile Layout */}
-      <div className="md:hidden w-full border-r border-gray-200 overflow-hidden flex flex-col">
+      <div className="md:hidden w-full border-r border-gray-200 flex flex-col min-w-0">
         {/* Header */}
         <div className="bg-white/80 backdrop-blur-md border-b border-gray-200 px-3 py-2.5 flex items-center z-10 flex-shrink-0">
           <Button

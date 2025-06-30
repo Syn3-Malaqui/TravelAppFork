@@ -609,7 +609,7 @@ export const MobileTweetCard: React.FC<MobileTweetCardProps> = ({
 
               {/* Tweet Text with Enhanced Link Parsing */}
               <div 
-                className="text-gray-900 mb-3 text-base leading-5 w-full break-words overflow-wrap-anywhere"
+                className="text-gray-900 mb-3 text-base leading-5 w-full break-words overflow-wrap-anywhere whitespace-pre-wrap"
                 dir={getTextDirection(tweet.content)}
                 style={{ textAlign: getTextDirection(tweet.content) === 'rtl' ? 'right' : 'left' }}
               >
