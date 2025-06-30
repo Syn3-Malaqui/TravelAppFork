@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Calendar, MapPin, Link as LinkIcon, UserPlus, UserMinus, Settings, MessageCircle } from 'lucide-react';
+import { ArrowLeft, Calendar, MapPin, Link as LinkIcon, UserPlus, UserMinus, Settings, MessageCircle, Trash2 } from 'lucide-react';
 import { Button } from '../ui/button';
 import { Avatar, AvatarImage, AvatarFallback } from '../ui/avatar';
 import { TweetCard } from '../Tweet/TweetCard';
@@ -104,7 +104,7 @@ export const ProfilePage: React.FC = () => {
         return;
       }
 
-      // Fast profile query - essential data only
+      // Fast profile query - essential data only including suspension status
       const { data: profileData, error: profileError } = await supabase
         .from('profiles')
         .select(`
@@ -118,7 +118,11 @@ export const ProfilePage: React.FC = () => {
           following_count,
           created_at,
           cover_image,
-          country
+          country,
+          suspended,
+          suspended_at,
+          suspended_reason,
+          deleted_at
         `)
         .eq('username', username)
         .single();
@@ -143,6 +147,10 @@ export const ProfilePage: React.FC = () => {
         joinedDate: new Date(profileData.created_at),
         coverImage: profileData.cover_image,
         country: profileData.country || 'US',
+        suspended: profileData.suspended || false,
+        suspendedAt: profileData.suspended_at ? new Date(profileData.suspended_at) : undefined,
+        suspendedReason: profileData.suspended_reason || undefined,
+        deletedAt: profileData.deleted_at ? new Date(profileData.deleted_at) : undefined,
       };
 
       setProfile(formattedProfile);
@@ -518,6 +526,252 @@ export const ProfilePage: React.FC = () => {
   const isOwnProfile = currentUser?.id === profile.id;
   const userIsFollowing = isFollowing(profile.id);
   const currentTabTweets = getCurrentTabTweets();
+
+  // Show suspended user page if user is suspended
+  if (profile?.suspended && !profile?.deletedAt) {
+    return (
+      <div className="min-h-screen bg-white flex h-screen">
+        {/* Desktop Layout */}
+        <div className="hidden md:flex flex-1 min-w-0">
+          <div className="flex-1 max-w-2xl border-x border-gray-200 overflow-y-auto">
+            {/* Header */}
+            <div className="bg-white/80 backdrop-blur-md border-b border-gray-200 px-4 py-3 flex items-center sticky top-0 z-10">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => navigate('/')}
+                className="p-2 mr-4"
+              >
+                <ArrowLeft className="h-5 w-5" />
+              </Button>
+              <div>
+                <h1 className="text-lg font-bold">Profile</h1>
+                <p className="text-sm text-gray-500">@{profile.username}</p>
+              </div>
+            </div>
+
+            {/* Suspended User Content */}
+            <div className="flex flex-col items-center justify-center py-16 px-8 text-center">
+              <div className="w-24 h-24 bg-orange-100 rounded-full flex items-center justify-center mb-6">
+                <UserMinus className="w-12 h-12 text-orange-600" />
+              </div>
+              
+              <h2 className="text-2xl font-bold text-gray-900 mb-4">
+                {language === 'en' ? 'Account Suspended' : 'الحساب موقوف'}
+              </h2>
+              
+              <p className="text-gray-600 mb-2 max-w-md">
+                {language === 'en' 
+                  ? 'This account has been suspended and is not available for viewing.'
+                  : 'تم إيقاف هذا الحساب وهو غير متاح للعرض.'
+                }
+              </p>
+              
+              {profile.suspendedAt && (
+                <p className="text-sm text-gray-500 mb-4">
+                  {language === 'en' ? 'Suspended on ' : 'تم الإيقاف في '}
+                  {formatDistanceToNow(profile.suspendedAt, { 
+                    addSuffix: true, 
+                    locale: language === 'ar' ? arSA : enUS 
+                  })}
+                </p>
+              )}
+              
+              {profile.suspendedReason && (
+                <div className="bg-orange-50 border border-orange-200 rounded-lg p-4 mb-6 max-w-md">
+                  <p className="text-sm text-orange-800">
+                    <strong>{language === 'en' ? 'Reason: ' : 'السبب: '}</strong>
+                    {profile.suspendedReason}
+                  </p>
+                </div>
+              )}
+              
+              <Button 
+                onClick={() => navigate('/')} 
+                className="bg-blue-500 hover:bg-blue-600 text-white"
+              >
+                {language === 'en' ? 'Go back home' : 'العودة للرئيسية'}
+              </Button>
+            </div>
+          </div>
+          
+          {/* Trending Sidebar */}
+          {showSidebar && (
+            <div className="w-80 flex-shrink-0">
+              <TrendingSidebar />
+            </div>
+          )}
+        </div>
+
+        {/* Mobile Layout */}
+        <div className="md:hidden flex-1 flex flex-col overflow-hidden">
+          {/* Header */}
+          <div className="bg-white/80 backdrop-blur-md border-b border-gray-200 px-4 py-3 flex items-center z-10 flex-shrink-0">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => navigate('/')}
+              className="p-2 mr-3"
+            >
+              <ArrowLeft className="h-5 w-5" />
+            </Button>
+            <div>
+              <h1 className="text-lg font-bold">Profile</h1>
+              <p className="text-sm text-gray-500">@{profile.username}</p>
+            </div>
+          </div>
+
+          {/* Suspended User Content - Mobile */}
+          <div className="flex-1 flex flex-col items-center justify-center py-12 px-6 text-center">
+            <div className="w-20 h-20 bg-orange-100 rounded-full flex items-center justify-center mb-6">
+              <UserMinus className="w-10 h-10 text-orange-600" />
+            </div>
+            
+            <h2 className="text-xl font-bold text-gray-900 mb-4">
+              {language === 'en' ? 'Account Suspended' : 'الحساب موقوف'}
+            </h2>
+            
+            <p className="text-gray-600 mb-2 text-sm">
+              {language === 'en' 
+                ? 'This account has been suspended and is not available for viewing.'
+                : 'تم إيقاف هذا الحساب وهو غير متاح للعرض.'
+              }
+            </p>
+            
+            {profile.suspendedAt && (
+              <p className="text-xs text-gray-500 mb-4">
+                {language === 'en' ? 'Suspended ' : 'تم الإيقاف '}
+                {formatDistanceToNow(profile.suspendedAt, { 
+                  addSuffix: true, 
+                  locale: language === 'ar' ? arSA : enUS 
+                })}
+              </p>
+            )}
+            
+            {profile.suspendedReason && (
+              <div className="bg-orange-50 border border-orange-200 rounded-lg p-3 mb-6 w-full">
+                <p className="text-xs text-orange-800">
+                  <strong>{language === 'en' ? 'Reason: ' : 'السبب: '}</strong>
+                  {profile.suspendedReason}
+                </p>
+              </div>
+            )}
+            
+            <Button 
+              onClick={() => navigate('/')} 
+              className="bg-blue-500 hover:bg-blue-600 text-white w-full"
+            >
+              {language === 'en' ? 'Go back home' : 'العودة للرئيسية'}
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Show deleted user page if user is deleted
+  if (profile?.deletedAt) {
+    return (
+      <div className="min-h-screen bg-white flex h-screen">
+        {/* Desktop Layout */}
+        <div className="hidden md:flex flex-1 min-w-0">
+          <div className="flex-1 max-w-2xl border-x border-gray-200 overflow-y-auto">
+            {/* Header */}
+            <div className="bg-white/80 backdrop-blur-md border-b border-gray-200 px-4 py-3 flex items-center sticky top-0 z-10">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => navigate('/')}
+                className="p-2 mr-4"
+              >
+                <ArrowLeft className="h-5 w-5" />
+              </Button>
+              <div>
+                <h1 className="text-lg font-bold">Profile</h1>
+                <p className="text-sm text-gray-500">@{profile.username}</p>
+              </div>
+            </div>
+
+            {/* Deleted User Content */}
+            <div className="flex flex-col items-center justify-center py-16 px-8 text-center">
+              <div className="w-24 h-24 bg-red-100 rounded-full flex items-center justify-center mb-6">
+                <Trash2 className="w-12 h-12 text-red-600" />
+              </div>
+              
+              <h2 className="text-2xl font-bold text-gray-900 mb-4">
+                {language === 'en' ? 'Account Deleted' : 'الحساب محذوف'}
+              </h2>
+              
+              <p className="text-gray-600 mb-6 max-w-md">
+                {language === 'en' 
+                  ? 'This account has been deleted and is no longer available.'
+                  : 'تم حذف هذا الحساب وهو لم يعد متاحاً.'
+                }
+              </p>
+              
+              <Button 
+                onClick={() => navigate('/')} 
+                className="bg-blue-500 hover:bg-blue-600 text-white"
+              >
+                {language === 'en' ? 'Go back home' : 'العودة للرئيسية'}
+              </Button>
+            </div>
+          </div>
+          
+          {/* Trending Sidebar */}
+          {showSidebar && (
+            <div className="w-80 flex-shrink-0">
+              <TrendingSidebar />
+            </div>
+          )}
+        </div>
+
+        {/* Mobile Layout */}
+        <div className="md:hidden flex-1 flex flex-col overflow-hidden">
+          {/* Header */}
+          <div className="bg-white/80 backdrop-blur-md border-b border-gray-200 px-4 py-3 flex items-center z-10 flex-shrink-0">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => navigate('/')}
+              className="p-2 mr-3"
+            >
+              <ArrowLeft className="h-5 w-5" />
+            </Button>
+            <div>
+              <h1 className="text-lg font-bold">Profile</h1>
+              <p className="text-sm text-gray-500">@{profile.username}</p>
+            </div>
+          </div>
+
+          {/* Deleted User Content - Mobile */}
+          <div className="flex-1 flex flex-col items-center justify-center py-12 px-6 text-center">
+            <div className="w-20 h-20 bg-red-100 rounded-full flex items-center justify-center mb-6">
+              <Trash2 className="w-10 h-10 text-red-600" />
+            </div>
+            
+            <h2 className="text-xl font-bold text-gray-900 mb-4">
+              {language === 'en' ? 'Account Deleted' : 'الحساب محذوف'}
+            </h2>
+            
+            <p className="text-gray-600 mb-6 text-sm">
+              {language === 'en' 
+                ? 'This account has been deleted and is no longer available.'
+                : 'تم حذف هذا الحساب وهو لم يعد متاحاً.'
+              }
+            </p>
+            
+            <Button 
+              onClick={() => navigate('/')} 
+              className="bg-blue-500 hover:bg-blue-600 text-white w-full"
+            >
+              {language === 'en' ? 'Go back home' : 'العودة للرئيسية'}
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-white flex h-screen">

@@ -11,6 +11,10 @@ export interface User {
   joinedDate: Date;
   coverImage?: string;
   country?: string;
+  suspended?: boolean;
+  suspendedAt?: Date;
+  suspendedReason?: string;
+  deletedAt?: Date;
 }
 
 export interface Tweet {
