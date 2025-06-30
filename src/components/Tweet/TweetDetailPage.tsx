@@ -8,9 +8,11 @@ import { MobileTweetCard } from './MobileTweetCard';
 import { TweetSkeleton } from './TweetSkeleton';
 import { ReplyComposer } from './ReplyComposer';
 import { TrendingSidebar } from '../Layout/TrendingSidebar';
+import { TweetBadges } from '../ui/TweetBadges';
 import { useAuth } from '../../hooks/useAuth';
 import { useTweets } from '../../hooks/useTweets';
 import { useTweetViews } from '../../hooks/useTweetViews';
+import { usePinnedTweets } from '../../hooks/usePinnedTweets';
 import { useLanguageStore } from '../../store/useLanguageStore';
 import { supabase } from '../../lib/supabase';
 import { storageService } from '../../lib/storage';
@@ -35,6 +37,7 @@ export const TweetDetailPage: React.FC = () => {
   const { user } = useAuth();
   const { replies, fetchReplies, likeTweet, unlikeTweet } = useTweets();
   const { recordView } = useTweetViews();
+  const { checkIfUserIsAdmin } = usePinnedTweets();
   const { language, isRTL } = useLanguageStore();
   
   const [tweet, setTweet] = useState<Tweet | null>(null);
@@ -43,6 +46,7 @@ export const TweetDetailPage: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [showReplyComposer, setShowReplyComposer] = useState(false);
   const [showSidebar, setShowSidebar] = useState(true);
+  const [isAdmin, setIsAdmin] = useState(false);
 
   // Handle window resize to show/hide sidebar
   useEffect(() => {
@@ -83,6 +87,11 @@ export const TweetDetailPage: React.FC = () => {
       recordView(tweet.id);
     }
   }, [tweet, user, recordView]);
+
+  // Check if current user is admin
+  useEffect(() => {
+    checkIfUserIsAdmin().then(setIsAdmin);
+  }, [checkIfUserIsAdmin]);
 
   const formatTweetData = (tweetData: TweetWithProfile, userLikes: string[], userRetweets: string[], userBookmarks: string[]): Tweet => {
     return {
@@ -581,6 +590,19 @@ export const TweetDetailPage: React.FC = () => {
                   {tweet.content}
                 </div>
 
+                {/* Tweet Badges */}
+                <TweetBadges
+                  tweetId={tweet.id}
+                  tags={tweet.tags || []}
+                  isAdmin={isAdmin}
+                  onTagsUpdate={(newTags) => {
+                    setTweet(prev => prev ? {
+                      ...prev,
+                      tags: newTags
+                    } : null);
+                  }}
+                />
+
                 {/* Images */}
                 {tweet.images && tweet.images.length > 0 && (
                   <div className="mb-4 rounded-2xl overflow-hidden border border-gray-200">
@@ -871,6 +893,19 @@ export const TweetDetailPage: React.FC = () => {
               >
                 {tweet.content}
               </div>
+
+              {/* Tweet Badges */}
+              <TweetBadges
+                tweetId={tweet.id}
+                tags={tweet.tags || []}
+                isAdmin={isAdmin}
+                onTagsUpdate={(newTags) => {
+                  setTweet(prev => prev ? {
+                    ...prev,
+                    tags: newTags
+                  } : null);
+                }}
+              />
 
               {/* Images */}
               {tweet.images && tweet.images.length > 0 && (

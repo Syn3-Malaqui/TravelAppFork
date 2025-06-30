@@ -22,6 +22,7 @@ import { LazyAvatar } from '../ui/LazyAvatar';
 import { LazyImage } from '../ui/LazyImage';
 import { PinnedIndicator } from '../ui/PinnedIndicator';
 import { VerifiedBadge } from '../ui/VerifiedBadge';
+import { TweetBadges } from '../ui/TweetBadges';
 import { 
   DropdownMenu,
   DropdownMenuContent,
@@ -749,6 +750,19 @@ export const MobileTweetCard: React.FC<MobileTweetCardProps> = ({
                   <span className="text-gray-500 text-sm italic"> (truncated)</span>
                 )}
               </div>
+
+              {/* Tweet Badges */}
+              <TweetBadges
+                tweetId={localTweet.id}
+                tags={localTweet.tags || []}
+                isAdmin={isAdmin}
+                onTagsUpdate={(newTags) => {
+                  setLocalTweet(prev => ({
+                    ...prev,
+                    tags: newTags
+                  }));
+                }}
+              />
 
               {/* Original Tweet Preview (for replies) */}
               {originalTweet && (

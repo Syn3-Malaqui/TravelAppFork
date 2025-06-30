@@ -89,35 +89,79 @@ export const AdminPanel: React.FC = () => {
       setLoading(true);
       console.log('🔍 Fetching users from database...');
       
-      // Optimized query - only essential fields and limited results
-      const { data, error } = await supabase
-        .from('profiles')
-        .select(`
-          id,
-          username,
-          display_name,
-          avatar_url,
-          verified,
-          role,
-          followers_count,
-          created_at,
-          suspended,
-          suspended_at,
-          suspended_reason,
-          deleted_at
-        `)
-        .order('created_at', { ascending: false })
-        .limit(100); // Limit to 100 users for better performance
+      // Check if current user is admin first
+      const { data: isAdminData, error: adminError } = await supabase.rpc('is_admin_user');
+      
+      if (adminError) {
+        console.error('❌ Error checking admin status:', adminError);
+        throw new Error('Unable to verify admin permissions');
+      }
+
+      if (!isAdminData) {
+        throw new Error('Admin access required');
+      }
+
+      console.log('✅ Admin access confirmed');
+      
+      // Use RPC to bypass RLS and get all profiles including deleted ones
+      const { data, error } = await supabase.rpc('get_all_profiles_for_admin');
+
+      // If the RPC doesn't exist, fall back to direct query
+      if (error && error.code === '42883') {
+        console.log('🔄 Using fallback query for admin profiles...');
+        
+        // Direct query with admin bypass
+        const { data: fallbackData, error: fallbackError } = await supabase
+          .from('profiles')
+          .select(`
+            id,
+            username,
+            display_name,
+            avatar_url,
+            verified,
+            role,
+            followers_count,
+            created_at,
+            suspended,
+            suspended_at,
+            suspended_reason,
+            deleted_at
+          `)
+          .order('created_at', { ascending: false })
+          .limit(100);
+
+        if (fallbackError) {
+          console.error('❌ Fallback query error:', fallbackError);
+          throw fallbackError;
+        }
+
+        console.log('✅ Fetched users via fallback:', fallbackData?.length || 0);
+        
+        // Add missing fields with defaults
+        const usersWithDefaults = (fallbackData || []).map((user: any) => ({
+          ...user,
+          bio: '', // Don't load bio initially
+          following_count: 0,
+          suspended: user.suspended || false,
+          suspended_at: user.suspended_at || undefined,
+          suspended_reason: user.suspended_reason || undefined,
+          deleted_at: user.deleted_at || undefined
+        }));
+        
+        setUsers(usersWithDefaults);
+        setFilteredUsers(usersWithDefaults);
+        return;
+      }
 
       if (error) {
         console.error('❌ Error fetching users:', error);
         throw error;
       }
       
-      console.log('✅ Fetched users:', data?.length || 0);
+      console.log('✅ Fetched users via admin RPC:', data?.length || 0);
       
       // Add missing fields with defaults
-      const usersWithDefaults = (data || []).map(user => ({
+      const usersWithDefaults = (data || []).map((user: any) => ({
         ...user,
         bio: '', // Don't load bio initially
         following_count: 0,
@@ -129,8 +173,15 @@ export const AdminPanel: React.FC = () => {
       
       setUsers(usersWithDefaults);
       setFilteredUsers(usersWithDefaults);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error fetching users:', error);
+      
+      // Show user-friendly error
+      if (error.message === 'Admin access required') {
+        alert('You do not have permission to access the admin panel.');
+      } else {
+        alert(`Failed to load users: ${error.message}`);
+      }
     } finally {
       setLoading(false);
     }
