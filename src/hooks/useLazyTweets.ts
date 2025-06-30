@@ -156,7 +156,7 @@ export const useLazyTweets = (options: UseLazyTweetsOptions = {}) => {
       if (!user || tweetIds.length === 0) return;
 
       // Simplified parallel queries
-      const [likesResult, retweetsResult, bookmarksResult] = await Promise.all([
+        const [likesResult, retweetsResult, bookmarksResult] = await Promise.all([
         supabase.from('likes').select('tweet_id').eq('user_id', user.id).in('tweet_id', tweetIds),
         supabase.from('retweets').select('tweet_id').eq('user_id', user.id).in('tweet_id', tweetIds),
         supabase.from('bookmarks').select('tweet_id').eq('user_id', user.id).in('tweet_id', tweetIds)
@@ -281,28 +281,28 @@ export const useLazyTweets = (options: UseLazyTweetsOptions = {}) => {
         let originalTweets: any[] = [];
         if (retweetIds.length > 0) {
           const { data: originalData } = await supabase
-            .from('tweets')
-            .select(`
+        .from('tweets')
+        .select(`
+            id,
+            content,
+            image_urls,
+            hashtags,
+            mentions,
+            tags,
+            likes_count,
+            retweets_count,
+            replies_count,
+            views_count,
+            created_at,
+            profiles!tweets_author_id_fkey (
               id,
-              content,
-              image_urls,
-              hashtags,
-              mentions,
-              tags,
-              likes_count,
-              retweets_count,
-              replies_count,
-              views_count,
-              created_at,
-              profiles!tweets_author_id_fkey (
-                id,
-                username,
-                display_name,
-                avatar_url,
-                verified,
-                followers_count,
-                following_count,
-                country,
+              username,
+              display_name,
+              avatar_url,
+              verified,
+              followers_count,
+              following_count,
+              country,
                 created_at,
                 bio
               )
@@ -326,7 +326,7 @@ export const useLazyTweets = (options: UseLazyTweetsOptions = {}) => {
 
         setTweets(prev => [...prev, ...formattedTweets]);
         offsetRef.current += tweetsData.length;
-
+        
         // Update interactions asynchronously (non-blocking)
         const tweetIds = formattedTweets.map(t => t.id);
         setTimeout(() => updateUserInteractions(tweetIds), 100);
@@ -382,7 +382,7 @@ export const useLazyTweets = (options: UseLazyTweetsOptions = {}) => {
   // Initial load
   useEffect(() => {
     if (initialLoad) {
-      loadMoreTweets();
+        loadMoreTweets();
     }
   }, [initialLoad, loadMoreTweets]);
 

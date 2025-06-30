@@ -35,6 +35,7 @@ export const ComposePage: React.FC = () => {
   } | null>(null);
   const [profileLoading, setProfileLoading] = useState(true);
   const [isMobile, setIsMobile] = useState(false);
+  const [isTablet, setIsTablet] = useState(false);
   const [categoriesDropdownOpen, setCategoriesDropdownOpen] = useState(false);
   const [countriesDropdownOpen, setCountriesDropdownOpen] = useState(false);
   const { createTweet } = useTweets();
@@ -62,14 +63,14 @@ export const ComposePage: React.FC = () => {
 
   // Detect mobile device
   useEffect(() => {
-    const checkMobile = () => {
-      setIsMobile(window.innerWidth < 768);
+    const checkViewport = () => {
+      const width = window.innerWidth;
+      setIsMobile(width < 768);
+      setIsTablet(width >= 768 && width < 1024);
     };
-    
-    checkMobile();
-    window.addEventListener('resize', checkMobile);
-    
-    return () => window.removeEventListener('resize', checkMobile);
+    checkViewport();
+    window.addEventListener('resize', checkViewport);
+    return () => window.removeEventListener('resize', checkViewport);
   }, []);
 
   // Fetch user profile data
@@ -802,9 +803,11 @@ export const ComposePage: React.FC = () => {
 
       {/* Bottom Actions - Fixed position with proper spacing for mobile navigation */}
       <div className={`bg-white border-t border-gray-200 flex-shrink-0 ${
-        isMobile 
-          ? 'fixed bottom-20 left-0 right-0 p-4 shadow-lg z-40 border-b border-gray-200' 
-          : 'p-3'
+        isMobile
+          ? 'fixed bottom-20 left-0 right-0 p-4 shadow-lg z-40 border-b border-gray-200'
+          : isTablet
+            ? 'fixed bottom-4 left-0 right-0 p-4 shadow-lg z-40 border-b border-gray-200'
+            : 'p-3'
       }`}>
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-3">
