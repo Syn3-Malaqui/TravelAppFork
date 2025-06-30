@@ -17,11 +17,18 @@ export const usePinnedTweets = () => {
       setLoading(true);
       setError(null);
 
-      const { error } = await supabase.rpc('pin_tweet_to_profile', {
+      console.log('📌 Pinning tweet to profile:', tweetId);
+
+      const { data, error } = await supabase.rpc('pin_tweet_to_profile', {
         tweet_id: tweetId
       });
 
-      if (error) throw error;
+      if (error) {
+        console.error('❌ Profile pin error:', error);
+        throw error;
+      }
+
+      console.log('✅ Profile pin success:', data);
       return true;
     } catch (err: any) {
       console.error('Error pinning tweet to profile:', err);
@@ -42,11 +49,18 @@ export const usePinnedTweets = () => {
       setLoading(true);
       setError(null);
 
-      const { error } = await supabase.rpc('unpin_tweet_from_profile', {
+      console.log('📌 Unpinning tweet from profile:', tweetId);
+
+      const { data, error } = await supabase.rpc('unpin_tweet_from_profile', {
         tweet_id: tweetId
       });
 
-      if (error) throw error;
+      if (error) {
+        console.error('❌ Profile unpin error:', error);
+        throw error;
+      }
+
+      console.log('✅ Profile unpin success:', data);
       return true;
     } catch (err: any) {
       console.error('Error unpinning tweet from profile:', err);
@@ -67,11 +81,18 @@ export const usePinnedTweets = () => {
       setLoading(true);
       setError(null);
 
-      const { error } = await supabase.rpc('pin_tweet_to_home', {
+      console.log('🏠 Pinning tweet to home timeline:', tweetId);
+
+      const { data, error } = await supabase.rpc('pin_tweet_to_home', {
         tweet_id: tweetId
       });
 
-      if (error) throw error;
+      if (error) {
+        console.error('❌ Home pin error:', error);
+        throw error;
+      }
+
+      console.log('✅ Home pin success:', data);
       return true;
     } catch (err: any) {
       console.error('Error pinning tweet to home:', err);
@@ -92,11 +113,18 @@ export const usePinnedTweets = () => {
       setLoading(true);
       setError(null);
 
-      const { error } = await supabase.rpc('unpin_tweet_from_home', {
+      console.log('🏠 Unpinning tweet from home timeline:', tweetId);
+
+      const { data, error } = await supabase.rpc('unpin_tweet_from_home', {
         tweet_id: tweetId
       });
 
-      if (error) throw error;
+      if (error) {
+        console.error('❌ Home unpin error:', error);
+        throw error;
+      }
+
+      console.log('✅ Home unpin success:', data);
       return true;
     } catch (err: any) {
       console.error('Error unpinning tweet from home:', err);
@@ -108,21 +136,54 @@ export const usePinnedTweets = () => {
   }, [user]);
 
   const checkIfUserIsAdmin = useCallback(async () => {
-    if (!user) return false;
+    if (!user) {
+      console.log('🔍 Admin check: No user logged in');
+      return false;
+    }
 
     try {
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('verified, username, role')
-        .eq('id', user.id)
-        .single();
+      console.log('🔍 Checking admin status for user:', user.id);
 
-      if (error) throw error;
+      // Use the new helper function for more reliable admin checking
+      const { data, error } = await supabase.rpc('check_admin_status');
+
+      if (error) {
+        console.error('❌ Admin check error:', error);
+        throw error;
+      }
+
+      console.log('🔍 Admin check result:', data);
       
-      return data.verified && (data.username === 'admin' || data.role === 'admin');
+      // The function returns a JSON object with can_pin_to_home boolean
+      return data?.can_pin_to_home || false;
     } catch (err) {
       console.error('Error checking admin status:', err);
-      return false;
+      
+      // Fallback to the old method if the new function fails
+      try {
+        console.log('🔄 Falling back to profile-based admin check');
+        
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('verified, username, role')
+          .eq('id', user.id)
+          .single();
+
+        if (error) throw error;
+        
+        const isAdmin = data.verified && (data.username === 'admin' || data.role === 'admin');
+        console.log('🔍 Fallback admin check:', { 
+          verified: data.verified, 
+          username: data.username, 
+          role: data.role, 
+          isAdmin 
+        });
+        
+        return isAdmin;
+      } catch (fallbackErr) {
+        console.error('❌ Fallback admin check also failed:', fallbackErr);
+        return false;
+      }
     }
   }, [user]);
 

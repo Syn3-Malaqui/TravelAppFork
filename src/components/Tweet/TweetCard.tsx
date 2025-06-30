@@ -45,6 +45,7 @@ interface TweetCardProps {
   currentUserId?: string;
   isReply?: boolean;
   parentTweetId?: string; // ID of the parent tweet in the thread
+  onPinStatusChange?: () => void; // Callback to refresh pinned tweets
 }
 
 // Function to detect if text contains Arabic characters
@@ -65,7 +66,8 @@ export const TweetCard: React.FC<TweetCardProps> = ({
   onBookmark, 
   currentUserId,
   isReply = false,
-  parentTweetId
+  parentTweetId,
+  onPinStatusChange
 }) => {
   const navigate = useNavigate();
   const [showReplies, setShowReplies] = useState(false);
@@ -172,6 +174,7 @@ export const TweetCard: React.FC<TweetCardProps> = ({
           pinnedToProfile: false,
           pinnedAt: undefined
         }));
+        onPinStatusChange?.(); // Refresh pinned tweets
       }
     } else {
       const success = await pinToProfile(localTweet.id);
@@ -181,6 +184,7 @@ export const TweetCard: React.FC<TweetCardProps> = ({
           pinnedToProfile: true,
           pinnedAt: new Date()
         }));
+        onPinStatusChange?.(); // Refresh pinned tweets
       }
     }
   };
@@ -196,6 +200,7 @@ export const TweetCard: React.FC<TweetCardProps> = ({
           pinnedToHome: false,
           pinnedAt: undefined
         }));
+        onPinStatusChange?.(); // Refresh pinned tweets
       }
     } else {
       const success = await pinToHome(localTweet.id);
@@ -205,6 +210,7 @@ export const TweetCard: React.FC<TweetCardProps> = ({
           pinnedToHome: true,
           pinnedAt: new Date()
         }));
+        onPinStatusChange?.(); // Refresh pinned tweets
       }
     }
   };

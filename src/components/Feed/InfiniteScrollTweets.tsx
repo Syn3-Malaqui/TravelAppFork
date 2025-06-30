@@ -29,6 +29,7 @@ export const InfiniteScrollTweets: React.FC<InfiniteScrollTweetsProps> = ({
   const [filteredTweets, setFilteredTweets] = useState<Tweet[]>([]);
   const [pinnedTweets, setPinnedTweets] = useState<Tweet[]>([]);
   const [loadingPinned, setLoadingPinned] = useState(false);
+  const [pinnedTweetsKey, setPinnedTweetsKey] = useState(0); // Force refresh key
   
   // Use different hooks based on feed type with optimized page sizes
   const forYouFeed = useLazyTweets({
@@ -57,6 +58,7 @@ export const InfiniteScrollTweets: React.FC<InfiniteScrollTweetsProps> = ({
     
     try {
       setLoadingPinned(true);
+      console.log('🔄 Loading pinned tweets...');
       
       const { data, error } = await supabase
         .from('tweets')
@@ -94,6 +96,8 @@ export const InfiniteScrollTweets: React.FC<InfiniteScrollTweetsProps> = ({
         .limit(5); // Limit to 5 pinned tweets max
 
       if (error) throw error;
+
+      console.log('✅ Pinned tweets loaded:', data.length);
 
       // Get current user interactions for pinned tweets
       let userLikes: string[] = [];
@@ -156,12 +160,18 @@ export const InfiniteScrollTweets: React.FC<InfiniteScrollTweetsProps> = ({
     } finally {
       setLoadingPinned(false);
     }
-  }, [feedType, user]);
+  }, [feedType, user, pinnedTweetsKey]);
 
   // Load pinned tweets when component mounts or feed type changes
   useEffect(() => {
     loadPinnedTweets();
   }, [loadPinnedTweets]);
+
+  // Function to refresh pinned tweets (can be called from child components)
+  const refreshPinnedTweets = useCallback(() => {
+    console.log('🔄 Refreshing pinned tweets...');
+    setPinnedTweetsKey(prev => prev + 1);
+  }, []);
 
   // Apply filters to tweets
   useEffect(() => {
@@ -199,8 +209,8 @@ export const InfiniteScrollTweets: React.FC<InfiniteScrollTweetsProps> = ({
         }
       },
       {
+        rootMargin: '400px', // Preload when 400px from bottom
         threshold: 0.1,
-        rootMargin: '300px', // Start loading 300px before reaching the bottom for better UX
       }
     );
 
@@ -218,83 +228,46 @@ export const InfiniteScrollTweets: React.FC<InfiniteScrollTweetsProps> = ({
     };
   }, [setupObserver]);
 
-  // Reset feed when switching tabs
-  useEffect(() => {
-    if (feedType === 'for-you') {
-      followingFeed.reset();
-    } else {
-      forYouFeed.reset();
-    }
-  }, [feedType, forYouFeed.reset, followingFeed.reset]);
-
+  // Enhanced interaction handlers with optimistic updates
   const handleLike = async (tweetId: string, isCurrentlyLiked: boolean) => {
     try {
+      console.log(`${isCurrentlyLiked ? '💔' : '❤️'} ${isCurrentlyLiked ? 'Unliking' : 'Liking'} tweet:`, tweetId);
+      
       if (isCurrentlyLiked) {
         await unlikeTweet(tweetId);
       } else {
         await likeTweet(tweetId);
       }
-      
-      // Update local state to reflect the change
-      setFilteredTweets(prev => 
-        prev.map(tweet => 
-          tweet.id === tweetId 
-            ? { 
-                ...tweet, 
-                isLiked: !isCurrentlyLiked,
-                likes: isCurrentlyLiked ? tweet.likes - 1 : tweet.likes + 1
-              }
-            : tweet
-        )
-      );
     } catch (error) {
-      console.error('Error toggling like:', error);
+      console.error('Error handling like:', error);
     }
   };
 
   const handleRetweet = async (tweetId: string, isCurrentlyRetweeted: boolean) => {
     try {
+      console.log(`${isCurrentlyRetweeted ? '↩️' : '🔁'} ${isCurrentlyRetweeted ? 'Unretweeting' : 'Retweeting'} tweet:`, tweetId);
+      
       if (isCurrentlyRetweeted) {
         await unretweetTweet(tweetId);
       } else {
         await retweetTweet(tweetId);
       }
-      
-      // Update local state to reflect the change
-      setFilteredTweets(prev => 
-        prev.map(tweet => 
-          tweet.id === tweetId 
-            ? { 
-                ...tweet, 
-                isRetweeted: !isCurrentlyRetweeted,
-                retweets: isCurrentlyRetweeted ? tweet.retweets - 1 : tweet.retweets + 1
-              }
-            : tweet
-        )
-      );
     } catch (error) {
-      console.error('Error toggling retweet:', error);
+      console.error('Error handling retweet:', error);
     }
   };
 
   const handleBookmark = async (tweetId: string, isCurrentlyBookmarked: boolean) => {
     try {
+      console.log(`${isCurrentlyBookmarked ? '🔖' : '📌'} ${isCurrentlyBookmarked ? 'Unbookmarking' : 'Bookmarking'} tweet:`, tweetId);
+      
       if (isCurrentlyBookmarked) {
         await unbookmarkTweet(tweetId);
       } else {
         await bookmarkTweet(tweetId);
       }
-      
-      // Update local state to reflect the change
-      setFilteredTweets(prev => 
-        prev.map(tweet => 
-          tweet.id === tweetId 
-            ? { ...tweet, isBookmarked: !isCurrentlyBookmarked }
-            : tweet
-        )
-      );
     } catch (error) {
-      console.error('Error toggling bookmark:', error);
+      console.error('Error handling bookmark:', error);
     }
   };
 
@@ -304,135 +277,109 @@ export const InfiniteScrollTweets: React.FC<InfiniteScrollTweetsProps> = ({
 
   if (error) {
     return (
-      <div className="flex flex-col items-center justify-center py-12 px-4">
-        <div className="text-red-500 text-center">
-          <p className="text-lg font-semibold mb-2">Error loading tweets</p>
-          <p className="text-sm text-gray-600">{error}</p>
+      <div className="p-8 text-center">
+        <div className="text-red-500 mb-4">
+          <p className="text-lg font-semibold">Failed to load tweets</p>
+          <p className="text-sm">{error}</p>
         </div>
+        <button
+          onClick={() => window.location.reload()}
+          className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
+        >
+          Retry
+        </button>
       </div>
     );
   }
 
-  // Empty state with appropriate messaging based on filters and feed type
-  if (filteredTweets.length === 0 && !loading) {
-    return (
-      <div className="w-full text-center py-12 text-gray-500">
-        {feedType === 'following' && tweets.length === 0 ? (
-          <>
-            <p className="text-lg mb-4">No tweets from people you follow yet!</p>
-            <p className="text-sm text-gray-400 mb-4">Follow some accounts to see their tweets here.</p>
-            <button 
-              onClick={() => navigate('/search')}
-              className="bg-blue-500 hover:bg-blue-600 text-white px-6 py-2 rounded-full font-medium transition-colors"
-            >
-              Find people to follow
-            </button>
-          </>
-        ) : categoryFilter || countryFilter !== 'ALL' ? (
-          <>
-            <p className="text-lg">No tweets found with the selected filters.</p>
-            <div className="mt-4 space-x-2">
-              <button 
-                onClick={() => navigate('/')}
-                className="text-blue-500 hover:text-blue-700 underline"
-              >
-                Clear filters
-              </button>
-            </div>
-          </>
-        ) : (
-          <>
-            <p className="text-lg mb-4">No tweets yet!</p>
-            <p className="text-sm text-gray-400 mb-4">Be the first to share something.</p>
-            <button 
-              onClick={handleCompose}
-              className="bg-blue-500 hover:bg-blue-600 text-white px-6 py-2 rounded-full font-medium transition-colors"
-            >
-              Create your first tweet
-            </button>
-          </>
-        )}
-      </div>
-    );
+  // Show loading state for initial load
+  if (loading && filteredTweets.length === 0 && pinnedTweets.length === 0) {
+    return <TweetSkeletonList count={10} isMobile={isMobile} />;
   }
+
+  const TweetComponent = isMobile ? MobileTweetCard : TweetCard;
+  const showFilters = categoryFilter || (countryFilter && countryFilter !== 'ALL');
 
   return (
-    <div className="flex flex-col">
-      {/* Initial loading state */}
-      {filteredTweets.length === 0 && loading && (
-        <TweetSkeletonList count={5} isMobile={isMobile} />
-      )}
-
-      {/* Pinned Tweets - Only show on "For You" tab and when not filtered */}
-      {feedType === 'for-you' && pinnedTweets.length > 0 && !categoryFilter && countryFilter === 'ALL' && (
+    <div className="w-full">
+      {/* Pinned Tweets Section - Only show on "For You" tab without filters */}
+      {feedType === 'for-you' && !showFilters && (
         <>
-          {pinnedTweets.map((tweet, index) => (
-            <div key={`pinned-${tweet.id}-${index}`} className="w-full">
-              {isMobile ? (
-                <MobileTweetCard 
-                  tweet={tweet}
-                  onLike={() => handleLike(tweet.id, tweet.isLiked)}
-                  onRetweet={() => handleRetweet(tweet.id, tweet.isRetweeted)}
-                  onBookmark={() => handleBookmark(tweet.id, tweet.isBookmarked)}
-                  currentUserId={user?.id}
-                />
-              ) : (
-                <TweetCard 
-                  tweet={tweet} 
-                  onLike={() => handleLike(tweet.id, tweet.isLiked)}
-                  onRetweet={() => handleRetweet(tweet.id, tweet.isRetweeted)}
-                  onBookmark={() => handleBookmark(tweet.id, tweet.isBookmarked)}
-                  currentUserId={user?.id}
-                />
-              )}
+          {loadingPinned && pinnedTweets.length === 0 && (
+            <div className="p-4 text-center">
+              <LoadingSpinner size="sm" />
+              <p className="text-sm text-gray-500 mt-2">Loading pinned tweets...</p>
             </div>
-          ))}
-          
-          {/* Divider between pinned and regular tweets */}
-          {filteredTweets.length > 0 && (
-            <div className="border-b border-gray-200 my-2" />
           )}
-        </>
-      )}
-
-      {/* Regular Tweets */}
-      {filteredTweets.map((tweet, index) => {
-        return (
-          <div key={`${tweet.id}-${tweet.retweetedAt || tweet.createdAt}-${index}`} className="w-full">
-            {isMobile ? (
-              <MobileTweetCard 
+          
+          {pinnedTweets.map((tweet) => (
+            <div key={`pinned-${tweet.id}`}>
+              <TweetComponent
                 tweet={tweet}
                 onLike={() => handleLike(tweet.id, tweet.isLiked)}
                 onRetweet={() => handleRetweet(tweet.id, tweet.isRetweeted)}
                 onBookmark={() => handleBookmark(tweet.id, tweet.isBookmarked)}
                 currentUserId={user?.id}
+                onPinStatusChange={refreshPinnedTweets} // Pass refresh function
               />
-            ) : (
-              <TweetCard 
-                tweet={tweet} 
-                onLike={() => handleLike(tweet.id, tweet.isLiked)}
-                onRetweet={() => handleRetweet(tweet.id, tweet.isRetweeted)}
-                onBookmark={() => handleBookmark(tweet.id, tweet.isBookmarked)}
-                currentUserId={user?.id}
-              />
-            )}
-          </div>
-        );
-      })}
+            </div>
+          ))}
+          
+          {/* Divider between pinned and regular tweets */}
+          {pinnedTweets.length > 0 && (
+            <div className="border-t-8 border-gray-100 my-2" />
+          )}
+        </>
+      )}
+
+      {/* Regular Tweets */}
+      {filteredTweets.map((tweet) => (
+        <div key={tweet.id}>
+          <TweetComponent
+            tweet={tweet}
+            onLike={() => handleLike(tweet.id, tweet.isLiked)}
+            onRetweet={() => handleRetweet(tweet.id, tweet.isRetweeted)}
+            onBookmark={() => handleBookmark(tweet.id, tweet.isBookmarked)}
+            currentUserId={user?.id}
+            onPinStatusChange={refreshPinnedTweets} // Pass refresh function
+          />
+        </div>
+      ))}
+
+      {/* Loading indicator for infinite scroll */}
+      {loading && filteredTweets.length > 0 && (
+        <div className="p-4 text-center">
+          <LoadingSpinner size="sm" />
+        </div>
+      )}
 
       {/* Load more trigger */}
-      <div ref={loadMoreRef} className="w-full">
-        {loading && filteredTweets.length > 0 && (
-          <div className="py-8">
-            <LoadingSpinner size="md" text="Loading more tweets..." />
-          </div>
-        )}
-      </div>
+      <div ref={loadMoreRef} className="h-4" />
 
-      {/* End of content */}
+      {/* No more tweets message */}
       {!hasMore && filteredTweets.length > 0 && (
-        <div className="text-center py-8 text-gray-500">
-          <p className="text-sm">You've reached the end!</p>
+        <div className="p-8 text-center text-gray-500">
+          <p>You've reached the end!</p>
+        </div>
+      )}
+
+      {/* Empty state */}
+      {!loading && filteredTweets.length === 0 && pinnedTweets.length === 0 && (
+        <div className="p-8 text-center text-gray-500">
+          <p className="text-lg mb-2">No tweets found</p>
+          <p className="text-sm">
+            {showFilters 
+              ? 'Try adjusting your filters or check back later.'
+              : 'Be the first to share something!'}
+          </p>
+          {!showFilters && (
+            <button
+              onClick={handleCompose}
+              className="mt-4 px-6 py-2 bg-blue-500 text-white rounded-full hover:bg-blue-600 transition-colors"
+            >
+              Compose Tweet
+            </button>
+          )}
         </div>
       )}
     </div>
