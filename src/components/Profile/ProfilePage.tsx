@@ -719,6 +719,7 @@ export const ProfilePage: React.FC = () => {
                       onRetweet={() => handleRetweet(tweet.id)}
                       onBookmark={() => handleBookmark(tweet.id)}
                       currentUserId={currentUser?.id}
+                      onPinStatusChange={refreshProfileData}
                     />
                   </div>
                 ))
@@ -918,6 +919,7 @@ export const ProfilePage: React.FC = () => {
                     onRetweet={() => handleRetweet(tweet.id)}
                     onBookmark={() => handleBookmark(tweet.id)}
                     currentUserId={currentUser?.id}
+                    onPinStatusChange={refreshProfileData}
                   />
                 </div>
               ))
