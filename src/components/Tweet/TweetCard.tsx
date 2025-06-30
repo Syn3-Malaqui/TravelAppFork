@@ -9,7 +9,7 @@ import {
   Bookmark,
   MoreHorizontal,
   Eye,
-  CheckCircle,
+  Check,
   ChevronDown,
   ChevronUp,
   X,
@@ -541,7 +541,9 @@ export const TweetCard: React.FC<TweetCardProps> = ({
                 {language === 'en' ? ' retweeted' : ' أعاد التغريد'}
               </span>
               {localTweet.retweetedBy.verified && (
-                <CheckCircle className="w-4 h-4 text-blue-500 fill-current" />
+                <div className="w-4 h-4 bg-blue-500 rounded-full flex items-center justify-center flex-shrink-0">
+                  <Check className="w-2.5 h-2.5 text-white" />
+                </div>
               )}
               <span>·</span>
               <span>
@@ -602,7 +604,9 @@ export const TweetCard: React.FC<TweetCardProps> = ({
                     {localTweet.author.displayName}
                   </span>
                   {localTweet.author.verified && (
-                    <CheckCircle className="w-5 h-5 text-blue-500 fill-current flex-shrink-0" />
+                    <div className="w-4 h-4 bg-blue-500 rounded-full flex items-center justify-center flex-shrink-0">
+                      <Check className="w-2.5 h-2.5 text-white" />
+                    </div>
                   )}
                   <span 
                     className="text-gray-500 truncate cursor-pointer hover:underline"
@@ -695,7 +699,9 @@ export const TweetCard: React.FC<TweetCardProps> = ({
                           {originalTweet.author.displayName}
                         </span>
                         {originalTweet.author.verified && (
-                          <CheckCircle className="w-4 h-4 text-blue-500 fill-current flex-shrink-0" />
+                          <div className="w-4 h-4 bg-blue-500 rounded-full flex items-center justify-center flex-shrink-0">
+                            <Check className="w-2.5 h-2.5 text-white" />
+                          </div>
                         )}
                         <span className="text-gray-500 text-sm truncate">
                           @{originalTweet.author.username}

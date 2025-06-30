@@ -8,11 +8,11 @@ import {
   User, 
   LogOut,
   Languages,
-  Settings,
-  CheckCircle
+  Settings
 } from 'lucide-react';
 import { Button } from '../ui/button';
 import { Avatar, AvatarImage, AvatarFallback } from '../ui/avatar';
+import { VerifiedBadge } from '../ui/VerifiedBadge';
 
 import { useAuth } from '../../hooks/useAuth';
 import { useNotifications } from '../../hooks/useNotifications';
@@ -181,9 +181,7 @@ export const Sidebar: React.FC = () => {
             <div className="min-w-0 text-right">
               <div className="font-bold text-sm truncate flex items-center justify-end">
                 {userProfile?.displayName || 'User'}
-                {userProfile?.verified && (
-                  <CheckCircle className="w-4 h-4 text-blue-500 fill-current flex-shrink-0 mr-1" />
-                )}
+                {userProfile?.verified && <VerifiedBadge size="md" />}
               </div>
               <div className="text-gray-500 text-sm truncate">@{userProfile?.username || 'user'}</div>
             </div>
@@ -199,9 +197,7 @@ export const Sidebar: React.FC = () => {
             <div className="min-w-0 text-left">
               <div className="font-bold text-sm truncate flex items-center">
                 {userProfile?.displayName || 'User'}
-                {userProfile?.verified && (
-                  <CheckCircle className="w-4 h-4 text-blue-500 fill-current flex-shrink-0 ml-1" />
-                )}
+                {userProfile?.verified && <VerifiedBadge size="md" />}
               </div>
               <div className="text-gray-500 text-sm truncate">@{userProfile?.username || 'user'}</div>
             </div>

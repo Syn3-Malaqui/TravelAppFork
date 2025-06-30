@@ -7,12 +7,13 @@ import {
   Repeat2, 
   Share, 
   MoreHorizontal,
-  CheckCircle,
+  Bookmark,
+  Eye,
+  Check,
+  X,
   ChevronDown,
   ChevronUp,
-  X,
-  CornerUpLeft,
-  Eye
+  CornerUpLeft
 } from 'lucide-react';
 import { Button } from '../ui/button';
 import { LazyAvatar } from '../ui/LazyAvatar';
@@ -30,6 +31,7 @@ import { useTweets } from '../../hooks/useTweets';
 import { useTweetViews } from '../../hooks/useTweetViews';
 import { useLanguageStore } from '../../store/useLanguageStore';
 import { supabase } from '../../lib/supabase';
+import { VerifiedBadge } from '../ui/VerifiedBadge';
 
 interface MobileTweetCardProps {
   tweet: Tweet;
@@ -491,7 +493,7 @@ export const MobileTweetCard: React.FC<MobileTweetCardProps> = ({
                 {language === 'en' ? ' retweeted' : ' أعاد التغريد'}
               </span>
               {tweet.retweetedBy.verified && (
-                <CheckCircle className="w-3 h-3 text-blue-500 fill-current" />
+                <VerifiedBadge size="md" />
               )}
               <span>·</span>
               <span>
@@ -546,9 +548,7 @@ export const MobileTweetCard: React.FC<MobileTweetCardProps> = ({
                   >
                     {tweet.author.displayName}
                   </span>
-                  {tweet.author.verified && (
-                    <CheckCircle className="w-4 h-4 text-blue-500 fill-current flex-shrink-0" />
-                  )}
+                  {tweet.author.verified && <VerifiedBadge size="md" />}
                   <span 
                     className="text-gray-500 text-sm truncate cursor-pointer hover:underline"
                     onClick={handleProfileClick}
@@ -639,9 +639,7 @@ export const MobileTweetCard: React.FC<MobileTweetCardProps> = ({
                         <span className="font-bold text-gray-900 text-xs truncate">
                           {originalTweet.author.displayName}
                         </span>
-                        {originalTweet.author.verified && (
-                          <CheckCircle className="w-2 h-2 text-blue-500 fill-current flex-shrink-0" />
-                        )}
+                        {originalTweet.author.verified && <VerifiedBadge size="md" />}
                         <span className="text-gray-500 text-xs truncate">
                           @{originalTweet.author.username}
                         </span>
