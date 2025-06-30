@@ -215,9 +215,21 @@ export const UserProfilePage: React.FC = () => {
         mentions: tweetData.mentions,
         tags: tweetData.tags || [],
         replyTo: tweetData.reply_to,
+        pinnedToProfile: tweetData.pinned_to_profile,
+        pinnedToHome: tweetData.pinned_to_home,
+        pinnedAt: tweetData.pinned_at,
       });
 
       const formattedTweets: Tweet[] = (tweetsData || []).map(formatTweetData);
+
+      // Ensure pinned tweets appear first
+      formattedTweets.sort((a, b) => {
+        if (a.pinnedToProfile !== b.pinnedToProfile) {
+          return a.pinnedToProfile ? -1 : 1;
+        }
+        return b.createdAt.getTime() - a.createdAt.getTime();
+      });
+
       const formattedReplies: Tweet[] = (repliesData || []).map(formatTweetData);
       const formattedLikes: Tweet[] = (likesData || []).filter((like: any) => like.tweets).map((like: any) => formatTweetData(like.tweets));
 
@@ -481,6 +493,7 @@ export const UserProfilePage: React.FC = () => {
                       onRetweet={() => handleRetweet(tweet.id)}
                       onBookmark={() => handleBookmark(tweet.id)}
                       currentUserId={currentUser?.id}
+                      onPinStatusChange={handleProfileUpdate}
                     />
                   </div>
                 ))
@@ -675,6 +688,7 @@ export const UserProfilePage: React.FC = () => {
                     onRetweet={() => handleRetweet(tweet.id)}
                     onBookmark={() => handleBookmark(tweet.id)}
                     currentUserId={currentUser?.id}
+                    onPinStatusChange={handleProfileUpdate}
                   />
                 </div>
               ))

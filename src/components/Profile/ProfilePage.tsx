@@ -282,6 +282,14 @@ export const ProfilePage: React.FC = () => {
         formatQuickTweetData(tweetData, profileData)
       );
       
+      // Sort so pinned tweets come first, then by creation date desc
+      formattedTweets.sort((a, b) => {
+        if (a.pinnedToProfile !== b.pinnedToProfile) {
+          return a.pinnedToProfile ? -1 : 1; // true first
+        }
+        return b.createdAt.getTime() - a.createdAt.getTime();
+      });
+      
       const formattedReplies: Tweet[] = (repliesResult.data || []).map(tweetData => 
         formatQuickTweetData(tweetData, profileData)
       );
