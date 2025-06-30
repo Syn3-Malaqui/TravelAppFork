@@ -709,7 +709,8 @@ export const TweetCard: React.FC<TweetCardProps> = ({
                       avoidCollisions={true}
                       collisionPadding={8}
                     >
-                      {isOwnTweet ? (
+                      {/* User's own tweet options */}
+                      {isOwnTweet && (
                         <>
                           <DropdownMenuItem 
                             onClick={handlePinToProfile} 
@@ -728,30 +729,38 @@ export const TweetCard: React.FC<TweetCardProps> = ({
                               </>
                             )}
                           </DropdownMenuItem>
-                          {isAdmin && (
-                            <DropdownMenuItem 
-                              onClick={handlePinToHome} 
-                              className="hover:bg-blue-50 text-blue-600"
-                              disabled={pinLoading}
-                            >
-                              {localTweet.pinnedToHome ? (
-                                <>
-                                  <PinOff className="w-4 h-4 mr-2" />
-                                  {language === 'en' ? 'Unpin from home' : 'إلغاء التثبيت من الرئيسية'}
-                                </>
-                              ) : (
-                                <>
-                                  <Pin className="w-4 h-4 mr-2" />
-                                  {language === 'en' ? 'Pin to home timeline' : 'تثبيت في الخط الزمني الرئيسي'}
-                                </>
-                              )}
-                            </DropdownMenuItem>
-                          )}
                           <DropdownMenuItem onClick={handleDelete} className="text-red-600 hover:bg-red-50">
                             {language === 'en' ? 'Delete Post' : 'حذف المنشور'}
                           </DropdownMenuItem>
                         </>
-                      ) : (
+                      )}
+
+                      {/* Admin options for any tweet */}
+                      {isAdmin && (
+                        <DropdownMenuItem 
+                          onClick={handlePinToHome} 
+                          className="hover:bg-blue-50 text-blue-600"
+                          disabled={pinLoading}
+                        >
+                          {localTweet.pinnedToHome ? (
+                            <>
+                              <PinOff className="w-4 h-4 mr-2" />
+                              {language === 'en' ? 'Unpin from home' : 'إلغاء التثبيت من الرئيسية'}
+                            </>
+                          ) : (
+                            <>
+                              <Pin className="w-4 h-4 mr-2" />
+                              {language === 'en' ? 
+                                (localTweet.isRetweet ? 'Pin original to home' : 'Pin to home timeline') : 
+                                (localTweet.isRetweet ? 'تثبيت الأصلي في الرئيسية' : 'تثبيت في الخط الزمني الرئيسي')
+                              }
+                            </>
+                          )}
+                        </DropdownMenuItem>
+                      )}
+
+                      {/* Other user's tweet options */}
+                      {!isOwnTweet && (
                         <>
                           <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleProfileClick(e); }} className="hover:bg-gray-50">
                             View Profile

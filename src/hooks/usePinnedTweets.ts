@@ -84,7 +84,7 @@ export const usePinnedTweets = () => {
       console.log('🏠 Pinning tweet to home timeline:', tweetId);
 
       const { data, error } = await supabase.rpc('pin_tweet_to_home', {
-        tweet_id: tweetId
+        input_tweet_id: tweetId
       });
 
       if (error) {
@@ -93,6 +93,12 @@ export const usePinnedTweets = () => {
       }
 
       console.log('✅ Home pin success:', data);
+      
+      // Log if it was a retweet that got converted to original
+      if (data?.was_retweet) {
+        console.log(`📌 Retweet ${data.input_tweet_id} was converted to original tweet ${data.pinned_tweet_id}`);
+      }
+      
       return true;
     } catch (err: any) {
       console.error('Error pinning tweet to home:', err);
@@ -116,7 +122,7 @@ export const usePinnedTweets = () => {
       console.log('🏠 Unpinning tweet from home timeline:', tweetId);
 
       const { data, error } = await supabase.rpc('unpin_tweet_from_home', {
-        tweet_id: tweetId
+        input_tweet_id: tweetId
       });
 
       if (error) {
@@ -125,6 +131,12 @@ export const usePinnedTweets = () => {
       }
 
       console.log('✅ Home unpin success:', data);
+      
+      // Log if it was a retweet that got converted to original
+      if (data?.was_retweet) {
+        console.log(`📌 Retweet ${data.input_tweet_id} was converted to original tweet ${data.unpinned_tweet_id} for unpinning`);
+      }
+      
       return true;
     } catch (err: any) {
       console.error('Error unpinning tweet from home:', err);
