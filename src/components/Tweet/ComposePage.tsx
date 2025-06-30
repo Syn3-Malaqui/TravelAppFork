@@ -807,7 +807,7 @@ export const ComposePage: React.FC = () => {
           ? 'fixed bottom-20 left-0 right-0 p-4 shadow-lg z-40 border-b border-gray-200'
           : 'fixed bottom-0 left-0 right-0 p-4 shadow-lg z-40 border-b border-gray-200'
       }`}>
-        <div className="flex items-center justify-between">
+        <div className="max-w-3xl mx-auto w-full flex items-center justify-between">
           <div className="flex items-center space-x-3">
             {/* Image Upload Button - Enhanced for Mobile */}
             <Button
