@@ -179,10 +179,14 @@ export const ProfilePage: React.FC = () => {
             retweets_count,
             replies_count,
             views_count,
-            created_at
+            created_at,
+            pinned_to_profile,
+            pinned_to_home,
+            pinned_at
           `)
           .eq('author_id', userId)
           .is('reply_to', null)
+          .order('pinned_to_profile', { ascending: false })
           .order('created_at', { ascending: false })
           .limit(20),
 
@@ -268,6 +272,9 @@ export const ProfilePage: React.FC = () => {
         mentions: tweetData.mentions || [],
         tags: tweetData.tags || [],
         replyTo: tweetData.reply_to,
+        pinnedToProfile: tweetData.pinned_to_profile || false,
+        pinnedToHome: tweetData.pinned_to_home || false,
+        pinnedAt: tweetData.pinned_at ? new Date(tweetData.pinned_at) : undefined,
       });
 
       // Format tweets quickly

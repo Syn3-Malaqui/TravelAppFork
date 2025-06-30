@@ -13,11 +13,14 @@ import {
   ChevronDown,
   ChevronUp,
   X,
-  CornerUpLeft
+  CornerUpLeft,
+  Pin,
+  PinOff
 } from 'lucide-react';
 import { Button } from '../ui/button';
 import { LazyAvatar } from '../ui/LazyAvatar';
 import { LazyImage } from '../ui/LazyImage';
+import { PinnedIndicator } from '../ui/PinnedIndicator';
 import { 
   DropdownMenu,
   DropdownMenuContent,
@@ -30,6 +33,7 @@ import { ReplyComposer } from './ReplyComposer';
 import { useTweets } from '../../hooks/useTweets';
 import { useTweetViews } from '../../hooks/useTweetViews';
 import { useProfileSync } from '../../hooks/useProfileSync';
+import { usePinnedTweets } from '../../hooks/usePinnedTweets';
 import { useLanguageStore } from '../../store/useLanguageStore';
 import { supabase } from '../../lib/supabase';
 
@@ -73,8 +77,10 @@ export const TweetCard: React.FC<TweetCardProps> = ({
   const [localTweet, setLocalTweet] = useState<Tweet>(tweet);
   const { replies, fetchReplies, createRetweet, removeRetweet } = useTweets();
   const { observeTweet, unobserveTweet, recordView } = useTweetViews();
+  const { pinToProfile, unpinFromProfile, pinToHome, unpinFromHome, checkIfUserIsAdmin, loading: pinLoading } = usePinnedTweets();
   const { language, isRTL } = useLanguageStore();
   const tweetRef = useRef<HTMLDivElement>(null);
+  const [isAdmin, setIsAdmin] = useState(false);
 
   // Sync local tweet state with prop changes
   useEffect(() => {
@@ -135,6 +141,11 @@ export const TweetCard: React.FC<TweetCardProps> = ({
     }
   }, [localTweet.id, isReply, observeTweet, unobserveTweet]);
 
+  // Check if current user is admin
+  useEffect(() => {
+    checkIfUserIsAdmin().then(setIsAdmin);
+  }, [checkIfUserIsAdmin]);
+
   const formatNumber = (num: number): string => {
     if (num >= 1000000) {
       return (num / 1000000).toFixed(1) + 'M';
@@ -148,6 +159,54 @@ export const TweetCard: React.FC<TweetCardProps> = ({
   const handleDelete = async () => {
     // Mock delete functionality
     // TODO: Implement actual delete functionality
+  };
+
+  const handlePinToProfile = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    
+    if (localTweet.pinnedToProfile) {
+      const success = await unpinFromProfile(localTweet.id);
+      if (success) {
+        setLocalTweet(prev => ({
+          ...prev,
+          pinnedToProfile: false,
+          pinnedAt: undefined
+        }));
+      }
+    } else {
+      const success = await pinToProfile(localTweet.id);
+      if (success) {
+        setLocalTweet(prev => ({
+          ...prev,
+          pinnedToProfile: true,
+          pinnedAt: new Date()
+        }));
+      }
+    }
+  };
+
+  const handlePinToHome = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    
+    if (localTweet.pinnedToHome) {
+      const success = await unpinFromHome(localTweet.id);
+      if (success) {
+        setLocalTweet(prev => ({
+          ...prev,
+          pinnedToHome: false,
+          pinnedAt: undefined
+        }));
+      }
+    } else {
+      const success = await pinToHome(localTweet.id);
+      if (success) {
+        setLocalTweet(prev => ({
+          ...prev,
+          pinnedToHome: true,
+          pinnedAt: new Date()
+        }));
+      }
+    }
   };
 
   const handleProfileClick = (e: React.MouseEvent) => {
@@ -645,9 +704,47 @@ export const TweetCard: React.FC<TweetCardProps> = ({
                       collisionPadding={8}
                     >
                       {isOwnTweet ? (
-                        <DropdownMenuItem onClick={handleDelete} className="text-red-600 hover:bg-red-50">
-                          Delete Tweet
-                        </DropdownMenuItem>
+                        <>
+                          <DropdownMenuItem 
+                            onClick={handlePinToProfile} 
+                            className="hover:bg-gray-50"
+                            disabled={pinLoading}
+                          >
+                            {localTweet.pinnedToProfile ? (
+                              <>
+                                <PinOff className="w-4 h-4 mr-2" />
+                                {language === 'en' ? 'Unpin from profile' : 'إلغاء التثبيت من الملف الشخصي'}
+                              </>
+                            ) : (
+                              <>
+                                <Pin className="w-4 h-4 mr-2" />
+                                {language === 'en' ? 'Pin to profile' : 'تثبيت في الملف الشخصي'}
+                              </>
+                            )}
+                          </DropdownMenuItem>
+                          {isAdmin && (
+                            <DropdownMenuItem 
+                              onClick={handlePinToHome} 
+                              className="hover:bg-blue-50 text-blue-600"
+                              disabled={pinLoading}
+                            >
+                              {localTweet.pinnedToHome ? (
+                                <>
+                                  <PinOff className="w-4 h-4 mr-2" />
+                                  {language === 'en' ? 'Unpin from home' : 'إلغاء التثبيت من الرئيسية'}
+                                </>
+                              ) : (
+                                <>
+                                  <Pin className="w-4 h-4 mr-2" />
+                                  {language === 'en' ? 'Pin to home timeline' : 'تثبيت في الخط الزمني الرئيسي'}
+                                </>
+                              )}
+                            </DropdownMenuItem>
+                          )}
+                          <DropdownMenuItem onClick={handleDelete} className="text-red-600 hover:bg-red-50">
+                            {language === 'en' ? 'Delete Post' : 'حذف المنشور'}
+                          </DropdownMenuItem>
+                        </>
                       ) : (
                         <>
                           <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleProfileClick(e); }} className="hover:bg-gray-50">
@@ -665,6 +762,18 @@ export const TweetCard: React.FC<TweetCardProps> = ({
                   </DropdownMenu>
                 </div>
               </div>
+
+              {/* Pinned Indicator */}
+              {(localTweet.pinnedToProfile || localTweet.pinnedToHome) && (
+                <div className="mb-2">
+                  {localTweet.pinnedToHome && (
+                    <PinnedIndicator type="home" className="mb-1" />
+                  )}
+                  {localTweet.pinnedToProfile && !localTweet.pinnedToHome && (
+                    <PinnedIndicator type="profile" />
+                  )}
+                </div>
+              )}
 
               {/* Tweet Text with Enhanced Link Parsing */}
               <div 

@@ -30,6 +30,10 @@ export interface Tweet {
   hashtags: string[];
   mentions: string[];
   tags?: string[];
+  // Pinned tweet fields
+  pinnedToProfile?: boolean;
+  pinnedToHome?: boolean;
+  pinnedAt?: Date;
   // Retweet information
   retweetedBy?: User;
   retweetedAt?: Date;
