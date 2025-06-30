@@ -805,9 +805,7 @@ export const ComposePage: React.FC = () => {
       <div className={`bg-white border-t border-gray-200 flex-shrink-0 ${
         isMobile
           ? 'fixed bottom-20 left-0 right-0 p-4 shadow-lg z-40 border-b border-gray-200'
-          : isTablet
-            ? 'fixed bottom-4 left-0 right-0 p-4 shadow-lg z-40 border-b border-gray-200'
-            : 'p-3'
+          : 'fixed bottom-0 left-0 right-0 p-4 shadow-lg z-40 border-b border-gray-200'
       }`}>
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-3">
