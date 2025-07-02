@@ -33,15 +33,11 @@ class StorageService {
         fileToUpload = await this.compressImage(file);
       }
 
-      // Convert file to Uint8Array for S3
-      const arrayBuffer = await fileToUpload.arrayBuffer();
-      const uint8Array = new Uint8Array(arrayBuffer);
-
-      // Upload the file to S3
+      // Upload the file to S3 using the File/blob directly (SDK handles browser streams)
       const command = new PutObjectCommand({
         Bucket: this.bucketName,
         Key: fileName,
-        Body: uint8Array,
+        Body: fileToUpload,
         ContentType: fileToUpload.type,
         ACL: 'public-read',
         CacheControl: 'max-age=31536000',
