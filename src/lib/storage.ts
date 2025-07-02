@@ -1,11 +1,25 @@
-import { supabase } from './supabase';
+/// <reference types="vite/client" />
+
+import {
+  S3Client,
+  PutObjectCommand,
+  DeleteObjectCommand,
+} from '@aws-sdk/client-s3';
+
+const s3Client = new S3Client({
+  region: import.meta.env.VITE_AWS_REGION,
+  credentials: {
+    accessKeyId: import.meta.env.VITE_AWS_ACCESS_KEY_ID!,
+    secretAccessKey: import.meta.env.VITE_AWS_SECRET_ACCESS_KEY!,
+  },
+});
 
 class StorageService {
-  private bucketName = 'tweet-images';
+  private bucketName = import.meta.env.VITE_S3_BUCKET as string;
   private imageCache = new Map<string, string>();
 
   /**
-   * Upload an image file to Supabase Storage
+   * Upload an image file to AWS S3
    */
   async uploadImage(file: File, userId: string): Promise<string> {
     try {
@@ -19,26 +33,27 @@ class StorageService {
         fileToUpload = await this.compressImage(file);
       }
 
-      // Upload the file
-      const { data, error } = await supabase.storage
-        .from(this.bucketName)
-        .upload(fileName, fileToUpload, {
-          cacheControl: '3600',
-          upsert: false
-        });
+      // Convert file to Uint8Array for S3
+      const arrayBuffer = await fileToUpload.arrayBuffer();
+      const uint8Array = new Uint8Array(arrayBuffer);
 
-      if (error) {
-        throw new Error(`Upload failed: ${error.message}`);
-      }
+      // Upload the file to S3
+      const command = new PutObjectCommand({
+        Bucket: this.bucketName,
+        Key: fileName,
+        Body: uint8Array,
+        ContentType: fileToUpload.type,
+        ACL: 'public-read',
+        CacheControl: 'max-age=31536000',
+      });
 
-      // Get the public URL
-      const { data: urlData } = supabase.storage
-        .from(this.bucketName)
-        .getPublicUrl(fileName);
+      await s3Client.send(command);
 
-      return urlData.publicUrl;
+      // Return the public S3 URL
+      const publicUrl = this.buildPublicUrl(fileName);
+      return publicUrl;
     } catch (error: any) {
-      console.error('Error uploading image:', error);
+      console.error('Error uploading image to S3:', error);
       throw new Error(error.message || 'Failed to upload image');
     }
   }
@@ -61,70 +76,61 @@ class StorageService {
   }
 
   /**
-   * Delete an image from storage
+   * Delete an image from S3
    */
   async deleteImage(imageUrl: string): Promise<void> {
     try {
-      // Extract the file path from the URL
-      const url = new URL(imageUrl);
-      const pathParts = url.pathname.split('/');
-      const fileName = pathParts[pathParts.length - 1];
-      const folderName = pathParts[pathParts.length - 2];
-      const filePath = `${folderName}/${fileName}`;
+      // Extract the S3 key from the URL
+      const key = this.extractKeyFromUrl(imageUrl);
 
-      const { error } = await supabase.storage
-        .from(this.bucketName)
-        .remove([filePath]);
+      const command = new DeleteObjectCommand({
+        Bucket: this.bucketName,
+        Key: key,
+      });
 
-      if (error) {
-        throw new Error(`Delete failed: ${error.message}`);
-      }
+      await s3Client.send(command);
 
       // Clear from cache
       this.imageCache.delete(imageUrl);
     } catch (error: any) {
-      console.error('Error deleting image:', error);
+      console.error('Error deleting image from S3:', error);
       throw new Error(error.message || 'Failed to delete image');
     }
   }
 
   /**
    * Get optimized image URL with transformations
+   * Note: S3 doesn't have built-in image transformations like Supabase
+   * You might want to use CloudFront + Lambda@Edge or a service like Cloudinary for this
    */
   getOptimizedImageUrl(imageUrl: string, options?: {
     width?: number;
     height?: number;
     quality?: number;
   }): string {
-    if (!options) return imageUrl;
+    // For now, return the original URL since S3 doesn't have built-in transformations
+    // You can implement CloudFront transformations or use a CDN service later
+    return imageUrl;
+  }
 
-    // Check cache first
-    const cacheKey = `${imageUrl}-w${options.width || ''}-h${options.height || ''}-q${options.quality || ''}`;
-    if (this.imageCache.has(cacheKey)) {
-      return this.imageCache.get(cacheKey)!;
-    }
+  /**
+   * Build public S3 URL from key
+   */
+  private buildPublicUrl(key: string): string {
+    return `https://${this.bucketName}.s3.${import.meta.env.VITE_AWS_REGION}.amazonaws.com/${key}`;
+  }
 
+  /**
+   * Extract S3 key from URL
+   */
+  private extractKeyFromUrl(url: string): string {
     try {
-      const url = new URL(imageUrl);
-      const params = new URLSearchParams();
-
-      if (options.width) params.append('width', options.width.toString());
-      if (options.height) params.append('height', options.height.toString());
-      if (options.quality) params.append('quality', options.quality.toString());
-
-      if (params.toString()) {
-        url.search = params.toString();
-      }
-
-      const optimizedUrl = url.toString();
-      
-      // Cache the result
-      this.imageCache.set(cacheKey, optimizedUrl);
-      
-      return optimizedUrl;
+      const urlObj = new URL(url);
+      // Remove the leading slash from pathname
+      return urlObj.pathname.substring(1);
     } catch (error) {
-      console.warn('Error optimizing image URL:', error);
-      return imageUrl;
+      console.error('Error extracting key from URL:', error);
+      throw new Error('Invalid image URL');
     }
   }
 
