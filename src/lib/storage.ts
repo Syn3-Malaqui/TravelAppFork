@@ -23,6 +23,11 @@ class StorageService {
    */
   async uploadImage(file: File, userId: string): Promise<string> {
     try {
+      console.log('S3 DEBUG', {
+        bucket: this.bucketName,
+        region: import.meta.env.VITE_AWS_REGION,
+        accessKeyIdPresent: !!import.meta.env.VITE_AWS_ACCESS_KEY_ID,
+      });
       // Generate a unique filename
       const fileExt = file.name.split('.').pop();
       const fileName = `${userId}/${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`;
