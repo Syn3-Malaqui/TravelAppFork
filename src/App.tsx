@@ -54,7 +54,7 @@ function App() {
   return (
     <Router>
       <div className={`min-h-screen bg-white ${language === 'ar' ? 'font-arabic' : ''}`} style={{ position: 'relative', zIndex: 0 }}>
-        <div className="flex h-screen overflow-hidden md:justify-center">
+        <div className="flex min-h-screen md:justify-center">
           {/* Mobile: Full width, Desktop: Centered with max-width */}
           <div className="flex flex-1 w-full md:max-w-[1200px]">
             {/* Desktop Sidebar */}
@@ -63,7 +63,7 @@ function App() {
             </div>
             
             {/* Main Content - Takes remaining space */}
-            <div className="flex-1 overflow-hidden">
+            <div className="flex-1">
               <Routes>
                 <Route path="/" element={<Timeline />} />
                 <Route 

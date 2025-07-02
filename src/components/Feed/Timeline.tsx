@@ -483,9 +483,9 @@ export const Timeline: React.FC = () => {
   };
 
   return (
-    <div className="h-full flex">
+    <div className="min-h-screen flex">
       {/* Mobile Layout - Only visible on mobile screens */}
-      <div className={`md:hidden w-full h-full flex flex-col ${language === 'ar' ? 'font-arabic' : ''}`}>
+      <div className={`md:hidden w-full min-h-screen flex flex-col ${language === 'ar' ? 'font-arabic' : ''}`}>
         {/* Mobile Header with NEW Layout - Fixed at top */}
         <div className="bg-white border-b border-gray-100 sticky top-0 z-10">
           
@@ -584,8 +584,8 @@ export const Timeline: React.FC = () => {
           <MobileTabs activeTab={activeTab} onTabChange={handleTabChange} />
         </div>
 
-        {/* Main Content Area - Full height minus header and bottom nav */}
-        <div className="flex-1 overflow-y-auto bg-gray-50 w-full">
+        {/* Main Content Area */}
+        <div className="flex-1 bg-gray-50 w-full">
           {/* Filter indicators */}
           {(categoryFilter || countryFilter !== 'ALL') && (
             <div className="bg-blue-50 border-b border-blue-200 px-4 py-3 w-full">
@@ -763,8 +763,8 @@ export const Timeline: React.FC = () => {
             </div>
           </div>
 
-          {/* Timeline - Scrollable container */}
-          <div className="flex-1 overflow-y-auto">
+          {/* Timeline */}
+          <div className="flex-1">
             <div className="flex flex-col">
               {/* Desktop Tweet Composer - Now inside scrollable area */}
               <div className="border-b border-gray-200 bg-white px-4 md:px-6">

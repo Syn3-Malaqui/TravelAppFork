@@ -308,7 +308,7 @@ export const UserProfilePage: React.FC = () => {
   const currentTabTweets = getCurrentTabTweets();
 
   return (
-    <div className="min-h-screen bg-white flex h-screen">
+    <div className="min-h-screen bg-white flex">
       {/* Desktop Layout with Conditional Sidebar */}
       <div className="hidden md:flex flex-1 min-w-0">
         {/* Main Content */}
@@ -330,7 +330,7 @@ export const UserProfilePage: React.FC = () => {
           </div>
 
           {/* Scrollable Content */}
-          <div className="flex-1 overflow-y-auto">
+          <div className="flex-1">
             {/* Profile Header */}
             <div className="relative">
               {/* Cover Image */}
@@ -525,7 +525,7 @@ export const UserProfilePage: React.FC = () => {
         </div>
 
         {/* Scrollable Content */}
-        <div className="flex-1 overflow-y-auto">
+        <div className="flex-1">
           {/* Profile Header */}
           <div className="relative">
             {/* Cover Image */}

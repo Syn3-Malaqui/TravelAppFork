@@ -447,7 +447,7 @@ export const ProfilePage: React.FC = () => {
     console.error('ProfilePage Error:', { error, profile, username, currentUser });
     
     return (
-      <div className="min-h-screen bg-white flex flex-col">
+      <div className="min-h-screen bg-white flex">
         {/* Header */}
         <div className="bg-white/80 backdrop-blur-md border-b border-gray-200 px-4 py-3 flex items-center z-10 flex-shrink-0">
           <Button
@@ -530,10 +530,10 @@ export const ProfilePage: React.FC = () => {
   // Show suspended user page if user is suspended
   if (profile?.suspended && !profile?.deletedAt) {
     return (
-      <div className="min-h-screen bg-white flex h-screen">
+      <div className="min-h-screen bg-white flex">
         {/* Desktop Layout */}
         <div className="hidden md:flex flex-1 min-w-0">
-          <div className="flex-1 max-w-2xl border-x border-gray-200 overflow-y-auto">
+          <div className="flex-1 max-w-2xl border-x border-gray-200">
             {/* Header */}
             <div className="bg-white/80 backdrop-blur-md border-b border-gray-200 px-4 py-3 flex items-center sticky top-0 z-10">
               <Button
@@ -604,7 +604,7 @@ export const ProfilePage: React.FC = () => {
         </div>
 
         {/* Mobile Layout */}
-        <div className="md:hidden flex-1 flex flex-col overflow-hidden">
+        <div className="md:hidden w-full min-h-screen flex flex-col">
           {/* Header */}
           <div className="bg-white/80 backdrop-blur-md border-b border-gray-200 px-4 py-3 flex items-center z-10 flex-shrink-0">
             <Button
@@ -672,10 +672,10 @@ export const ProfilePage: React.FC = () => {
   // Show deleted user page if user is deleted
   if (profile?.deletedAt) {
     return (
-      <div className="min-h-screen bg-white flex h-screen">
+      <div className="min-h-screen bg-white flex">
         {/* Desktop Layout */}
         <div className="hidden md:flex flex-1 min-w-0">
-          <div className="flex-1 max-w-2xl border-x border-gray-200 overflow-y-auto">
+          <div className="flex-1 max-w-2xl border-x border-gray-200">
             {/* Header */}
             <div className="bg-white/80 backdrop-blur-md border-b border-gray-200 px-4 py-3 flex items-center sticky top-0 z-10">
               <Button
@@ -727,7 +727,7 @@ export const ProfilePage: React.FC = () => {
         </div>
 
         {/* Mobile Layout */}
-        <div className="md:hidden flex-1 flex flex-col overflow-hidden">
+        <div className="md:hidden w-full min-h-screen flex flex-col">
           {/* Header */}
           <div className="bg-white/80 backdrop-blur-md border-b border-gray-200 px-4 py-3 flex items-center z-10 flex-shrink-0">
             <Button
@@ -774,7 +774,7 @@ export const ProfilePage: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-white flex h-screen">
+    <div className="min-h-screen bg-white flex">
       {/* Desktop Layout with Conditional Sidebar */}
       <div className="hidden md:flex flex-1 min-w-0">
         {/* Main Content */}
@@ -796,7 +796,7 @@ export const ProfilePage: React.FC = () => {
           </div>
 
           {/* Scrollable Content */}
-          <div className="flex-1 overflow-y-auto">
+          <div className="flex-1">
             {/* Profile Header */}
             <div className="relative">
               {/* Cover Image */}
@@ -995,7 +995,7 @@ export const ProfilePage: React.FC = () => {
       </div>
 
       {/* Mobile Layout */}
-      <div className="md:hidden w-full border-r border-gray-200 flex flex-col min-w-0">
+      <div className="md:hidden w-full min-h-screen flex flex-col">
         {/* Header */}
         <div className="bg-white/80 backdrop-blur-md border-b border-gray-200 px-3 py-2.5 flex items-center z-10 flex-shrink-0">
           <Button
@@ -1013,7 +1013,7 @@ export const ProfilePage: React.FC = () => {
         </div>
 
         {/* Scrollable Content */}
-        <div className="flex-1 overflow-y-auto">
+        <div className="flex-1">
           {/* Profile Header */}
           <div className="relative">
             {/* Cover Image */}
