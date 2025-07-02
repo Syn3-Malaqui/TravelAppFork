@@ -106,7 +106,7 @@ export const NotificationsPage: React.FC = () => {
 
   if (error) {
     return (
-      <div className="h-full bg-white flex flex-col overflow-hidden">
+      <div className="min-h-screen bg-white flex flex-col">
         <div className="bg-white/80 backdrop-blur-md border-b border-gray-200 px-4 py-3 z-10 flex-shrink-0">
           <div className={`flex items-center ${isRTL ? 'space-x-reverse space-x-4' : 'space-x-4'}`}>
             <Button
@@ -120,7 +120,7 @@ export const NotificationsPage: React.FC = () => {
             <h1 className="text-xl font-bold">{isRTL ? 'الإشعارات' : 'Notifications'}</h1>
           </div>
         </div>
-        <div className="flex-1 overflow-y-auto flex flex-col items-center justify-center py-12 px-4">
+        <div className="flex-1 flex flex-col items-center justify-center py-12 px-4">
           <div className="text-red-500 text-center">
             <p className="text-lg font-semibold mb-2">{isRTL ? 'خطأ في تحميل الإشعارات' : 'Error loading notifications'}</p>
             <p className="text-sm text-gray-600">{error}</p>
@@ -131,7 +131,7 @@ export const NotificationsPage: React.FC = () => {
   }
 
   return (
-    <div className="h-full bg-white flex flex-col overflow-hidden">
+    <div className="min-h-screen bg-white flex flex-col">
       {/* Header */}
       <div className="bg-white/80 backdrop-blur-md border-b border-gray-200 px-4 py-3 z-10 flex-shrink-0">
         <div className="flex items-center justify-between">
@@ -203,8 +203,8 @@ export const NotificationsPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Notifications List - Scrollable */}
-      <div className="flex-1 overflow-y-auto pb-20 md:pb-0">
+      {/* Notifications List */}
+      <div className="flex-1 pb-20 md:pb-0">
         {filteredNotifications.length === 0 ? (
           <div className="text-center py-12 text-gray-500">
             <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">

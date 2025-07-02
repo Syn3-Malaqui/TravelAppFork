@@ -454,7 +454,7 @@ export const AdminPanel: React.FC = () => {
   }
 
   return (
-    <div className={`h-screen bg-white flex flex-col ${language === 'ar' ? 'font-arabic' : ''}`} dir={isRTL ? 'rtl' : 'ltr'}>
+    <div className={`min-h-screen bg-white flex flex-col ${language === 'ar' ? 'font-arabic' : ''}`} dir={isRTL ? 'rtl' : 'ltr'}>
       {/* Header */}
       <div className="flex-shrink-0 bg-white/95 backdrop-blur-md border-b border-gray-200 z-10">
         <div className="flex items-center justify-between p-4">
@@ -508,8 +508,8 @@ export const AdminPanel: React.FC = () => {
         </div>
       </div>
 
-      {/* Scrollable Content Area */}
-      <div className="flex-1 overflow-y-auto">
+      {/* Content Area */}
+      <div className="flex-1">
         {/* Users List */}
         <div className="p-4">
         <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
