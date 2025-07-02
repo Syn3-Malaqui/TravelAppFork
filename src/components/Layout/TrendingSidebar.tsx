@@ -113,7 +113,7 @@ export const TrendingSidebar: React.FC = () => {
       </div>
 
       {/* Scrollable Content */}
-      <div className="flex-1 overflow-y-auto">
+      <div className="flex-1 overflow-y-auto scrollbar-hide">
         <div className="p-4">
           {loading ? (
             <div className="space-y-3">
