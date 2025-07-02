@@ -98,7 +98,7 @@ export const TrendingSidebar: React.FC = () => {
   };
 
   return (
-    <div className={`${sidebarWidth} bg-white ${isRTL ? '' : 'border-l border-gray-200'} flex flex-col h-full flex-shrink-0`}>
+    <div className={`${sidebarWidth} bg-white ${isRTL ? '' : 'border-l border-gray-200'} flex flex-col h-screen sticky top-0 flex-shrink-0`}>
       {/* Fixed Header */}
       <div className="bg-white/95 backdrop-blur-md border-b border-gray-200 z-40 flex-shrink-0">
         <div className="p-4">

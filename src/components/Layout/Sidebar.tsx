@@ -150,7 +150,7 @@ export const Sidebar: React.FC = () => {
   };
 
   return (
-    <div className={`w-64 h-full ${isRTL ? '' : 'border-r'} border-gray-200 bg-white p-4 flex flex-col`}>
+    <div className={`w-64 h-screen sticky top-0 ${isRTL ? '' : 'border-r'} border-gray-200 bg-white p-4 flex flex-col overflow-y-auto`}>
       {/* Logo with Site Name */}
       <div className={`mb-6 flex items-center ${isRTL ? 'justify-end' : 'justify-start'}`}>
         <div className="w-12 h-12">
