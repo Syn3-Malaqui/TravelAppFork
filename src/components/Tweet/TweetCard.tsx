@@ -943,12 +943,11 @@ export const TweetCard: React.FC<TweetCardProps> = React.memo(({
                           <div className="relative">
                             <VideoPlayer
                               src={allMedia[0].url}
-                              alt="Tweet video"
-                              className="w-full h-full"
-                              controls={true}
-                              muted={true}
-                              loading="lazy"
-                              onClick={(e: React.MouseEvent) => e.stopPropagation()}
+                              className="w-full"
+                              height={175}
+                              controls
+                              muted
+                              onClick={(e) => e.stopPropagation()}
                             />
                           </div>
                         )}
@@ -974,12 +973,11 @@ export const TweetCard: React.FC<TweetCardProps> = React.memo(({
                               <div className="relative">
                                 <VideoPlayer
                                   src={mediaItem.url}
-                                  alt={`Tweet video ${index + 1}`}
-                                  className="w-full h-full"
-                                  controls={true}
-                                  muted={true}
-                                  loading="lazy"
-                                  onClick={(e: React.MouseEvent) => e.stopPropagation()}
+                                  className="w-full"
+                                  height={175}
+                                  controls
+                                  muted
+                                  onClick={(e) => e.stopPropagation()}
                                 />
                               </div>
                             )}
@@ -1007,12 +1005,11 @@ export const TweetCard: React.FC<TweetCardProps> = React.memo(({
                               <div className="relative">
                                 <VideoPlayer
                                   src={mediaItem.url}
-                                  alt={`Tweet video ${index + 1}`}
-                                  className="w-full h-full"
-                                  controls={true}
-                                  muted={true}
-                                  loading="lazy"
-                                  onClick={(e: React.MouseEvent) => e.stopPropagation()}
+                                  className="w-full"
+                                  height={175}
+                                  controls
+                                  muted
+                                  onClick={(e) => e.stopPropagation()}
                                 />
                               </div>
                             )}
@@ -1193,11 +1190,10 @@ export const TweetCard: React.FC<TweetCardProps> = React.memo(({
               ) : (
                 <VideoPlayer
                   src={selectedMedia.url}
-                  alt={`Tweet video ${selectedImageIndex + 1}`}
                   className="max-w-full max-h-full"
                   controls={true}
                   muted={false}
-                  loading="eager"
+                  onClick={(e) => e.stopPropagation()}
                 />
               )}
 

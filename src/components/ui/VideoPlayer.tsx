@@ -36,7 +36,7 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
     >
       <video
         src={src}
-        className="w-full h-full object-contain"
+        className="w-full !h-full object-contain"
         autoPlay={autoPlay}
         muted={muted}
         loop={loop}
