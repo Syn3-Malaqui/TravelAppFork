@@ -165,31 +165,45 @@ export const TweetCard: React.FC<TweetCardProps> = React.memo(({
   // Helper function to get all media (images and videos) from tweet
   const getAllMedia = (): { url: string; type: 'image' | 'video' }[] => {
     const media: { url: string; type: 'image' | 'video' }[] = [];
-
+    
+    // Add images
     if (tweet.images) {
-      tweet.images.forEach(rawUrl => {
-        if (typeof rawUrl !== 'string') return; // skip non-strings
-        if (rawUrl.startsWith('video:')) {
-          media.push({ url: rawUrl.replace('video:', ''), type: 'video' });
-        } else if (rawUrl.startsWith('image:')) {
-          media.push({ url: rawUrl.replace('image:', ''), type: 'image' });
-        } else if (/^https?:\/\//.test(rawUrl)) {
-          // fallback for legacy: treat as image if it's a URL
-          media.push({ url: rawUrl, type: 'image' });
-        }
-        // else: skip (do not include tags/categories)
+      tweet.images.forEach(url => {
+        // Remove 'image:' prefix if present
+        const cleanUrl = url.startsWith('image:') ? url.slice(6) : url;
+        media.push({ url: cleanUrl, type: 'image' });
       });
     }
-    // Add videos from videos array if present (for future compatibility)
+    
+    // Add videos
     if (tweet.videos) {
       tweet.videos.forEach(url => {
-        media.push({ url, type: 'video' });
+        // Remove 'video:' prefix if present
+        const cleanUrl = url.startsWith('video:') ? url.slice(6) : url;
+        media.push({ url: cleanUrl, type: 'video' });
       });
     }
+    
     // Add mixed media if available
     if (tweet.media) {
-      media.push(...tweet.media);
+      tweet.media.forEach(item => {
+        if (typeof item === 'string') {
+          // Handle string URLs with prefixes
+          if (item.startsWith('video:')) {
+            media.push({ url: item.slice(6), type: 'video' });
+          } else if (item.startsWith('image:')) {
+            media.push({ url: item.slice(6), type: 'image' });
+          } else {
+            // Default to image if no prefix
+            media.push({ url: item, type: 'image' });
+          }
+        } else {
+          // Handle objects with url and type properties
+          media.push(item);
+        }
+      });
     }
+    
     return media;
   };
 
