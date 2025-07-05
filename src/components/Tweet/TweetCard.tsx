@@ -15,7 +15,8 @@ import {
   X,
   CornerUpLeft,
   Pin,
-  PinOff
+  PinOff,
+  Play
 } from 'lucide-react';
 import { Button } from '../ui/button';
 import { LazyAvatar } from '../ui/LazyAvatar';
@@ -37,6 +38,8 @@ import { useProfileSync } from '../../hooks/useProfileSync';
 import { usePinnedTweets } from '../../hooks/usePinnedTweets';
 import { useLanguageStore } from '../../store/useLanguageStore';
 import { supabase } from '../../lib/supabase';
+import VideoPlayer from '../ui/VideoPlayer';
+import { storageService } from '../../lib/storage';
 
 interface TweetCardProps {
   tweet: Tweet;
@@ -157,6 +160,32 @@ export const TweetCard: React.FC<TweetCardProps> = React.memo(({
       return (num / 1000).toFixed(1) + 'K';
     }
     return num.toString();
+  };
+
+  // Helper function to get all media (images and videos) from tweet
+  const getAllMedia = (): { url: string; type: 'image' | 'video' }[] => {
+    const media: { url: string; type: 'image' | 'video' }[] = [];
+    
+    // Add images
+    if (tweet.images) {
+      tweet.images.forEach(url => {
+        media.push({ url, type: 'image' });
+      });
+    }
+    
+    // Add videos
+    if (tweet.videos) {
+      tweet.videos.forEach(url => {
+        media.push({ url, type: 'video' });
+      });
+    }
+    
+    // Add mixed media if available
+    if (tweet.media) {
+      media.push(...tweet.media);
+    }
+    
+    return media;
   };
 
   const handleDelete = async () => {
@@ -449,12 +478,13 @@ export const TweetCard: React.FC<TweetCardProps> = React.memo(({
   };
 
   const navigateImage = (direction: 'prev' | 'next') => {
-    if (!tweet.images || selectedImageIndex === null) return;
+    const allMedia = getAllMedia();
+    if (allMedia.length === 0 || selectedImageIndex === null) return;
     
     if (direction === 'prev') {
-      setSelectedImageIndex(selectedImageIndex > 0 ? selectedImageIndex - 1 : tweet.images.length - 1);
+      setSelectedImageIndex(selectedImageIndex > 0 ? selectedImageIndex - 1 : allMedia.length - 1);
     } else {
-      setSelectedImageIndex(selectedImageIndex < tweet.images.length - 1 ? selectedImageIndex + 1 : 0);
+      setSelectedImageIndex(selectedImageIndex < allMedia.length - 1 ? selectedImageIndex + 1 : 0);
     }
   };
 
@@ -864,92 +894,205 @@ export const TweetCard: React.FC<TweetCardProps> = React.memo(({
                 </div>
               )}
 
-              {/* Images */}
-              {tweet.images && tweet.images.length > 0 && (
-                <div className="mb-2 rounded-2xl overflow-hidden border border-gray-200">
-                  {tweet.images.length === 1 ? (
-                    // Single image - centered and fills container
-                    <div className="w-full aspect-[16/9] cursor-pointer" onClick={(e) => handleImageClick(0, e)}>
-                      <LazyImage 
-                        src={tweet.images[0]} 
-                        alt="Tweet image" 
-                        className="w-full h-full hover:opacity-95 transition-opacity"
-                        width={600}
-                        quality={80}
-                      />
-                    </div>
-                  ) : tweet.images.length === 2 ? (
-                    // Two images - side by side, centered and fills container
-                    <div className="grid grid-cols-2 gap-1">
-                      {tweet.images.map((image, index) => (
-                        <div 
-                          key={index} 
-                          className="aspect-[16/9] cursor-pointer"
-                          onClick={(e) => handleImageClick(index, e)}
-                        >
+              {/* Media (Images and Videos) */}
+              {(() => {
+                const allMedia = getAllMedia();
+                if (allMedia.length === 0) return null;
+                
+                return (
+                  <div className="mb-2 rounded-2xl overflow-hidden border border-gray-200">
+                    {allMedia.length === 1 ? (
+                      // Single media - centered and fills container
+                      <div className="w-full aspect-[16/9] cursor-pointer" onClick={(e) => handleImageClick(0, e)}>
+                        {allMedia[0].type === 'image' ? (
                           <LazyImage 
-                            src={image} 
-                            alt={`Tweet image ${index + 1}`} 
+                            src={allMedia[0].url} 
+                            alt="Tweet image" 
                             className="w-full h-full hover:opacity-95 transition-opacity"
-                            width={400}
+                            width={600}
                             quality={80}
                           />
+                        ) : (
+                          <div className="relative">
+                            <VideoPlayer
+                              src={allMedia[0].url}
+                              alt="Tweet video"
+                              className="w-full h-full"
+                              controls={false}
+                              muted={true}
+                              loading="lazy"
+                            />
+                            <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-30">
+                              <div className="bg-white bg-opacity-20 rounded-full p-3">
+                                <Play className="w-8 h-8 text-white" />
+                              </div>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    ) : allMedia.length === 2 ? (
+                      // Two media - side by side, centered and fills container
+                      <div className="grid grid-cols-2 gap-1">
+                        {allMedia.map((mediaItem, index) => (
+                          <div 
+                            key={index} 
+                            className="aspect-[16/9] cursor-pointer"
+                            onClick={(e) => handleImageClick(index, e)}
+                          >
+                            {mediaItem.type === 'image' ? (
+                              <LazyImage 
+                                src={mediaItem.url} 
+                                alt={`Tweet image ${index + 1}`} 
+                                className="w-full h-full hover:opacity-95 transition-opacity"
+                                width={400}
+                                quality={80}
+                              />
+                            ) : (
+                              <div className="relative">
+                                <VideoPlayer
+                                  src={mediaItem.url}
+                                  alt={`Tweet video ${index + 1}`}
+                                  className="w-full h-full"
+                                  controls={false}
+                                  muted={true}
+                                  loading="lazy"
+                                />
+                                <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-30">
+                                  <div className="bg-white bg-opacity-20 rounded-full p-2">
+                                    <Play className="w-6 h-6 text-white" />
+                                  </div>
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    ) : allMedia.length === 3 ? (
+                      // Three media - first takes full left side, two small on right, all centered
+                      <div className="grid grid-cols-2 grid-rows-2 gap-1 h-80">
+                        <div className="row-span-2 cursor-pointer" onClick={(e) => handleImageClick(0, e)}>
+                          {allMedia[0].type === 'image' ? (
+                            <LazyImage 
+                              src={allMedia[0].url} 
+                              alt="Tweet image 1" 
+                              className="w-full h-full hover:opacity-95 transition-opacity"
+                              width={400}
+                              quality={80}
+                            />
+                          ) : (
+                            <div className="relative">
+                              <VideoPlayer
+                                src={allMedia[0].url}
+                                alt="Tweet video 1"
+                                className="w-full h-full"
+                                controls={false}
+                                muted={true}
+                                loading="lazy"
+                              />
+                              <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-30">
+                                <div className="bg-white bg-opacity-20 rounded-full p-2">
+                                  <Play className="w-6 h-6 text-white" />
+                                </div>
+                              </div>
+                            </div>
+                          )}
                         </div>
-                      ))}
-                    </div>
-                  ) : tweet.images.length === 3 ? (
-                    // Three images - first takes full left side, two small on right, all centered
-                    <div className="grid grid-cols-2 grid-rows-2 gap-1 h-80">
-                      <div className="row-span-2 cursor-pointer" onClick={(e) => handleImageClick(0, e)}>
-                        <LazyImage 
-                          src={tweet.images[0]} 
-                          alt="Tweet image 1" 
-                          className="w-full h-full hover:opacity-95 transition-opacity"
-                          width={400}
-                          quality={80}
-                        />
-                      </div>
-                      <div className="cursor-pointer" onClick={(e) => handleImageClick(1, e)}>
-                        <LazyImage 
-                          src={tweet.images[1]} 
-                          alt="Tweet image 2" 
-                          className="w-full h-full hover:opacity-95 transition-opacity"
-                          width={300}
-                          quality={80}
-                        />
-                      </div>
-                      <div className="cursor-pointer" onClick={(e) => handleImageClick(2, e)}>
-                        <LazyImage 
-                          src={tweet.images[2]} 
-                          alt="Tweet image 3" 
-                          className="w-full h-full hover:opacity-95 transition-opacity"
-                          width={300}
-                          quality={80}
-                        />
-                      </div>
-                    </div>
-                  ) : (
-                    // Four images - 2x2 grid, all centered and fills container
-                    <div className="grid grid-cols-2 gap-1">
-                      {tweet.images.map((image, index) => (
-                        <div 
-                          key={index} 
-                          className="aspect-[16/9] cursor-pointer"
-                          onClick={(e) => handleImageClick(index, e)}
-                        >
-                          <LazyImage 
-                            src={image} 
-                            alt={`Tweet image ${index + 1}`} 
-                            className="w-full h-full hover:opacity-95 transition-opacity"
-                            width={300}
-                            quality={80}
-                          />
+                        <div className="cursor-pointer" onClick={(e) => handleImageClick(1, e)}>
+                          {allMedia[1].type === 'image' ? (
+                            <LazyImage 
+                              src={allMedia[1].url} 
+                              alt="Tweet image 2" 
+                              className="w-full h-full hover:opacity-95 transition-opacity"
+                              width={300}
+                              quality={80}
+                            />
+                          ) : (
+                            <div className="relative">
+                              <VideoPlayer
+                                src={allMedia[1].url}
+                                alt="Tweet video 2"
+                                className="w-full h-full"
+                                controls={false}
+                                muted={true}
+                                loading="lazy"
+                              />
+                              <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-30">
+                                <div className="bg-white bg-opacity-20 rounded-full p-1">
+                                  <Play className="w-4 h-4 text-white" />
+                                </div>
+                              </div>
+                            </div>
+                          )}
                         </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              )}
+                        <div className="cursor-pointer" onClick={(e) => handleImageClick(2, e)}>
+                          {allMedia[2].type === 'image' ? (
+                            <LazyImage 
+                              src={allMedia[2].url} 
+                              alt="Tweet image 3" 
+                              className="w-full h-full hover:opacity-95 transition-opacity"
+                              width={300}
+                              quality={80}
+                            />
+                          ) : (
+                            <div className="relative">
+                              <VideoPlayer
+                                src={allMedia[2].url}
+                                alt="Tweet video 3"
+                                className="w-full h-full"
+                                controls={false}
+                                muted={true}
+                                loading="lazy"
+                              />
+                              <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-30">
+                                <div className="bg-white bg-opacity-20 rounded-full p-1">
+                                  <Play className="w-4 h-4 text-white" />
+                                </div>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    ) : (
+                      // Four media - 2x2 grid, all centered and fills container
+                      <div className="grid grid-cols-2 gap-1">
+                        {allMedia.map((mediaItem, index) => (
+                          <div 
+                            key={index} 
+                            className="aspect-[16/9] cursor-pointer"
+                            onClick={(e) => handleImageClick(index, e)}
+                          >
+                            {mediaItem.type === 'image' ? (
+                              <LazyImage 
+                                src={mediaItem.url} 
+                                alt={`Tweet image ${index + 1}`} 
+                                className="w-full h-full hover:opacity-95 transition-opacity"
+                                width={300}
+                                quality={80}
+                              />
+                            ) : (
+                              <div className="relative">
+                                <VideoPlayer
+                                  src={mediaItem.url}
+                                  alt={`Tweet video ${index + 1}`}
+                                  className="w-full h-full"
+                                  controls={false}
+                                  muted={true}
+                                  loading="lazy"
+                                />
+                                <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-30">
+                                  <div className="bg-white bg-opacity-20 rounded-full p-1">
+                                    <Play className="w-4 h-4 text-white" />
+                                  </div>
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                );
+              })()}
 
               {/* Actions */}
               <div className="flex items-center justify-between mt-1">
@@ -1065,59 +1208,77 @@ export const TweetCard: React.FC<TweetCardProps> = React.memo(({
         )}
       </div>
 
-      {/* Image Modal */}
-      {selectedImageIndex !== null && tweet.images && (
-        <div className="fixed inset-0 bg-black/90 z-50 flex items-center justify-center">
-          <div className="relative max-w-4xl max-h-full w-full h-full flex items-center justify-center p-4">
-            {/* Close button */}
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={closeImageModal}
-              className="absolute top-4 right-4 text-white hover:bg-white/20 p-2 rounded-full z-10"
-            >
-              <X className="h-6 w-6" />
-            </Button>
+      {/* Media Modal */}
+      {selectedImageIndex !== null && (() => {
+        const allMedia = getAllMedia();
+        if (allMedia.length === 0) return null;
+        
+        const selectedMedia = allMedia[selectedImageIndex];
+        
+        return (
+          <div className="fixed inset-0 bg-black/90 z-50 flex items-center justify-center">
+            <div className="relative max-w-4xl max-h-full w-full h-full flex items-center justify-center p-4">
+              {/* Close button */}
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={closeImageModal}
+                className="absolute top-4 right-4 text-white hover:bg-white/20 p-2 rounded-full z-10"
+              >
+                <X className="h-6 w-6" />
+              </Button>
 
-            {/* Navigation buttons */}
-            {tweet.images.length > 1 && (
-              <>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => navigateImage('prev')}
-                  className="absolute left-4 top-1/2 transform -translate-y-1/2 text-white hover:bg-white/20 p-3 rounded-full"
-                >
-                  <ChevronDown className="h-6 w-6 transform rotate-90" />
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => navigateImage('next')}
-                  className="absolute right-4 top-1/2 transform -translate-y-1/2 text-white hover:bg-white/20 p-3 rounded-full"
-                >
-                  <ChevronDown className="h-6 w-6 transform -rotate-90" />
-                </Button>
-              </>
-            )}
+              {/* Navigation buttons */}
+              {allMedia.length > 1 && (
+                <>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => navigateImage('prev')}
+                    className="absolute left-4 top-1/2 transform -translate-y-1/2 text-white hover:bg-white/20 p-3 rounded-full"
+                  >
+                    <ChevronDown className="h-6 w-6 transform rotate-90" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => navigateImage('next')}
+                    className="absolute right-4 top-1/2 transform -translate-y-1/2 text-white hover:bg-white/20 p-3 rounded-full"
+                  >
+                    <ChevronDown className="h-6 w-6 transform -rotate-90" />
+                  </Button>
+                </>
+              )}
 
-            {/* Image */}
-            <img
-              src={tweet.images[selectedImageIndex]}
-              alt={`Tweet image ${selectedImageIndex + 1}`}
-              className="max-w-full max-h-full object-contain object-center"
-              loading="eager" // Force immediate loading for modal view
-            />
+              {/* Media Content */}
+              {selectedMedia.type === 'image' ? (
+                <img
+                  src={selectedMedia.url}
+                  alt={`Tweet image ${selectedImageIndex + 1}`}
+                  className="max-w-full max-h-full object-contain object-center"
+                  loading="eager" // Force immediate loading for modal view
+                />
+              ) : (
+                <VideoPlayer
+                  src={selectedMedia.url}
+                  alt={`Tweet video ${selectedImageIndex + 1}`}
+                  className="max-w-full max-h-full"
+                  controls={true}
+                  muted={false}
+                  loading="eager"
+                />
+              )}
 
-            {/* Image counter */}
-            {tweet.images.length > 1 && (
-              <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 bg-black/50 text-white px-3 py-1 rounded-full text-sm">
-                {selectedImageIndex + 1} / {tweet.images.length}
-              </div>
-            )}
+              {/* Media counter */}
+              {allMedia.length > 1 && (
+                <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 bg-black/50 text-white px-3 py-1 rounded-full text-sm">
+                  {selectedImageIndex + 1} / {allMedia.length}
+                </div>
+              )}
+            </div>
           </div>
-        </div>
-      )}
+        );
+      })()}
     </>
   );
 });

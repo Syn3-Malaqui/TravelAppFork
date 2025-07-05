@@ -99,6 +99,7 @@ export const useTweets = () => {
       replies: tweetData.replies_count,
       views: tweetData.views_count,
       images: tweetData.image_urls,
+      videos: tweetData.video_urls || [],
       isLiked: userLikes.includes(tweetData.id),
       isRetweeted: userRetweets.includes(tweetData.id),
       isBookmarked: userBookmarks.includes(tweetData.id),
@@ -942,7 +943,7 @@ export const useTweets = () => {
     }
   };
 
-  const createTweet = async (content: string, imageUrls: string[] = [], categories: TweetCategory[] = [], countries: string[] = []) => {
+  const createTweet = async (content: string, imageUrls: string[] = [], videoUrls: string[] = [], categories: TweetCategory[] = [], countries: string[] = []) => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('User not authenticated');
@@ -968,6 +969,7 @@ export const useTweets = () => {
           content,
           author_id: user.id,
           image_urls: imageUrls,
+          video_urls: videoUrls, // Add video URLs
           hashtags,
           mentions,
           tags: allTags, // Store both categories and countries
@@ -1020,7 +1022,7 @@ export const useTweets = () => {
     }
   };
 
-  const createReply = async (content: string, replyToId: string, imageUrls: string[] = []) => {
+  const createReply = async (content: string, replyToId: string, imageUrls: string[] = [], videoUrls: string[] = []) => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('User not authenticated');
@@ -1041,6 +1043,7 @@ export const useTweets = () => {
           author_id: user.id,
           reply_to: replyToId,
           image_urls: imageUrls,
+          video_urls: videoUrls, // Add video URLs
           hashtags,
           mentions,
         })

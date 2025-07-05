@@ -27,6 +27,8 @@ export interface Tweet {
   replies: number;
   views: number;
   images?: string[];
+  videos?: string[];
+  media?: { url: string; type: 'image' | 'video' }[];
   isLiked: boolean;
   isRetweeted: boolean;
   isBookmarked: boolean;
@@ -92,6 +94,7 @@ interface TweetData {
   author_id: string;
   reply_to: string | null;
   image_urls: string[];
+  video_urls: string[];
   hashtags: string[];
   mentions: string[];
   tags: string[];
