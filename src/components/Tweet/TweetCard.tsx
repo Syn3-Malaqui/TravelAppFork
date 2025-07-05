@@ -166,25 +166,29 @@ export const TweetCard: React.FC<TweetCardProps> = React.memo(({
   const getAllMedia = (): { url: string; type: 'image' | 'video' }[] => {
     const media: { url: string; type: 'image' | 'video' }[] = [];
     
-    // Add images
+    // Add images/videos from the images array, parsing the prefix
     if (tweet.images) {
-      tweet.images.forEach(url => {
-        media.push({ url, type: 'image' });
+      tweet.images.forEach(rawUrl => {
+        if (rawUrl.startsWith('video:')) {
+          media.push({ url: rawUrl.replace('video:', ''), type: 'video' });
+        } else if (rawUrl.startsWith('image:')) {
+          media.push({ url: rawUrl.replace('image:', ''), type: 'image' });
+        } else {
+          // fallback for legacy
+          media.push({ url: rawUrl, type: 'image' });
+        }
       });
     }
-    
-    // Add videos
+    // Add videos from videos array if present (for future compatibility)
     if (tweet.videos) {
       tweet.videos.forEach(url => {
         media.push({ url, type: 'video' });
       });
     }
-    
     // Add mixed media if available
     if (tweet.media) {
       media.push(...tweet.media);
     }
-    
     return media;
   };
 
