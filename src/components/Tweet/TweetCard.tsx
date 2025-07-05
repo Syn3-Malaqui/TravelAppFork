@@ -168,37 +168,27 @@ export const TweetCard: React.FC<TweetCardProps> = React.memo(({
 
     if (tweet.images) {
       tweet.images.forEach(rawUrl => {
-        if (typeof rawUrl !== 'string') return;
-        // Only process if it looks like a URL or prefixed URL
-        if (!rawUrl.startsWith('http') && !rawUrl.startsWith('image:') && !rawUrl.startsWith('video:')) return;
-
+        if (typeof rawUrl !== 'string') return; // skip non-strings
         if (rawUrl.startsWith('video:')) {
-          const url = rawUrl.replace('video:', '');
-          if (url.startsWith('http')) media.push({ url, type: 'video' });
+          media.push({ url: rawUrl.replace('video:', ''), type: 'video' });
         } else if (rawUrl.startsWith('image:')) {
-          const url = rawUrl.replace('image:', '');
-          if (url.startsWith('http')) media.push({ url, type: 'image' });
-        } else if (rawUrl.startsWith('http')) {
-          // fallback for legacy
+          media.push({ url: rawUrl.replace('image:', ''), type: 'image' });
+        } else if (/^https?:\/\//.test(rawUrl)) {
+          // fallback for legacy: treat as image if it's a URL
           media.push({ url: rawUrl, type: 'image' });
         }
+        // else: skip (do not include tags/categories)
       });
     }
     // Add videos from videos array if present (for future compatibility)
     if (tweet.videos) {
       tweet.videos.forEach(url => {
-        if (typeof url === 'string' && url.startsWith('http')) {
-          media.push({ url, type: 'video' });
-        }
+        media.push({ url, type: 'video' });
       });
     }
     // Add mixed media if available
     if (tweet.media) {
-      tweet.media.forEach(item => {
-        if (item && typeof item.url === 'string' && (item.url.startsWith('http'))) {
-          media.push(item);
-        }
-      });
+      media.push(...tweet.media);
     }
     return media;
   };
