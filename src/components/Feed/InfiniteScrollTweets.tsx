@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useCallback, useState } from 'react';
+import React, { useEffect, useRef, useCallback, useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { TweetCard } from '../Tweet/TweetCard';
 import { MobileTweetCard } from '../Tweet/MobileTweetCard';
@@ -9,6 +9,7 @@ import { useAuth } from '../../hooks/useAuth';
 import { useTweets } from '../../hooks/useTweets';
 import { supabase } from '../../lib/supabase';
 import { Tweet } from '../../types';
+import { feedCache, cacheKeys } from '../../lib/cache';
 
 interface InfiniteScrollTweetsProps {
   isMobile?: boolean;
@@ -17,7 +18,7 @@ interface InfiniteScrollTweetsProps {
   countryFilter: string;
 }
 
-export const InfiniteScrollTweets: React.FC<InfiniteScrollTweetsProps> = ({
+export const InfiniteScrollTweets: React.FC<InfiniteScrollTweetsProps> = React.memo(({
   isMobile = false,
   feedType,
   categoryFilter,
@@ -52,12 +53,24 @@ export const InfiniteScrollTweets: React.FC<InfiniteScrollTweetsProps> = ({
   const loadMoreRef = useRef<HTMLDivElement>(null);
   const observerRef = useRef<IntersectionObserver | null>(null);
 
-  // Load pinned tweets for home timeline
+  // Load pinned tweets for home timeline with caching
   const loadPinnedTweets = useCallback(async () => {
     if (feedType !== 'for-you') return; // Only show pinned tweets on "For You" tab
     
     try {
       setLoadingPinned(true);
+      
+      // Check cache first
+      const cacheKey = 'pinned_tweets:home';
+      const cachedPinned = feedCache.get<Tweet[]>(cacheKey);
+      
+      if (cachedPinned) {
+        console.log('⚡ Using cached pinned tweets:', cachedPinned.length);
+        setPinnedTweets(cachedPinned);
+        setLoadingPinned(false);
+        return;
+      }
+      
       console.log('🔄 Loading pinned tweets...');
       
       const { data, error } = await supabase
@@ -154,6 +167,9 @@ export const InfiniteScrollTweets: React.FC<InfiniteScrollTweetsProps> = ({
         };
       });
 
+      // Cache the pinned tweets
+      feedCache.set(cacheKey, formattedPinnedTweets, 5 * 60 * 1000); // Cache for 5 minutes
+
       setPinnedTweets(formattedPinnedTweets);
     } catch (error) {
       console.error('Error loading pinned tweets:', error);
@@ -173,8 +189,8 @@ export const InfiniteScrollTweets: React.FC<InfiniteScrollTweetsProps> = ({
     setPinnedTweetsKey(prev => prev + 1);
   }, []);
 
-  // Apply filters to tweets
-  useEffect(() => {
+  // Memoized filtered tweets to prevent unnecessary re-computations
+  const filteredTweetsData = useMemo(() => {
     let filtered = [...tweets];
 
     // Filter by category
@@ -191,8 +207,13 @@ export const InfiniteScrollTweets: React.FC<InfiniteScrollTweetsProps> = ({
       );
     }
 
-    setFilteredTweets(filtered);
+    return filtered;
   }, [tweets, categoryFilter, countryFilter]);
+
+  // Update state when filtered data changes
+  useEffect(() => {
+    setFilteredTweets(filteredTweetsData);
+  }, [filteredTweetsData]);
 
   // Set up intersection observer for infinite scroll with preloading
   const setupObserver = useCallback(() => {
@@ -228,8 +249,8 @@ export const InfiniteScrollTweets: React.FC<InfiniteScrollTweetsProps> = ({
     };
   }, [setupObserver]);
 
-  // Enhanced interaction handlers with optimistic updates
-  const handleLike = async (tweetId: string, isCurrentlyLiked: boolean) => {
+  // Enhanced interaction handlers with optimistic updates and memoization
+  const handleLike = useCallback(async (tweetId: string, isCurrentlyLiked: boolean) => {
     try {
       console.log(`${isCurrentlyLiked ? '💔' : '❤️'} ${isCurrentlyLiked ? 'Unliking' : 'Liking'} tweet:`, tweetId);
       
@@ -241,9 +262,9 @@ export const InfiniteScrollTweets: React.FC<InfiniteScrollTweetsProps> = ({
     } catch (error) {
       console.error('Error handling like:', error);
     }
-  };
+  }, [likeTweet, unlikeTweet]);
 
-  const handleRetweet = async (tweetId: string, isCurrentlyRetweeted: boolean) => {
+  const handleRetweet = useCallback(async (tweetId: string, isCurrentlyRetweeted: boolean) => {
     try {
       console.log(`${isCurrentlyRetweeted ? '↩️' : '🔁'} ${isCurrentlyRetweeted ? 'Unretweeting' : 'Retweeting'} tweet:`, tweetId);
       
@@ -255,9 +276,9 @@ export const InfiniteScrollTweets: React.FC<InfiniteScrollTweetsProps> = ({
     } catch (error) {
       console.error('Error handling retweet:', error);
     }
-  };
+  }, [retweetTweet, unretweetTweet]);
 
-  const handleBookmark = async (tweetId: string, isCurrentlyBookmarked: boolean) => {
+  const handleBookmark = useCallback(async (tweetId: string, isCurrentlyBookmarked: boolean) => {
     try {
       console.log(`${isCurrentlyBookmarked ? '🔖' : '📌'} ${isCurrentlyBookmarked ? 'Unbookmarking' : 'Bookmarking'} tweet:`, tweetId);
       
@@ -269,11 +290,11 @@ export const InfiniteScrollTweets: React.FC<InfiniteScrollTweetsProps> = ({
     } catch (error) {
       console.error('Error handling bookmark:', error);
     }
-  };
+  }, [bookmarkTweet, unbookmarkTweet]);
 
-  const handleCompose = () => {
+  const handleCompose = useCallback(() => {
     navigate('/compose');
-  };
+  }, [navigate]);
 
   if (error) {
     return (
@@ -384,4 +405,4 @@ export const InfiniteScrollTweets: React.FC<InfiniteScrollTweetsProps> = ({
       )}
     </div>
   );
-};
+});

@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { X, Image } from 'lucide-react';
+import { X, Image, Video, Play } from 'lucide-react';
 import { Button } from '../ui/button';
 import { Avatar, AvatarImage, AvatarFallback } from '../ui/avatar';
 import { Tweet } from '../../types';
 import { useAuth } from '../../hooks/useAuth';
 import { useTweets } from '../../hooks/useTweets';
 import { storageService } from '../../lib/storage';
+import VideoPlayer from '../ui/VideoPlayer';
 
 interface ReplyComposerProps {
   tweet: Tweet;
@@ -21,10 +22,10 @@ export const ReplyComposer: React.FC<ReplyComposerProps> = ({
   replyingToReply = false
 }) => {
   const [content, setContent] = useState('');
-  const [images, setImages] = useState<string[]>([]);
+  const [media, setMedia] = useState<{ url: string; type: 'image' | 'video' }[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const [uploadingImage, setUploadingImage] = useState(false);
+  const [uploadingMedia, setUploadingMedia] = useState(false);
   const { user } = useAuth();
   const { createReply } = useTweets();
 
@@ -53,9 +54,10 @@ export const ReplyComposer: React.FC<ReplyComposerProps> = ({
       // For replies to replies, we want to reply to the original tweet (root of the thread)
       // but include the @mention in the content
       const rootTweetId = tweet.replyTo || tweet.id;
-      await createReply(content, rootTweetId, images);
+      const mediaUrls = media.map(item => item.url);
+      await createReply(content, rootTweetId, mediaUrls);
       setContent('');
-      setImages([]);
+      setMedia([]);
       onReplySuccess();
     } catch (err: any) {
       setError(err.message || 'Failed to post reply');
@@ -64,66 +66,73 @@ export const ReplyComposer: React.FC<ReplyComposerProps> = ({
     }
   };
 
-  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleMediaUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (!files || files.length === 0 || !user) return;
 
-    // Check if adding these images would exceed the limit
-    if (images.length + files.length > 4) {
-      setError('You can only attach up to 4 images per reply');
+    // Check if adding these media files would exceed the limit
+    if (media.length + files.length > 4) {
+      setError('You can only attach up to 4 media files per reply');
       return;
     }
 
-    setUploadingImage(true);
+    setUploadingMedia(true);
     setError('');
 
     try {
-      const validFiles: File[] = [];
+      const validFiles: { file: File; type: 'image' | 'video' }[] = [];
       
       // Validate all files first
       for (let i = 0; i < files.length; i++) {
         const file = files[i];
-        const validation = storageService.validateImageFile(file);
+        const validation = storageService.validateMediaFile(file);
         
         if (!validation.isValid) {
           setError(validation.error || 'Invalid file');
           continue;
         }
         
-        validFiles.push(file);
+        validFiles.push({ file, type: validation.mediaType! });
       }
 
       if (validFiles.length === 0) {
-        setUploadingImage(false);
+        setUploadingMedia(false);
         return;
       }
 
-      // Upload files to Supabase Storage
-      const newImageUrls = await storageService.uploadImages(validFiles, user.id);
-      setImages(prev => [...prev, ...newImageUrls]);
+      // Upload files to S3 Storage
+      const uploadPromises = validFiles.map(async ({ file, type }) => {
+        const mediaUrl = type === 'image' ? 
+          await storageService.uploadImage(file, user.id) :
+          await storageService.uploadVideo(file, user.id);
+        return { url: mediaUrl, type };
+      });
+
+      const newMediaItems = await Promise.all(uploadPromises);
+      setMedia(prev => [...prev, ...newMediaItems]);
 
     } catch (err: any) {
-      setError(err.message || 'Failed to upload images. Please try again.');
+      setError(err.message || 'Failed to upload media files. Please try again.');
     } finally {
-      setUploadingImage(false);
+      setUploadingMedia(false);
       // Reset the input
       e.target.value = '';
     }
   };
 
-  const removeImage = async (index: number) => {
-    const imageUrl = images[index];
+  const removeMedia = async (index: number) => {
+    const mediaItem = media[index];
     
     try {
       // Remove from storage
-      await storageService.deleteImage(imageUrl);
+      await storageService.deleteMediaFile(mediaItem.url);
       
       // Remove from state
-      setImages(prev => prev.filter((_, i) => i !== index));
+      setMedia(prev => prev.filter((_, i) => i !== index));
     } catch (error) {
-      console.error('Error deleting image:', error);
+      console.error('Error deleting media:', error);
       // Still remove from state even if deletion fails
-      setImages(prev => prev.filter((_, i) => i !== index));
+      setMedia(prev => prev.filter((_, i) => i !== index));
     }
   };
 
@@ -187,22 +196,40 @@ export const ReplyComposer: React.FC<ReplyComposerProps> = ({
             autoFocus
           />
 
-          {/* Image Preview */}
-          {images.length > 0 && (
+          {/* Media Preview */}
+          {media.length > 0 && (
             <div className="mt-3">
               <div className="grid grid-cols-2 gap-2">
-                {images.map((image, index) => (
+                {media.map((mediaItem, index) => (
                   <div key={index} className="relative group">
-                    <img 
-                      src={storageService.getOptimizedImageUrl(image, { width: 200, quality: 80 })}
-                      alt={`Reply image ${index + 1}`}
-                      className="w-full h-20 object-cover rounded-lg border border-gray-200"
-                    />
+                    {mediaItem.type === 'image' ? (
+                      <img 
+                        src={storageService.getOptimizedImageUrl(mediaItem.url, { width: 200, quality: 80 })}
+                        alt={`Reply image ${index + 1}`}
+                        className="w-full h-20 object-cover rounded-lg border border-gray-200"
+                      />
+                    ) : (
+                      <div className="relative">
+                        <VideoPlayer
+                          src={mediaItem.url}
+                          alt={`Reply video ${index + 1}`}
+                          className="w-full h-20 rounded-lg border border-gray-200"
+                          controls={false}
+                          muted={true}
+                          loading="lazy"
+                        />
+                        <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-30 rounded-lg">
+                          <div className="bg-white bg-opacity-20 rounded-full p-1">
+                            <Play className="w-4 h-4 text-white" />
+                          </div>
+                        </div>
+                      </div>
+                    )}
                     <Button
                       variant="ghost"
                       size="sm"
                       className="absolute top-1 right-1 bg-black/70 text-white hover:bg-black/90 p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
-                      onClick={() => removeImage(index)}
+                      onClick={() => removeMedia(index)}
                     >
                       <X className="h-3 w-3" />
                     </Button>
@@ -215,20 +242,23 @@ export const ReplyComposer: React.FC<ReplyComposerProps> = ({
           {/* Actions */}
           <div className="flex items-center justify-between mt-3">
             <div className="flex items-center space-x-3">
-              {/* Image Upload */}
-              <label className={`cursor-pointer ${images.length >= 4 || uploadingImage ? 'opacity-50 cursor-not-allowed' : ''}`}>
+              {/* Media Upload */}
+              <label className={`cursor-pointer ${media.length >= 4 || uploadingMedia ? 'opacity-50 cursor-not-allowed' : ''}`}>
                 <input
                   type="file"
-                  accept="image/*"
+                  accept="image/*,video/*"
                   multiple
                   className="hidden"
-                  onChange={handleImageUpload}
-                  disabled={images.length >= 4 || uploadingImage}
+                  onChange={handleMediaUpload}
+                  disabled={media.length >= 4 || uploadingMedia}
                 />
-                {uploadingImage ? (
+                {uploadingMedia ? (
                   <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-500"></div>
                 ) : (
-                  <Image className="h-5 w-5 text-blue-500" />
+                  <div className="flex items-center space-x-1">
+                    <Image className="h-4 w-4 text-blue-500" />
+                    <Video className="h-4 w-4 text-blue-500" />
+                  </div>
                 )}
               </label>
             </div>
@@ -256,7 +286,7 @@ export const ReplyComposer: React.FC<ReplyComposerProps> = ({
               {/* Reply Button */}
               <Button
                 onClick={handleSubmit}
-                disabled={!content.trim() || isOverLimit || loading || uploadingImage}
+                disabled={!content.trim() || isOverLimit || loading || uploadingMedia}
                 className="bg-blue-500 hover:bg-blue-600 text-white font-bold px-4 py-2 rounded-full text-sm disabled:opacity-50"
               >
                 {loading ? 'Replying...' : 'Reply'}

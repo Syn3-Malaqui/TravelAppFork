@@ -18,24 +18,84 @@ const s3Client = new S3Client({
 class StorageService {
   private bucketName = import.meta.env.VITE_S3_BUCKET as string;
   private imageCache = new Map<string, string>();
+  private videoCache = new Map<string, string>();
 
   /**
    * Upload an image file to AWS S3
    */
   async uploadImage(file: File, userId: string): Promise<string> {
+    return this.uploadFile(file, userId, 'image');
+  }
+
+  /**
+   * Upload a video file to AWS S3
+   */
+  async uploadVideo(file: File, userId: string): Promise<string> {
+    return this.uploadFile(file, userId, 'video');
+  }
+
+  /**
+   * Upload multiple images
+   */
+  async uploadImages(files: File[], userId: string): Promise<string[]> {
+    return this.uploadFiles(files, userId, 'image');
+  }
+
+  /**
+   * Upload multiple videos
+   */
+  async uploadVideos(files: File[], userId: string): Promise<string[]> {
+    return this.uploadFiles(files, userId, 'video');
+  }
+
+  /**
+   * Upload mixed media files (images and videos)
+   */
+  async uploadMediaFiles(files: File[], userId: string): Promise<string[]> {
+    if (!files || files.length === 0) {
+      throw new Error('No files provided');
+    }
+
+    const uploadPromises = Array.from(files).map(file => {
+      const mediaType = file.type.startsWith('image/') ? 'image' : 'video';
+      return this.uploadFile(file, userId, mediaType);
+    });
+
+    try {
+      const urls = await Promise.all(uploadPromises);
+      return urls;
+    } catch (error: any) {
+      console.error('Error uploading multiple media files:', error);
+      throw new Error('Failed to upload one or more media files');
+    }
+  }
+
+  /**
+   * Generic file upload method for both images and videos
+   */
+  private async uploadFile(file: File, userId: string, mediaType: 'image' | 'video'): Promise<string> {
     try {
       // Check if file exists
       if (!file) {
         throw new Error('No file provided');
       }
 
+      // Validate file based on type
+      const validation = mediaType === 'image' ? 
+        this.validateImageFile(file) : 
+        this.validateVideoFile(file);
+      
+      if (!validation.isValid) {
+        throw new Error(validation.error || 'Invalid file');
+      }
+
       // Generate a unique filename
       const fileExt = file.name.split('.').pop();
-      const fileName = `${userId}/${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`;
+      const fileName = `${userId}/${mediaType}s/${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`;
 
       // Compress image before upload if it's large
       let fileToUpload = file;
-      if (file.size > 1024 * 1024) { // If larger than 1MB
+      if (mediaType === 'image' && file.size > 1024 * 1024) { // If larger than 1MB
         fileToUpload = await this.compressImage(file);
       }
 
@@ -46,6 +106,7 @@ class StorageService {
         fileName: fileName,
         fileSize: fileToUpload.size,
         fileType: fileToUpload.type,
+        mediaType: mediaType,
       });
 
       // Upload the file to S3 using the File/blob directly (SDK handles browser streams)
@@ -63,39 +124,39 @@ class StorageService {
       const publicUrl = this.buildPublicUrl(fileName);
       return publicUrl;
     } catch (error: any) {
-      console.error('Error uploading image to S3:', error);
-      throw new Error(error.message || 'Failed to upload image');
+      console.error(`Error uploading ${mediaType} to S3:`, error);
+      throw new Error(error.message || `Failed to upload ${mediaType}`);
     }
   }
 
   /**
-   * Upload multiple images
+   * Upload multiple files of the same type
    */
-  async uploadImages(files: File[], userId: string): Promise<string[]> {
+  private async uploadFiles(files: File[], userId: string, mediaType: 'image' | 'video'): Promise<string[]> {
     if (!files || files.length === 0) {
       throw new Error('No files provided');
     }
 
     const uploadPromises = Array.from(files).map(file => 
-      this.uploadImage(file, userId)
+      this.uploadFile(file, userId, mediaType)
     );
 
     try {
       const urls = await Promise.all(uploadPromises);
       return urls;
     } catch (error: any) {
-      console.error('Error uploading multiple images:', error);
-      throw new Error('Failed to upload one or more images');
+      console.error(`Error uploading multiple ${mediaType}s:`, error);
+      throw new Error(`Failed to upload one or more ${mediaType}s`);
     }
   }
 
   /**
-   * Delete an image from S3
+   * Delete a media file from S3 (works for both images and videos)
    */
-  async deleteImage(imageUrl: string): Promise<void> {
+  async deleteMediaFile(mediaUrl: string): Promise<void> {
     try {
       // Extract the S3 key from the URL
-      const key = this.extractKeyFromUrl(imageUrl);
+      const key = this.extractKeyFromUrl(mediaUrl);
 
       const command = new DeleteObjectCommand({
         Bucket: this.bucketName,
@@ -104,12 +165,43 @@ class StorageService {
 
       await s3Client.send(command);
 
-      // Clear from cache
-      this.imageCache.delete(imageUrl);
+      // Clear from both caches
+      this.imageCache.delete(mediaUrl);
+      this.videoCache.delete(mediaUrl);
     } catch (error: any) {
-      console.error('Error deleting image from S3:', error);
-      throw new Error(error.message || 'Failed to delete image');
+      console.error('Error deleting media file from S3:', error);
+      throw new Error(error.message || 'Failed to delete media file');
     }
+  }
+
+  /**
+   * Delete an image from S3 (backwards compatibility)
+   */
+  async deleteImage(imageUrl: string): Promise<void> {
+    return this.deleteMediaFile(imageUrl);
+  }
+
+  /**
+   * Delete a video from S3
+   */
+  async deleteVideo(videoUrl: string): Promise<void> {
+    return this.deleteMediaFile(videoUrl);
+  }
+
+  /**
+   * Check if a URL is a video file
+   */
+  isVideoFile(url: string): boolean {
+    const videoExtensions = ['.mp4', '.mov', '.webm', '.ogg', '.avi', '.mkv'];
+    return videoExtensions.some(ext => url.toLowerCase().includes(ext));
+  }
+
+  /**
+   * Check if a URL is an image file
+   */
+  isImageFile(url: string): boolean {
+    const imageExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.webp'];
+    return imageExtensions.some(ext => url.toLowerCase().includes(ext));
   }
 
   /**
@@ -144,7 +236,7 @@ class StorageService {
       return urlObj.pathname.substring(1);
     } catch (error) {
       console.error('Error extracting key from URL:', error);
-      throw new Error('Invalid image URL');
+      throw new Error('Invalid media URL');
     }
   }
 
@@ -175,6 +267,54 @@ class StorageService {
     }
 
     return { isValid: true };
+  }
+
+  /**
+   * Validate video file
+   */
+  validateVideoFile(file: File): { isValid: boolean; error?: string } {
+    // Check if file exists
+    if (!file) {
+      return { isValid: false, error: 'No file provided' };
+    }
+
+    // Check file type
+    if (!file.type.startsWith('video/')) {
+      return { isValid: false, error: 'Please select only video files' };
+    }
+
+    // Check file size (max 100MB for videos)
+    const maxSize = 100 * 1024 * 1024; // 100MB
+    if (file.size > maxSize) {
+      return { isValid: false, error: 'Videos must be smaller than 100MB' };
+    }
+
+    // Check supported formats
+    const supportedFormats = ['video/mp4', 'video/webm', 'video/ogg', 'video/quicktime', 'video/x-msvideo'];
+    if (!supportedFormats.includes(file.type)) {
+      return { isValid: false, error: 'Supported formats: MP4, WebM, OGG, MOV, AVI' };
+    }
+
+    return { isValid: true };
+  }
+
+  /**
+   * Validate media file (image or video)
+   */
+  validateMediaFile(file: File): { isValid: boolean; error?: string; mediaType?: 'image' | 'video' } {
+    if (!file) {
+      return { isValid: false, error: 'No file provided' };
+    }
+
+    if (file.type.startsWith('image/')) {
+      const validation = this.validateImageFile(file);
+      return { ...validation, mediaType: 'image' };
+    } else if (file.type.startsWith('video/')) {
+      const validation = this.validateVideoFile(file);
+      return { ...validation, mediaType: 'video' };
+    } else {
+      return { isValid: false, error: 'Please select only image or video files' };
+    }
   }
 
   /**
@@ -256,6 +396,7 @@ class StorageService {
    */
   clearCache(): void {
     this.imageCache.clear();
+    this.videoCache.clear();
   }
 }
 

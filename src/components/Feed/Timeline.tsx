@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useLanguageStore } from '../../store/useLanguageStore';
 import { useWindowSize } from '../../hooks/useWindowSize';
@@ -19,8 +19,9 @@ import { useTweets } from '../../hooks/useTweets';
 import { supabase } from '../../lib/supabase';
 import { FILTER_COUNTRIES, getLocalizedCountryName } from '../../types';
 import { X, ChevronDown, Check, ChevronLeft, ChevronRight } from 'lucide-react';
+import { feedCache, cacheKeys } from '../../lib/cache';
 
-export const Timeline: React.FC = () => {
+export const Timeline: React.FC = React.memo(() => {
   const navigate = useNavigate();
   const { language, isRTL } = useLanguageStore();
   const { width, isMobile } = useWindowSize();
@@ -79,93 +80,104 @@ export const Timeline: React.FC = () => {
     }
   }, [width, isMobile]);
 
+  // Memoized function to fetch available countries with caching
+  const fetchAvailableCountries = useCallback(async () => {
+    try {
+      // Check cache first
+      const cacheKey = cacheKeys.countries();
+      const cached = feedCache.get<Array<{code: string, name: string}>>(cacheKey);
+      
+      if (cached) {
+        console.log('⚡ Using cached countries:', cached.length);
+        // Re-localize the names based on current language
+        const localizedCountries = cached.map(country => ({
+          code: country.code,
+          name: country.code === 'ALL' 
+            ? (language === 'en' ? 'All Countries' : 'جميع البلدان')
+            : getLocalizedCountryName(FILTER_COUNTRIES.find(c => c.code === country.code)!, language)
+        }));
+        setAvailableCountries(localizedCountries);
+        return;
+      }
+
+      console.log('🔍 Fetching available countries from tweet tags...');
+      
+      // Optimized query - only get unique tags, not full tweet data
+      const { data, error } = await supabase
+        .from('tweets')
+        .select('tags')
+        .not('tags', 'is', null)
+        .limit(1000); // Limit to reduce query time
+
+      if (error) throw error;
+
+      // Extract all country codes from tweet tags
+      const allTags = data.flatMap(tweet => tweet.tags || []);
+      
+      // Filter only valid country codes (that exist in our FILTER_COUNTRIES list)
+      const countryCodesInTweets = [...new Set(allTags)]
+        .filter(tag => FILTER_COUNTRIES.find(c => c.code === tag && c.code !== 'ALL'));
+      
+      // Merge recently tweeted countries so they always appear
+      try {
+        const recent = JSON.parse(sessionStorage.getItem('recent_tweet_countries') || '[]');
+        const recentCountries = recent.filter((code: string) => 
+          FILTER_COUNTRIES.find(c => c.code === code && c.code !== 'ALL')
+        );
+        countryCodesInTweets.push(...recentCountries);
+      } catch {}
+      
+      // Remove duplicates and get unique country codes
+      const uniqueCountryCodes = [...new Set(countryCodesInTweets)];
+      
+      // Map to our country format with localized names
+      const mappedCountries = uniqueCountryCodes
+        .map(countryCode => FILTER_COUNTRIES.find(c => c.code === countryCode))
+        .filter(Boolean) // Remove undefined entries
+        .map(country => ({
+          code: country!.code,
+          name: getLocalizedCountryName(country!, language)
+        }))
+        .sort((a, b) => a.name.localeCompare(b.name)); // Sort alphabetically
+
+      // Always include "All" at the beginning
+      const finalCountries = [
+        { code: 'ALL', name: language === 'en' ? 'All Countries' : 'جميع البلدان' },
+        ...mappedCountries
+      ];
+      
+      // Cache the result (store base data without localized names)
+      const cacheData = finalCountries.map(country => ({
+        code: country.code,
+        name: country.code // Store code as name for caching, we'll localize on retrieval
+      }));
+      feedCache.set(cacheKey, cacheData, 10 * 60 * 1000); // Cache for 10 minutes
+      
+      setAvailableCountries(finalCountries);
+      
+      console.log(`✅ Found ${mappedCountries.length} countries with tweets and cached result`);
+    } catch (error) {
+      console.error('❌ Error fetching countries from tweets:', error);
+      
+      // Fallback: Use a minimal set of popular countries if the database query fails
+      const fallbackCountries = [
+        'ALL', 'US', 'GB', 'AE', 'SA', 'DE', 'FR', 'IT', 'ES', 'JP'
+      ].map(code => FILTER_COUNTRIES.find(c => c.code === code))
+       .filter(Boolean)
+       .map(country => ({
+         code: country!.code,
+         name: getLocalizedCountryName(country!, language)
+       }));
+       
+      setAvailableCountries(fallbackCountries);
+      console.log('🔄 Using fallback countries due to query error:', fallbackCountries);
+    }
+  }, [language]);
+
   // Fetch available countries from the database - only countries with actual tweets
   useEffect(() => {
-    const fetchAvailableCountries = async () => {
-      try {
-        console.log('🔍 Fetching available countries from tweet tags...');
-        
-        // Query tweets to get all unique tags (which include country codes)
-        const { data, error } = await supabase
-          .from('tweets')
-          .select('id, tags, content, created_at')
-          .not('tags', 'is', null);
-
-        if (error) throw error;
-
-        console.log('📊 Database tweets found:', data.length);
-        console.log('📋 Sample tweets with tags:', data.slice(0, 5).map(tweet => ({
-          id: tweet.id,
-          content: tweet.content.substring(0, 50) + '...',
-          tags: tweet.tags,
-          created_at: tweet.created_at
-        })));
-
-        // Extract all country codes from tweet tags
-        const allTags = data.flatMap(tweet => tweet.tags || []);
-        console.log('🏷️ All tags found:', allTags);
-        
-        // Filter only valid country codes (that exist in our FILTER_COUNTRIES list)
-        const countryCodesInTweets = [...new Set(allTags)]
-          .filter(tag => FILTER_COUNTRIES.find(c => c.code === tag && c.code !== 'ALL'));
-        
-        console.log('🌍 Valid country codes in tweets:', countryCodesInTweets);
-        
-        // Merge recently tweeted countries so they always appear
-        try {
-          const recent = JSON.parse(sessionStorage.getItem('recent_tweet_countries') || '[]');
-          console.log('💾 Recent tweet countries from sessionStorage:', recent);
-          const recentCountries = recent.filter((code: string) => 
-            FILTER_COUNTRIES.find(c => c.code === code && c.code !== 'ALL')
-          );
-          countryCodesInTweets.push(...recentCountries);
-        } catch {}
-        
-        // Remove duplicates and get unique country codes
-        const uniqueCountryCodes = [...new Set(countryCodesInTweets)];
-        console.log('🎯 Final unique country codes:', uniqueCountryCodes);
-        
-        // Map to our country format with localized names
-        const mappedCountries = uniqueCountryCodes
-          .map(countryCode => FILTER_COUNTRIES.find(c => c.code === countryCode))
-          .filter(Boolean) // Remove undefined entries
-          .map(country => ({
-            code: country!.code,
-            name: getLocalizedCountryName(country!, language)
-          }))
-          .sort((a, b) => a.name.localeCompare(b.name)); // Sort alphabetically
-
-        // Always include "All" at the beginning
-        const finalCountries = [
-          { code: 'ALL', name: language === 'en' ? 'All Countries' : 'جميع البلدان' },
-          ...mappedCountries
-        ];
-        
-        setAvailableCountries(finalCountries);
-        
-        console.log(`✅ Found ${mappedCountries.length} countries with tweets:`, 
-          mappedCountries.map(c => `${c.code} (${c.name})`));
-        console.log('🎉 Final available countries:', finalCountries);
-      } catch (error) {
-        console.error('❌ Error fetching countries from tweets:', error);
-        
-        // Fallback: Use a minimal set of popular countries if the database query fails
-        const fallbackCountries = [
-          'ALL', 'US', 'GB', 'AE', 'SA', 'DE', 'FR', 'IT', 'ES', 'JP'
-        ].map(code => FILTER_COUNTRIES.find(c => c.code === code))
-         .filter(Boolean)
-         .map(country => ({
-           code: country!.code,
-           name: getLocalizedCountryName(country!, language)
-         }));
-         
-        setAvailableCountries(fallbackCountries);
-        console.log('🔄 Using fallback countries due to query error:', fallbackCountries);
-      }
-    };
-
     fetchAvailableCountries();
-  }, [language]);
+  }, [fetchAvailableCountries]);
 
   // Refresh available countries when user returns from composing (check sessionStorage changes)
   useEffect(() => {
@@ -221,57 +233,73 @@ export const Timeline: React.FC = () => {
     };
   }, [availableCountries, language]);
 
-  // Fetch user profile data for the composer
-  useEffect(() => {
-    const fetchUserProfile = async () => {
-      if (!user) return;
+  // Memoized user profile fetching with caching
+  const fetchUserProfile = useCallback(async () => {
+    if (!user) return;
 
-      try {
-        const { data, error } = await supabase
-          .from('profiles')
-          .select('display_name, username, avatar_url')
-          .eq('id', user.id)
-          .maybeSingle();
-
-        if (error) throw error;
-
-        if (data) {
+    try {
+      // Check if we have preloaded profile data first
+      const preloadedData = sessionStorage.getItem('preloaded_user_profile');
+      if (preloadedData) {
+        const parsed = JSON.parse(preloadedData);
+        if (Date.now() < parsed.expiry) {
+          console.log('⚡ Using preloaded profile data');
           setUserProfile({
-            displayName: data.display_name,
-            username: data.username,
-            avatar: data.avatar_url || '',
+            displayName: parsed.data.display_name,
+            username: parsed.data.username,
+            avatar: parsed.data.avatar_url || '',
           });
-        } else {
-          // Fallback to auth metadata when no profile exists
-          setUserProfile({
-            displayName: user.user_metadata?.display_name || 'User',
-            username: user.user_metadata?.username || 'user',
-            avatar: user.user_metadata?.avatar_url || '',
-          });
+          return;
         }
-      } catch (error) {
-        console.error('Error fetching user profile:', error);
-        // Fallback to auth metadata
+      }
+
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('display_name, username, avatar_url')
+        .eq('id', user.id)
+        .maybeSingle();
+
+      if (error) throw error;
+
+      if (data) {
+        setUserProfile({
+          displayName: data.display_name,
+          username: data.username,
+          avatar: data.avatar_url || '',
+        });
+      } else {
+        // Fallback to auth metadata when no profile exists
         setUserProfile({
           displayName: user.user_metadata?.display_name || 'User',
           username: user.user_metadata?.username || 'user',
           avatar: user.user_metadata?.avatar_url || '',
         });
       }
-    };
-
-    fetchUserProfile();
+    } catch (error) {
+      console.error('Error fetching user profile:', error);
+      // Fallback to auth metadata
+      setUserProfile({
+        displayName: user.user_metadata?.display_name || 'User',
+        username: user.user_metadata?.username || 'user',
+        avatar: user.user_metadata?.avatar_url || '',
+      });
+    }
   }, [user]);
 
-  const handleComposeClick = () => {
+  // Fetch user profile data for the composer
+  useEffect(() => {
+    fetchUserProfile();
+  }, [fetchUserProfile]);
+
+  const handleComposeClick = useCallback(() => {
     navigate('/compose');
-  };
+  }, [navigate]);
 
-  const handleTabChange = (tab: 'for-you' | 'following') => {
+  const handleTabChange = useCallback((tab: 'for-you' | 'following') => {
     setActiveTab(tab);
-  };
+  }, []);
 
-  const handleFilterChange = (filterId: string) => {
+  const handleFilterChange = useCallback((filterId: string) => {
     setSelectedFilter(filterId);
     
     // Map filter IDs to category filters
@@ -309,20 +337,20 @@ export const Timeline: React.FC = () => {
       default:
         setCategoryFilter(null);
     }
-  };
+  }, []);
 
-  const handleCountryChange = (countryCode: string) => {
+  const handleCountryChange = useCallback((countryCode: string) => {
     setCountryFilter(countryCode);
-  };
+  }, []);
 
-  const clearFilters = () => {
+  const clearFilters = useCallback(() => {
     setCategoryFilter(null);
     setCountryFilter('ALL');
     setSelectedFilter('all');
-  };
+  }, []);
 
-  // Scroll functions
-  const scrollCountries = (direction: 'left' | 'right') => {
+  // Memoized scroll functions
+  const scrollCountries = useCallback((direction: 'left' | 'right') => {
     const element = countriesScrollRef.current;
     if (!element) return;
     
@@ -337,7 +365,7 @@ export const Timeline: React.FC = () => {
       : element.scrollLeft + scrollAmount;
     
     element.scrollTo({ left: newScrollLeft, behavior: 'smooth' });
-  };
+  }, [isRTL]);
 
   // Check scroll positions
   const checkScrollPosition = (element: HTMLDivElement, setCanScrollLeft: (value: boolean) => void, setCanScrollRight: (value: boolean) => void) => {
@@ -385,7 +413,10 @@ export const Timeline: React.FC = () => {
     }, 100);
   }, [availableCountries, isRTL]);
 
-  const selectedCountryData = availableCountries.find(c => c.code === countryFilter) || availableCountries[0];
+  const selectedCountryData = useMemo(() => 
+    availableCountries.find(c => c.code === countryFilter) || availableCountries[0],
+    [availableCountries, countryFilter]
+  );
 
   // Temporary debug panel (only in development)
   const DebugPanel = () => {
@@ -834,4 +865,4 @@ export const Timeline: React.FC = () => {
       <DebugPanel />
     </div>
   );
-};
+});

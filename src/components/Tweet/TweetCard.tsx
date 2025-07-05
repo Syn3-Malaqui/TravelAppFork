@@ -60,7 +60,7 @@ const getTextDirection = (text: string): 'ltr' | 'rtl' => {
   return isArabicText(text) ? 'rtl' : 'ltr';
 };
 
-export const TweetCard: React.FC<TweetCardProps> = ({ 
+export const TweetCard: React.FC<TweetCardProps> = React.memo(({ 
   tweet, 
   onLike, 
   onRetweet, 

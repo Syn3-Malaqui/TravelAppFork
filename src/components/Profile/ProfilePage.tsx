@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Calendar, MapPin, Link as LinkIcon, UserPlus, UserMinus, Settings, MessageCircle, Trash2 } from 'lucide-react';
 import { Button } from '../ui/button';
@@ -18,6 +18,7 @@ import { storageService } from '../../lib/storage';
 import { Tweet, User } from '../../types';
 import { formatDistanceToNow } from 'date-fns';
 import { arSA, enUS } from 'date-fns/locale';
+import { profileCache, tweetCache, cacheKeys, invalidateCache } from '../../lib/cache';
 
 export const ProfilePage: React.FC = () => {
   const { username } = useParams<{ username: string }>();
@@ -104,6 +105,20 @@ export const ProfilePage: React.FC = () => {
         return;
       }
 
+      // Check cache first
+      const cacheKey = cacheKeys.profile(username || '');
+      const cachedProfile = profileCache.get<User>(cacheKey);
+      
+      if (cachedProfile) {
+        console.log('⚡ Using cached profile data for:', username);
+        setProfile(cachedProfile);
+        setLoading(false);
+        
+        // Load tweets in background
+        loadUserTweets(cachedProfile.id, cachedProfile);
+        return;
+      }
+
       // Fast profile query - essential data only including suspension status
       const { data: profileData, error: profileError } = await supabase
         .from('profiles')
@@ -153,6 +168,9 @@ export const ProfilePage: React.FC = () => {
         deletedAt: profileData.deleted_at ? new Date(profileData.deleted_at) : undefined,
       };
 
+      // Cache the profile data
+      profileCache.set(cacheKey, formattedProfile);
+
       setProfile(formattedProfile);
       setLoading(false);
 
@@ -166,12 +184,29 @@ export const ProfilePage: React.FC = () => {
     }
   }, [username, currentUser, currentUserProfile]);
 
-  // Separate function to load user tweets
-  const loadUserTweets = async (userId: string, profileData: User) => {
+  // Optimized function to load user tweets with caching
+  const loadUserTweets = useCallback(async (userId: string, profileData: User) => {
     try {
       console.log('🔄 Loading tweets for user:', userId);
 
-      // Load tweets quickly with simplified queries
+      // Check cache for tweets
+      const tweetsCacheKey = cacheKeys.userTweets(userId, 'tweets');
+      const repliesCacheKey = cacheKeys.userTweets(userId, 'replies');
+      const likesCacheKey = cacheKeys.userTweets(userId, 'likes');
+
+      const cachedTweets = tweetCache.get<Tweet[]>(tweetsCacheKey);
+      const cachedReplies = tweetCache.get<Tweet[]>(repliesCacheKey);
+      const cachedLikes = tweetCache.get<Tweet[]>(likesCacheKey);
+
+      if (cachedTweets && cachedReplies && cachedLikes) {
+        console.log('⚡ Using cached tweet data');
+        setTweets(cachedTweets);
+        setReplies(cachedReplies);
+        setLikes(cachedLikes);
+        return;
+      }
+
+      // Load tweets quickly with simplified queries - truly parallel
       const [tweetsResult, repliesResult, likesResult] = await Promise.all([
         // User's tweets (excluding replies) - minimal data
         supabase
@@ -348,10 +383,16 @@ export const ProfilePage: React.FC = () => {
           }
         }, 200);
       }
+
+      // Cache the results
+      tweetCache.set(tweetsCacheKey, formattedTweets);
+      tweetCache.set(repliesCacheKey, formattedReplies);
+      tweetCache.set(likesCacheKey, formattedLikes);
+
     } catch (error) {
       console.error('Error loading user tweets:', error);
     }
-  };
+  }, [currentUser]);
 
   // Simplified profile loading
   useEffect(() => {
@@ -361,7 +402,7 @@ export const ProfilePage: React.FC = () => {
     fetchProfile();
   }, [username, fetchProfile]);
 
-  const handleFollow = async () => {
+  const handleFollow = useCallback(async () => {
     if (!profile) return;
     
     try {
@@ -370,14 +411,15 @@ export const ProfilePage: React.FC = () => {
       } else {
         await followUser(profile.id);
       }
-      // Refresh profile to get updated follower count
+      // Invalidate cache and refresh profile to get updated follower count
+      invalidateCache.userProfile(profile.id);
       await fetchProfile();
     } catch (error: any) {
       console.error('Error toggling follow:', error.message);
     }
-  };
+  }, [profile, isFollowing, unfollowUser, followUser, fetchProfile]);
 
-  const handleMessage = async () => {
+  const handleMessage = useCallback(async () => {
     if (!profile || !currentUser) return;
     
     try {
@@ -393,36 +435,38 @@ export const ProfilePage: React.FC = () => {
     } finally {
       setMessageLoading(false);
     }
-  };
+  }, [profile, currentUser, createConversation, navigate]);
 
-  const handleLike = async (tweetId: string) => {
+  const handleLike = useCallback(async (tweetId: string) => {
     console.log('Like tweet:', tweetId);
-  };
+  }, []);
 
-  const handleRetweet = (tweetId: string) => {
+  const handleRetweet = useCallback((tweetId: string) => {
     console.log('Retweet:', tweetId);
-  };
+  }, []);
 
-  const handleBookmark = (tweetId: string) => {
+  const handleBookmark = useCallback((tweetId: string) => {
     console.log('Bookmark:', tweetId);
-  };
+  }, []);
 
-  const handleFollowersClick = () => {
+  const handleFollowersClick = useCallback(() => {
     if (profile) navigate(`/profile/${profile.username}/followers`);
-  };
+  }, [profile, navigate]);
 
-  const handleFollowingClick = () => {
+  const handleFollowingClick = useCallback(() => {
     if (profile) navigate(`/profile/${profile.username}/following`);
-  };
+  }, [profile, navigate]);
 
   // Function to refresh profile data (called when new tweets are added)
-  const refreshProfileData = () => {
+  const refreshProfileData = useCallback(() => {
     if (username) {
+      invalidateCache.userProfile(username);
+      invalidateCache.userTweets(profile?.id || '');
       fetchProfile();
     }
-  };
+  }, [username, profile?.id, fetchProfile]);
 
-  const getCurrentTabTweets = () => {
+  const getCurrentTabTweets = useMemo(() => {
     switch (activeTab) {
       case 'tweets':
         return tweets;
@@ -435,7 +479,7 @@ export const ProfilePage: React.FC = () => {
       default:
         return tweets;
     }
-  };
+  }, [activeTab, tweets, replies, likes]);
 
   // Show loading state
   if (loading && profile === null) {
@@ -525,7 +569,7 @@ export const ProfilePage: React.FC = () => {
 
   const isOwnProfile = currentUser?.id === profile.id;
   const userIsFollowing = isFollowing(profile.id);
-  const currentTabTweets = getCurrentTabTweets();
+  const currentTabTweets = getCurrentTabTweets;
 
   // Show suspended user page if user is suspended
   if (profile?.suspended && !profile?.deletedAt) {

@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { X, Image, Smile, Calendar, MapPin, ArrowLeft, Tag, Globe, Upload, Trash2, Camera, ChevronDown, Check } from 'lucide-react';
+import { X, Image, Smile, Calendar, MapPin, ArrowLeft, Tag, Globe, Upload, Trash2, Camera, ChevronDown, Check, Video, Play } from 'lucide-react';
 import { Button } from '../ui/button';
 import { Avatar, AvatarImage, AvatarFallback } from '../ui/avatar';
 import { 
@@ -15,18 +15,19 @@ import { useAuth } from '../../hooks/useAuth';
 import { storageService } from '../../lib/storage';
 import { supabase } from '../../lib/supabase';
 import { useLanguageStore } from '../../store/useLanguageStore';
+import VideoPlayer from '../ui/VideoPlayer';
 
 export const ComposePage: React.FC = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { language, isRTL } = useLanguageStore();
   const [content, setContent] = useState('');
-  const [images, setImages] = useState<string[]>([]);
+  const [media, setMedia] = useState<{ url: string; type: 'image' | 'video' }[]>([]);
   const [selectedCategories, setSelectedCategories] = useState<TweetCategory[]>([]);
   const [selectedCountries, setSelectedCountries] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const [uploadingImage, setUploadingImage] = useState(false);
+  const [uploadingMedia, setUploadingMedia] = useState(false);
   const [uploadProgress, setUploadProgress] = useState<{ [key: string]: number }>({});
   const [userProfile, setUserProfile] = useState<{
     displayName: string;
@@ -138,12 +139,13 @@ export const ComposePage: React.FC = () => {
     setError('');
     
     try {
-      // Create tweet with both categories and countries
-      await createTweet(content, images, selectedCategories, selectedCountries);
+      // Create tweet with both categories and countries - convert media to URL array
+      const mediaUrls = media.map(item => item.url);
+      await createTweet(content, mediaUrls, selectedCategories, selectedCountries);
       
       // Reset form
       setContent('');
-      setImages([]);
+      setMedia([]);
       setSelectedCategories([]);
       setSelectedCountries([]);
       
@@ -172,42 +174,42 @@ export const ComposePage: React.FC = () => {
     }
   };
 
-  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleMediaUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (!files || files.length === 0 || !user) return;
 
-    // Check if adding these images would exceed the limit
-    if (images.length + files.length > 4) {
-      setError('You can only attach up to 4 images per post');
+    // Check if adding these media files would exceed the limit
+    if (media.length + files.length > 4) {
+      setError('You can only attach up to 4 media files per post');
       return;
     }
 
-    setUploadingImage(true);
+    setUploadingMedia(true);
     setError('');
 
     try {
-      const validFiles: File[] = [];
+      const validFiles: { file: File; type: 'image' | 'video' }[] = [];
       
       // Validate all files first
       for (let i = 0; i < files.length; i++) {
         const file = files[i];
-        const validation = storageService.validateImageFile(file);
+        const validation = storageService.validateMediaFile(file);
         
         if (!validation.isValid) {
           setError(validation.error || 'Invalid file');
           continue;
         }
         
-        validFiles.push(file);
+        validFiles.push({ file, type: validation.mediaType! });
       }
 
       if (validFiles.length === 0) {
-        setUploadingImage(false);
+        setUploadingMedia(false);
         return;
       }
 
-      // Upload files to Supabase Storage
-      const uploadPromises = validFiles.map(async (file, index) => {
+      // Upload files to S3 Storage
+      const uploadPromises = validFiles.map(async ({ file, type }, index) => {
         const fileId = `${Date.now()}-${index}`;
         setUploadProgress(prev => ({ ...prev, [fileId]: 0 }));
         
@@ -220,12 +222,14 @@ export const ComposePage: React.FC = () => {
             }));
           }, 100);
 
-          const imageUrl = await storageService.uploadImage(file, user.id);
+          const mediaUrl = type === 'image' ? 
+            await storageService.uploadImage(file, user.id) :
+            await storageService.uploadVideo(file, user.id);
           
           clearInterval(progressInterval);
           setUploadProgress(prev => ({ ...prev, [fileId]: 100 }));
           
-          return imageUrl;
+          return { url: mediaUrl, type };
         } catch (error) {
           setUploadProgress(prev => {
             const newProgress = { ...prev };
@@ -236,8 +240,8 @@ export const ComposePage: React.FC = () => {
         }
       });
 
-      const newImageUrls = await Promise.all(uploadPromises);
-      setImages(prev => [...prev, ...newImageUrls]);
+      const newMediaItems = await Promise.all(uploadPromises);
+      setMedia(prev => [...prev, ...newMediaItems]);
       
       // Clear progress after a short delay
       setTimeout(() => {
@@ -245,27 +249,27 @@ export const ComposePage: React.FC = () => {
       }, 1000);
 
     } catch (err: any) {
-      setError(err.message || 'Failed to upload images. Please try again.');
+      setError(err.message || 'Failed to upload media files. Please try again.');
     } finally {
-      setUploadingImage(false);
+      setUploadingMedia(false);
       // Reset the input
       e.target.value = '';
     }
   };
 
-  const removeImage = async (index: number) => {
-    const imageUrl = images[index];
+  const removeMedia = async (index: number) => {
+    const mediaItem = media[index];
     
     try {
       // Remove from storage
-      await storageService.deleteImage(imageUrl);
+      await storageService.deleteMediaFile(mediaItem.url);
       
       // Remove from state
-      setImages(prev => prev.filter((_, i) => i !== index));
+      setMedia(prev => prev.filter((_, i) => i !== index));
     } catch (error) {
-      console.error('Error deleting image:', error);
+      console.error('Error deleting media:', error);
       // Still remove from state even if deletion fails
-      setImages(prev => prev.filter((_, i) => i !== index));
+      setMedia(prev => prev.filter((_, i) => i !== index));
     }
   };
 
@@ -287,9 +291,9 @@ export const ComposePage: React.FC = () => {
     );
   };
 
-  // Handle image upload button click
-  const handleImageButtonClick = () => {
-    if (images.length >= 4 || uploadingImage) return;
+  // Handle media upload button click
+  const handleMediaButtonClick = () => {
+    if (media.length >= 4 || uploadingMedia) return;
     
     if (isMobile && mobileFileInputRef.current) {
       mobileFileInputRef.current.click();
@@ -328,22 +332,22 @@ export const ComposePage: React.FC = () => {
       <input
         ref={fileInputRef}
         type="file"
-        accept="image/*"
+        accept="image/*,video/*"
         multiple
         className="hidden"
-        onChange={handleImageUpload}
-        disabled={images.length >= 4 || uploadingImage}
+        onChange={handleMediaUpload}
+        disabled={media.length >= 4 || uploadingMedia}
       />
       
       {/* Separate mobile file input for better mobile compatibility */}
       <input
         ref={mobileFileInputRef}
         type="file"
-        accept="image/*"
+        accept="image/*,video/*"
         multiple
         className="hidden"
-        onChange={handleImageUpload}
-        disabled={images.length >= 4 || uploadingImage}
+        onChange={handleMediaUpload}
+        disabled={media.length >= 4 || uploadingMedia}
         capture="environment" // Prefer camera on mobile
       />
 
@@ -381,7 +385,7 @@ export const ComposePage: React.FC = () => {
           
           <Button
             onClick={handleSubmit}
-            disabled={!content.trim() || isOverLimit || loading || uploadingImage || selectedCategories.length === 0 || selectedCountries.length === 0}
+            disabled={!content.trim() || isOverLimit || loading || uploadingMedia || selectedCategories.length === 0 || selectedCountries.length === 0}
             className={`bg-blue-500 hover:bg-blue-600 text-white font-bold rounded-full disabled:opacity-50 ${
               isMobile ? 'px-4 py-2 text-sm' : 'px-6 py-2'
             }`}
@@ -556,35 +560,55 @@ export const ComposePage: React.FC = () => {
                 </div>
               )}
 
-              {/* Image Preview */}
-              {images.length > 0 && (
+              {/* Media Preview */}
+              {media.length > 0 && (
                 <div className="mt-3">
                   <div className={`grid gap-2 ${
-                    images.length === 1 ? 'grid-cols-1' :
-                    images.length === 2 ? 'grid-cols-2' :
-                    images.length === 3 ? 'grid-cols-2' :
+                    media.length === 1 ? 'grid-cols-1' :
+                    media.length === 2 ? 'grid-cols-2' :
+                    media.length === 3 ? 'grid-cols-2' :
                     'grid-cols-2'
                   }`}>
-                    {images.map((image, index) => (
+                    {media.map((mediaItem, index) => (
                       <div 
                         key={index} 
                         className={`relative group ${
-                          images.length === 3 && index === 0 ? 'row-span-2' : ''
+                          media.length === 3 && index === 0 ? 'row-span-2' : ''
                         }`}
                       >
-                        <img 
-                          src={storageService.getOptimizedImageUrl(image, { width: 400, quality: 80 })}
-                          alt={`Upload ${index + 1}`}
-                          className={`w-full object-cover rounded-lg border border-gray-200 ${
-                            isMobile ? 'h-24' : 'h-32'
-                          }`}
-                        />
+                        {mediaItem.type === 'image' ? (
+                          <img 
+                            src={storageService.getOptimizedImageUrl(mediaItem.url, { width: 400, quality: 80 })}
+                            alt={`Upload ${index + 1}`}
+                            className={`w-full object-cover rounded-lg border border-gray-200 ${
+                              isMobile ? 'h-24' : 'h-32'
+                            }`}
+                          />
+                        ) : (
+                          <div className="relative">
+                            <VideoPlayer
+                              src={mediaItem.url}
+                              alt={`Video ${index + 1}`}
+                              className={`w-full rounded-lg border border-gray-200 ${
+                                isMobile ? 'h-24' : 'h-32'
+                              }`}
+                              controls={false}
+                              muted={true}
+                              loading="lazy"
+                            />
+                            <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-30 rounded-lg">
+                              <div className="bg-white bg-opacity-20 rounded-full p-2">
+                                <Play className="w-6 h-6 text-white" />
+                              </div>
+                            </div>
+                          </div>
+                        )}
                         <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors rounded-lg" />
                         <Button
                           variant="ghost"
                           size="sm"
                           className="absolute top-1 right-1 bg-black/70 text-white hover:bg-black/90 p-1.5 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
-                          onClick={() => removeImage(index)}
+                          onClick={() => removeMedia(index)}
                         >
                           <Trash2 className="h-3 w-3" />
                         </Button>
@@ -592,11 +616,11 @@ export const ComposePage: React.FC = () => {
                     ))}
                   </div>
                   
-                  {/* Image count indicator */}
+                  {/* Media count indicator */}
                   <div className={`mt-2 text-gray-500 flex items-center justify-between ${isMobile ? 'text-xs' : 'text-sm'}`}>
-                    <span>{images.length}/4 images</span>
-                    {images.length < 4 && (
-                      <span className="text-blue-500">You can add {4 - images.length} more image{4 - images.length !== 1 ? 's' : ''}</span>
+                    <span>{media.length}/4 media files</span>
+                    {media.length < 4 && (
+                      <span className="text-blue-500">You can add {4 - media.length} more file{4 - media.length !== 1 ? 's' : ''}</span>
                     )}
                   </div>
                 </div>
@@ -809,23 +833,26 @@ export const ComposePage: React.FC = () => {
       }`}>
         <div className="max-w-3xl mx-auto w-full flex items-center justify-between">
           <div className="flex items-center space-x-3">
-            {/* Image Upload Button - Enhanced for Mobile */}
+            {/* Media Upload Button - Enhanced for Mobile */}
             <Button
               variant="ghost"
-              onClick={handleImageButtonClick}
-              disabled={images.length >= 4 || uploadingImage}
+              onClick={handleMediaButtonClick}
+              disabled={media.length >= 4 || uploadingMedia}
               className={`flex items-center space-x-2 text-blue-500 hover:text-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
                 isMobile ? 'p-3 rounded-full hover:bg-blue-50 bg-blue-50 shadow-md' : 'p-2 hover:bg-blue-50 rounded-lg'
               }`}
             >
-              {uploadingImage ? (
+              {uploadingMedia ? (
                 <div className={`animate-spin rounded-full border-b-2 border-blue-500 ${isMobile ? 'h-5 w-5' : 'h-6 w-6'}`}></div>
               ) : (
-                <Image className={isMobile ? 'h-5 w-5' : 'h-6 w-6'} />
+                <div className="flex items-center space-x-1">
+                  <Image className={isMobile ? 'h-4 w-4' : 'h-5 w-5'} />
+                  <Video className={isMobile ? 'h-4 w-4' : 'h-5 w-5'} />
+                </div>
               )}
               {!isMobile && (
                 <span className="text-sm font-medium">
-                  {uploadingImage ? 'Uploading...' : 'Add photos'}
+                  {uploadingMedia ? 'Uploading...' : 'Add photos/videos'}
                 </span>
               )}
             </Button>

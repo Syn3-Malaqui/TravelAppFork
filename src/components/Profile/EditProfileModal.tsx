@@ -42,9 +42,9 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({
     const file = e.target.files?.[0];
     if (!file || !user) return;
 
-    const validation = storageService.validateImageFile(file);
-    if (!validation.isValid) {
-      setError(validation.error || 'Invalid file');
+    const validation = storageService.validateMediaFile(file);
+    if (!validation.isValid || validation.mediaType !== 'image') {
+      setError(validation.error || 'Please select only image files for avatar');
       return;
     }
 
@@ -75,9 +75,9 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({
     const file = e.target.files?.[0];
     if (!file || !user) return;
 
-    const validation = storageService.validateImageFile(file);
-    if (!validation.isValid) {
-      setError(validation.error || 'Invalid file');
+    const validation = storageService.validateMediaFile(file);
+    if (!validation.isValid || validation.mediaType !== 'image') {
+      setError(validation.error || 'Please select only image files for cover image');
       return;
     }
 
