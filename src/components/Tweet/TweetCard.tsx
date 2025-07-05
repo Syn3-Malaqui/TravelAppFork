@@ -190,16 +190,19 @@ export const TweetCard: React.FC<TweetCardProps> = React.memo(({
         if (typeof item === 'string') {
           // Handle string URLs with prefixes
           if (item.startsWith('video:')) {
-            media.push({ url: item.slice(6), type: 'video' });
+            const cleanUrl = item.slice(6);
+            media.push({ url: cleanUrl, type: 'video' });
           } else if (item.startsWith('image:')) {
-            media.push({ url: item.slice(6), type: 'image' });
+            const cleanUrl = item.slice(6);
+            media.push({ url: cleanUrl, type: 'image' });
           } else {
             // Default to image if no prefix
             media.push({ url: item, type: 'image' });
           }
         } else {
           // Handle objects with url and type properties
-          media.push(item);
+          const cleanUrl = item.url.startsWith(`${item.type}:`) ? item.url.slice(item.type.length + 1) : item.url;
+          media.push({ ...item, url: cleanUrl });
         }
       });
     }
@@ -489,6 +492,12 @@ export const TweetCard: React.FC<TweetCardProps> = React.memo(({
 
   const handleImageClick = (index: number, e: React.MouseEvent) => {
     e.stopPropagation();
+    const allMedia = getAllMedia();
+    if (allMedia[index].type === 'video') {
+      // For videos, just toggle play/pause in place
+      return;
+    }
+    // For images, show the modal
     setSelectedImageIndex(index);
   };
 
@@ -918,7 +927,7 @@ export const TweetCard: React.FC<TweetCardProps> = React.memo(({
                 const allMedia = getAllMedia();
                 if (allMedia.length === 0) return null;
                 
-                return (
+                const mediaContent = (
                   <div className="mb-2 rounded-2xl overflow-hidden border border-gray-200">
                     {allMedia.length === 1 ? (
                       // Single media - centered and fills container
@@ -937,11 +946,12 @@ export const TweetCard: React.FC<TweetCardProps> = React.memo(({
                               src={allMedia[0].url}
                               alt="Tweet video"
                               className="w-full h-full"
-                              controls={false}
+                              controls={true}
                               muted={true}
                               loading="lazy"
+                              onClick={(e: React.MouseEvent) => e.stopPropagation()}
                             />
-                            <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-30">
+                            <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-30 pointer-events-none">
                               <div className="bg-white bg-opacity-20 rounded-full p-3">
                                 <Play className="w-8 h-8 text-white" />
                               </div>
@@ -972,11 +982,12 @@ export const TweetCard: React.FC<TweetCardProps> = React.memo(({
                                   src={mediaItem.url}
                                   alt={`Tweet video ${index + 1}`}
                                   className="w-full h-full"
-                                  controls={false}
+                                  controls={true}
                                   muted={true}
                                   loading="lazy"
+                                  onClick={(e: React.MouseEvent) => e.stopPropagation()}
                                 />
-                                <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-30">
+                                <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-30 pointer-events-none">
                                   <div className="bg-white bg-opacity-20 rounded-full p-2">
                                     <Play className="w-6 h-6 text-white" />
                                   </div>
@@ -986,98 +997,13 @@ export const TweetCard: React.FC<TweetCardProps> = React.memo(({
                           </div>
                         ))}
                       </div>
-                    ) : allMedia.length === 3 ? (
-                      // Three media - first takes full left side, two small on right, all centered
-                      <div className="grid grid-cols-2 grid-rows-2 gap-1 h-80">
-                        <div className="row-span-2 cursor-pointer" onClick={(e) => handleImageClick(0, e)}>
-                          {allMedia[0].type === 'image' ? (
-                            <LazyImage 
-                              src={allMedia[0].url} 
-                              alt="Tweet image 1" 
-                              className="w-full h-full hover:opacity-95 transition-opacity"
-                              width={400}
-                              quality={80}
-                            />
-                          ) : (
-                            <div className="relative">
-                              <VideoPlayer
-                                src={allMedia[0].url}
-                                alt="Tweet video 1"
-                                className="w-full h-full"
-                                controls={false}
-                                muted={true}
-                                loading="lazy"
-                              />
-                              <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-30">
-                                <div className="bg-white bg-opacity-20 rounded-full p-2">
-                                  <Play className="w-6 h-6 text-white" />
-                                </div>
-                              </div>
-                            </div>
-                          )}
-                        </div>
-                        <div className="cursor-pointer" onClick={(e) => handleImageClick(1, e)}>
-                          {allMedia[1].type === 'image' ? (
-                            <LazyImage 
-                              src={allMedia[1].url} 
-                              alt="Tweet image 2" 
-                              className="w-full h-full hover:opacity-95 transition-opacity"
-                              width={300}
-                              quality={80}
-                            />
-                          ) : (
-                            <div className="relative">
-                              <VideoPlayer
-                                src={allMedia[1].url}
-                                alt="Tweet video 2"
-                                className="w-full h-full"
-                                controls={false}
-                                muted={true}
-                                loading="lazy"
-                              />
-                              <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-30">
-                                <div className="bg-white bg-opacity-20 rounded-full p-1">
-                                  <Play className="w-4 h-4 text-white" />
-                                </div>
-                              </div>
-                            </div>
-                          )}
-                        </div>
-                        <div className="cursor-pointer" onClick={(e) => handleImageClick(2, e)}>
-                          {allMedia[2].type === 'image' ? (
-                            <LazyImage 
-                              src={allMedia[2].url} 
-                              alt="Tweet image 3" 
-                              className="w-full h-full hover:opacity-95 transition-opacity"
-                              width={300}
-                              quality={80}
-                            />
-                          ) : (
-                            <div className="relative">
-                              <VideoPlayer
-                                src={allMedia[2].url}
-                                alt="Tweet video 3"
-                                className="w-full h-full"
-                                controls={false}
-                                muted={true}
-                                loading="lazy"
-                              />
-                              <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-30">
-                                <div className="bg-white bg-opacity-20 rounded-full p-1">
-                                  <Play className="w-4 h-4 text-white" />
-                                </div>
-                              </div>
-                            </div>
-                          )}
-                        </div>
-                      </div>
                     ) : (
-                      // Four media - 2x2 grid, all centered and fills container
+                      // Three or more media - grid layout
                       <div className="grid grid-cols-2 gap-1">
                         {allMedia.map((mediaItem, index) => (
                           <div 
                             key={index} 
-                            className="aspect-[16/9] cursor-pointer"
+                            className={`aspect-[16/9] cursor-pointer ${index === 0 ? 'row-span-2' : ''}`}
                             onClick={(e) => handleImageClick(index, e)}
                           >
                             {mediaItem.type === 'image' ? (
@@ -1085,7 +1011,7 @@ export const TweetCard: React.FC<TweetCardProps> = React.memo(({
                                 src={mediaItem.url} 
                                 alt={`Tweet image ${index + 1}`} 
                                 className="w-full h-full hover:opacity-95 transition-opacity"
-                                width={300}
+                                width={400}
                                 quality={80}
                               />
                             ) : (
@@ -1094,13 +1020,14 @@ export const TweetCard: React.FC<TweetCardProps> = React.memo(({
                                   src={mediaItem.url}
                                   alt={`Tweet video ${index + 1}`}
                                   className="w-full h-full"
-                                  controls={false}
+                                  controls={true}
                                   muted={true}
                                   loading="lazy"
+                                  onClick={(e: React.MouseEvent) => e.stopPropagation()}
                                 />
-                                <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-30">
-                                  <div className="bg-white bg-opacity-20 rounded-full p-1">
-                                    <Play className="w-4 h-4 text-white" />
+                                <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-30 pointer-events-none">
+                                  <div className="bg-white bg-opacity-20 rounded-full p-2">
+                                    <Play className="w-6 h-6 text-white" />
                                   </div>
                                 </div>
                               </div>
@@ -1111,6 +1038,8 @@ export const TweetCard: React.FC<TweetCardProps> = React.memo(({
                     )}
                   </div>
                 );
+
+                return mediaContent;
               })()}
 
               {/* Actions */}

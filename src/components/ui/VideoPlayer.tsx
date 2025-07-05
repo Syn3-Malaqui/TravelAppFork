@@ -17,6 +17,7 @@ interface VideoPlayerProps {
   onError?: () => void;
   onPlay?: () => void;
   onPause?: () => void;
+  onClick?: (e: React.MouseEvent) => void;
 }
 
 export const VideoPlayer: React.FC<VideoPlayerProps> = ({
@@ -35,6 +36,7 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
   onError,
   onPlay,
   onPause,
+  onClick,
 }) => {
   const [isPlaying, setIsPlaying] = useState(autoPlay);
   const [isMuted, setIsMuted] = useState(muted);
@@ -276,6 +278,7 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
       style={{ width, height }}
       onMouseMove={handleMouseMove}
       onMouseLeave={() => controls && isPlaying && setShowControls(false)}
+      onClick={onClick}
     >
       {/* Video Element */}
       {isInView && (
@@ -289,6 +292,8 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
           loop={loop}
           playsInline
           style={{ width, height }}
+          onLoadStart={() => setIsLoading(true)}
+          onLoadedData={() => setIsLoading(false)}
         />
       )}
 
