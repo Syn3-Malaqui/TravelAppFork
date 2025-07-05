@@ -166,12 +166,17 @@ export const TweetCard: React.FC<TweetCardProps> = React.memo(({
   const getAllMedia = (): { url: string; type: 'image' | 'video' }[] => {
     const media: { url: string; type: 'image' | 'video' }[] = [];
     
+    const isVideoUrl = (url: string): boolean => {
+      return url.toLowerCase().endsWith('.mp4');
+    };
+
     // Add images
     if (tweet.images) {
       tweet.images.forEach(url => {
         // Remove 'image:' prefix if present
         const cleanUrl = url.startsWith('image:') ? url.slice(6) : url;
-        media.push({ url: cleanUrl, type: 'image' });
+        // Check if it's actually a video despite being in images array
+        media.push({ url: cleanUrl, type: isVideoUrl(cleanUrl) ? 'video' : 'image' });
       });
     }
     
@@ -189,20 +194,18 @@ export const TweetCard: React.FC<TweetCardProps> = React.memo(({
       tweet.media.forEach(item => {
         if (typeof item === 'string') {
           // Handle string URLs with prefixes
-          if (item.startsWith('video:')) {
-            const cleanUrl = item.slice(6);
-            media.push({ url: cleanUrl, type: 'video' });
-          } else if (item.startsWith('image:')) {
-            const cleanUrl = item.slice(6);
-            media.push({ url: cleanUrl, type: 'image' });
-          } else {
-            // Default to image if no prefix
-            media.push({ url: item, type: 'image' });
-          }
+          const cleanUrl = item.startsWith('video:') ? item.slice(6) : 
+                          item.startsWith('image:') ? item.slice(6) : item;
+          
+          // Determine type based on file extension, overriding any prefix
+          const type = isVideoUrl(cleanUrl) ? 'video' : 'image';
+          media.push({ url: cleanUrl, type });
         } else {
           // Handle objects with url and type properties
           const cleanUrl = item.url.startsWith(`${item.type}:`) ? item.url.slice(item.type.length + 1) : item.url;
-          media.push({ ...item, url: cleanUrl });
+          // Override type if URL indicates different media type
+          const type = isVideoUrl(cleanUrl) ? 'video' : item.type;
+          media.push({ url: cleanUrl, type });
         }
       });
     }
