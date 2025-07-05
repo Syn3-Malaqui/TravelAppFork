@@ -98,8 +98,26 @@ export const useTweets = () => {
       retweets: tweetData.retweets_count,
       replies: tweetData.replies_count,
       views: tweetData.views_count,
-      images: tweetData.image_urls,
-      videos: tweetData.video_urls || [],
+      // Parse combined media URLs to separate images and videos
+      ...(() => {
+        const images: string[] = [];
+        const videos: string[] = [];
+        
+        if (tweetData.image_urls) {
+          tweetData.image_urls.forEach(url => {
+            if (url.startsWith('video:')) {
+              videos.push(url.substring(6)); // Remove 'video:' prefix
+            } else if (url.startsWith('image:')) {
+              images.push(url.substring(6)); // Remove 'image:' prefix
+            } else {
+              // Legacy support for URLs without prefix (assume image)
+              images.push(url);
+            }
+          });
+        }
+        
+        return { images, videos };
+      })(),
       isLiked: userLikes.includes(tweetData.id),
       isRetweeted: userRetweets.includes(tweetData.id),
       isBookmarked: userBookmarks.includes(tweetData.id),
@@ -944,6 +962,14 @@ export const useTweets = () => {
   };
 
   const createTweet = async (content: string, imageUrls: string[] = [], videoUrls: string[] = [], categories: TweetCategory[] = [], countries: string[] = []) => {
+    // Combine images and videos into a single array with metadata
+    const allMediaUrls = [
+      ...imageUrls.map(url => ({ url, type: 'image' })),
+      ...videoUrls.map(url => ({ url, type: 'video' }))
+    ];
+    
+    // Store all media URLs in the image_urls field for now
+    const mediaUrls = allMediaUrls.map(media => `${media.type}:${media.url}`);
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('User not authenticated');
@@ -968,8 +994,7 @@ export const useTweets = () => {
         .insert({
           content,
           author_id: user.id,
-          image_urls: imageUrls,
-          video_urls: videoUrls, // Add video URLs
+          image_urls: mediaUrls, // Store combined media URLs
           hashtags,
           mentions,
           tags: allTags, // Store both categories and countries
@@ -1023,6 +1048,14 @@ export const useTweets = () => {
   };
 
   const createReply = async (content: string, replyToId: string, imageUrls: string[] = [], videoUrls: string[] = []) => {
+    // Combine images and videos into a single array with metadata
+    const allMediaUrls = [
+      ...imageUrls.map(url => ({ url, type: 'image' })),
+      ...videoUrls.map(url => ({ url, type: 'video' }))
+    ];
+    
+    // Store all media URLs in the image_urls field for now
+    const mediaUrls = allMediaUrls.map(media => `${media.type}:${media.url}`);
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('User not authenticated');
@@ -1042,8 +1075,7 @@ export const useTweets = () => {
           content,
           author_id: user.id,
           reply_to: replyToId,
-          image_urls: imageUrls,
-          video_urls: videoUrls, // Add video URLs
+          image_urls: mediaUrls, // Store combined media URLs
           hashtags,
           mentions,
         })

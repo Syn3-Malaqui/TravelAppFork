@@ -94,7 +94,7 @@ interface TweetData {
   author_id: string;
   reply_to: string | null;
   image_urls: string[];
-  video_urls: string[];
+  video_urls?: string[];
   hashtags: string[];
   mentions: string[];
   tags: string[];
