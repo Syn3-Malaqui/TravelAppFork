@@ -167,6 +167,9 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
     const video = videoRef.current;
     if (!video) return;
 
+    // Keep controls visible on interaction
+    setShowControls(true);
+
     if (isPlaying) {
       video.pause();
     } else {
@@ -178,6 +181,7 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
     const video = videoRef.current;
     if (!video) return;
 
+    setShowControls(true);
     video.muted = !isMuted;
   };
 
@@ -308,7 +312,7 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
       {!isPlaying && !isLoading && (
         <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-30">
           <button
-            onClick={togglePlay}
+            onClick={(e) => { e.stopPropagation(); togglePlay(); }}
             className="bg-white bg-opacity-20 hover:bg-opacity-30 rounded-full p-4 transition-all duration-200"
           >
             <Play className="w-12 h-12 text-white ml-1" />
@@ -342,14 +346,14 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-3">
               <button
-                onClick={togglePlay}
+                onClick={(e) => { e.stopPropagation(); togglePlay(); }}
                 className="text-white hover:text-blue-400 transition-colors"
               >
                 {isPlaying ? <Pause className="w-5 h-5" /> : <Play className="w-5 h-5" />}
               </button>
 
               <button
-                onClick={restart}
+                onClick={(e) => { e.stopPropagation(); restart(); }}
                 className="text-white hover:text-blue-400 transition-colors"
               >
                 <RotateCcw className="w-4 h-4" />
@@ -357,7 +361,7 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
 
               <div className="flex items-center space-x-2">
                 <button
-                  onClick={toggleMute}
+                  onClick={(e) => { e.stopPropagation(); toggleMute(); }}
                   className="text-white hover:text-blue-400 transition-colors"
                 >
                   {isMuted || volume === 0 ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4" />}
@@ -369,7 +373,7 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
                   max="1"
                   step="0.1"
                   value={isMuted ? 0 : volume}
-                  onChange={handleVolumeChange}
+                  onChange={(e) => { e.stopPropagation(); handleVolumeChange(e); }}
                   className="w-16 h-1 bg-gray-300 rounded-lg appearance-none cursor-pointer"
                 />
               </div>
@@ -380,7 +384,7 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
             </div>
 
             <button
-              onClick={toggleFullscreen}
+              onClick={(e) => { e.stopPropagation(); toggleFullscreen(); }}
               className="text-white hover:text-blue-400 transition-colors"
             >
               {isFullscreen ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
