@@ -23,6 +23,11 @@ class StorageService {
    */
   async uploadImage(file: File, userId: string): Promise<string> {
     try {
+      // Check if file exists
+      if (!file) {
+        throw new Error('No file provided');
+      }
+
       // Generate a unique filename
       const fileExt = file.name.split('.').pop();
       const fileName = `${userId}/${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`;
@@ -66,6 +71,10 @@ class StorageService {
    * Upload multiple images
    */
   async uploadImages(files: File[], userId: string): Promise<string[]> {
+    if (!files || files.length === 0) {
+      throw new Error('No files provided');
+    }
+
     const uploadPromises = Array.from(files).map(file => 
       this.uploadImage(file, userId)
     );
@@ -142,6 +151,11 @@ class StorageService {
    * Validate image file
    */
   validateImageFile(file: File): { isValid: boolean; error?: string } {
+    // Check if file exists
+    if (!file) {
+      return { isValid: false, error: 'No file provided' };
+    }
+
     // Check file type
     if (!file.type.startsWith('image/')) {
       return { isValid: false, error: 'Please select only image files' };
@@ -166,6 +180,10 @@ class StorageService {
    * Compress image to reduce file size
    */
   private async compressImage(file: File): Promise<File> {
+    if (!file) {
+      throw new Error('No file provided for compression');
+    }
+
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
       reader.readAsDataURL(file);
