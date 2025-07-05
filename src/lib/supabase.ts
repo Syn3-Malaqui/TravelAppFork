@@ -15,10 +15,8 @@ const cleanUrl = supabaseUrl?.replace(/\/rest.*$/, '').replace(/\/$/, '') || '';
 // Create Supabase client with optimized configuration
 export const supabase = createClient<Database>(cleanUrl, supabaseAnonKey || '', {
   auth: {
-    // Allow Supabase to automatically refresh expired JWTs in the background
-    autoRefreshToken: true,
-    // Persist the session in localStorage so the user stays logged-in after a page refresh
-    persistSession: true,
+    autoRefreshToken: false,
+    persistSession: false,
     detectSessionInUrl: false, // Disable to prevent URL issues
     flowType: 'pkce'
   },
