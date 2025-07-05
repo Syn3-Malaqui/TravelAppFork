@@ -23,11 +23,6 @@ class StorageService {
    */
   async uploadImage(file: File, userId: string): Promise<string> {
     try {
-      console.log('S3 DEBUG', {
-        bucket: this.bucketName,
-        region: import.meta.env.VITE_AWS_REGION,
-        accessKeyIdPresent: !!import.meta.env.VITE_AWS_ACCESS_KEY_ID,
-      });
       // Generate a unique filename
       const fileExt = file.name.split('.').pop();
       const fileName = `${userId}/${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`;
@@ -38,13 +33,21 @@ class StorageService {
         fileToUpload = await this.compressImage(file);
       }
 
+      console.log('S3 DEBUG', {
+        bucket: this.bucketName,
+        region: import.meta.env.VITE_AWS_REGION,
+        accessKeyIdPresent: !!import.meta.env.VITE_AWS_ACCESS_KEY_ID,
+        fileName: fileName,
+        fileSize: fileToUpload.size,
+        fileType: fileToUpload.type,
+      });
+
       // Upload the file to S3 using the File/blob directly (SDK handles browser streams)
       const command = new PutObjectCommand({
         Bucket: this.bucketName,
         Key: fileName,
         Body: fileToUpload,
         ContentType: fileToUpload.type,
-        ACL: 'public-read',
         CacheControl: 'max-age=31536000',
       });
 
