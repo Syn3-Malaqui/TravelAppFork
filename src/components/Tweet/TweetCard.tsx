@@ -165,15 +165,20 @@ export const TweetCard: React.FC<TweetCardProps> = React.memo(({
   // Helper function to get all media (images and videos) from tweet
   const getAllMedia = (): { url: string; type: 'image' | 'video' }[] => {
     const media: { url: string; type: 'image' | 'video' }[] = [];
-    
-    // Add images/videos from the images array, parsing the prefix
+
     if (tweet.images) {
       tweet.images.forEach(rawUrl => {
+        if (typeof rawUrl !== 'string') return;
+        // Only process if it looks like a URL or prefixed URL
+        if (!rawUrl.startsWith('http') && !rawUrl.startsWith('image:') && !rawUrl.startsWith('video:')) return;
+
         if (rawUrl.startsWith('video:')) {
-          media.push({ url: rawUrl.replace('video:', ''), type: 'video' });
+          const url = rawUrl.replace('video:', '');
+          if (url.startsWith('http')) media.push({ url, type: 'video' });
         } else if (rawUrl.startsWith('image:')) {
-          media.push({ url: rawUrl.replace('image:', ''), type: 'image' });
-        } else {
+          const url = rawUrl.replace('image:', '');
+          if (url.startsWith('http')) media.push({ url, type: 'image' });
+        } else if (rawUrl.startsWith('http')) {
           // fallback for legacy
           media.push({ url: rawUrl, type: 'image' });
         }
@@ -182,12 +187,18 @@ export const TweetCard: React.FC<TweetCardProps> = React.memo(({
     // Add videos from videos array if present (for future compatibility)
     if (tweet.videos) {
       tweet.videos.forEach(url => {
-        media.push({ url, type: 'video' });
+        if (typeof url === 'string' && url.startsWith('http')) {
+          media.push({ url, type: 'video' });
+        }
       });
     }
     // Add mixed media if available
     if (tweet.media) {
-      media.push(...tweet.media);
+      tweet.media.forEach(item => {
+        if (item && typeof item.url === 'string' && (item.url.startsWith('http'))) {
+          media.push(item);
+        }
+      });
     }
     return media;
   };
