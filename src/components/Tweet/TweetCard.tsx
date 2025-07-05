@@ -1006,7 +1006,7 @@ export const TweetCard: React.FC<TweetCardProps> = React.memo(({
                         {allMedia.map((mediaItem, index) => (
                           <div 
                             key={index} 
-                            className={`aspect-[16/9] cursor-pointer ${index === 0 ? 'row-span-2' : ''}`}
+                            className={`aspect-[16/9] cursor-pointer ${allMedia.length === 3 && index === 0 ? 'row-span-2' : ''}`}
                             onClick={(e) => handleImageClick(index, e)}
                           >
                             {mediaItem.type === 'image' ? (
