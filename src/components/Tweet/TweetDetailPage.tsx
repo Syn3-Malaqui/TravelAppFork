@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, CornerUpLeft, Eye } from 'lucide-react';
+import { ArrowLeft, CornerUpLeft, Eye, Play } from 'lucide-react';
 import { Button } from '../ui/button';
 import { Avatar, AvatarImage, AvatarFallback } from '../ui/avatar';
 import { TweetCard } from './TweetCard';
@@ -19,6 +19,8 @@ import { storageService } from '../../lib/storage';
 import { Tweet, TweetWithProfile } from '../../types';
 import { formatDistanceToNow } from 'date-fns';
 import { arSA, enUS } from 'date-fns/locale';
+import { LazyImage } from '../ui/LazyImage';
+import { VideoPlayer } from '../ui/VideoPlayer';
 
 // Function to detect if text contains Arabic characters
 const isArabicText = (text: string): boolean => {
@@ -94,19 +96,6 @@ export const TweetDetailPage: React.FC = () => {
   }, [checkIfUserIsAdmin]);
 
   const formatTweetData = (tweetData: TweetWithProfile, userLikes: string[], userRetweets: string[], userBookmarks: string[]): Tweet => {
-    // Helper function to process media URLs
-    const processMediaUrls = (urls: (string | `image:${string}` | `video:${string}`)[] | undefined): (string | `image:${string}` | `video:${string}`)[] => {
-      if (!urls) return [];
-      return urls.map(url => {
-        // If URL is already prefixed, return as is
-        if (url.startsWith('image:') || url.startsWith('video:')) {
-          return url;
-        }
-        // Add appropriate prefix based on file type
-        return url.toLowerCase().endsWith('.mp4') ? `video:${url}` as const : `image:${url}` as const;
-      });
-    };
-
     return {
       id: tweetData.id,
       content: tweetData.content,
@@ -114,13 +103,12 @@ export const TweetDetailPage: React.FC = () => {
         id: tweetData.profiles.id,
         username: tweetData.profiles.username,
         displayName: tweetData.profiles.display_name,
-        avatar: tweetData.profiles.avatar_url || '',
-        bio: tweetData.profiles.bio,
+        avatar: tweetData.profiles.avatar_url ?? '',
+        bio: tweetData.profiles.bio ?? '',
         verified: tweetData.profiles.verified,
-        isAdmin: tweetData.profiles.is_admin,
         followers: tweetData.profiles.followers_count,
         following: tweetData.profiles.following_count,
-        country: tweetData.profiles.country,
+        country: tweetData.profiles.country ?? undefined,
         joinedDate: new Date(tweetData.profiles.created_at),
       },
       createdAt: new Date(tweetData.created_at),
@@ -128,17 +116,14 @@ export const TweetDetailPage: React.FC = () => {
       retweets: tweetData.retweets_count,
       replies: tweetData.replies_count,
       views: tweetData.views_count,
-      images: processMediaUrls(tweetData.image_urls),
-      videos: processMediaUrls(tweetData.video_urls),
+      images: tweetData.image_urls || [],
       isLiked: userLikes.includes(tweetData.id),
       isRetweeted: userRetweets.includes(tweetData.id),
       isBookmarked: userBookmarks.includes(tweetData.id),
-      hashtags: tweetData.hashtags || [],
-      mentions: tweetData.mentions || [],
+      hashtags: tweetData.hashtags,
+      mentions: tweetData.mentions,
       tags: tweetData.tags || [],
-      replyTo: tweetData.reply_to || undefined,
-      isRetweet: tweetData.is_retweet,
-      originalTweet: tweetData.original_tweet ? formatTweetData(tweetData.original_tweet, userLikes, userRetweets, userBookmarks) : undefined,
+      replyTo: tweetData.reply_to ?? undefined,
     };
   };
 
@@ -152,13 +137,102 @@ export const TweetDetailPage: React.FC = () => {
     return num.toString();
   };
 
+  // Helper to aggregate and detect media (images & videos)
+  const getAllMedia = (): { url: string; type: 'image' | 'video' }[] => {
+    if (!tweet) return [];
+
+    const media: { url: string; type: 'image' | 'video' }[] = [];
+
+    const isVideoUrl = (url: string): boolean => url.toLowerCase().endsWith('.mp4');
+
+    if (tweet.images && tweet.images.length) {
+      tweet.images.forEach((rawUrl) => {
+        const cleanUrl = rawUrl.startsWith('image:') ? rawUrl.slice(6) : rawUrl.startsWith('video:') ? rawUrl.slice(6) : rawUrl;
+        media.push({ url: cleanUrl, type: isVideoUrl(cleanUrl) ? 'video' : 'image' });
+      });
+    }
+
+    // If tweet.videos or tweet.media are available in the future, include them here as well
+
+    return media;
+  };
+
+  // Sub-component to render the media grid (desktop & mobile share logic)
+  const MediaGrid: React.FC<{ mobile?: boolean }> = ({ mobile = false }) => {
+    const allMedia = getAllMedia();
+    if (allMedia.length === 0) return null;
+
+    const containerClass = mobile ? 'mb-3 rounded-xl overflow-hidden' : 'mb-4 rounded-2xl overflow-hidden border border-gray-200';
+
+    return (
+      <div className={containerClass}>
+        {allMedia.length === 1 ? (
+          allMedia[0].type === 'image' ? (
+            <LazyImage
+              src={allMedia[0].url}
+              alt="Tweet media"
+              className={mobile ? 'w-full aspect-[16/9] object-cover' : 'w-full max-h-96 object-cover'}
+              width={600}
+              quality={80}
+            />
+          ) : (
+            <VideoPlayer
+              src={allMedia[0].url}
+              alt="Tweet video"
+              className={mobile ? 'w-full aspect-[16/9]' : 'w-full max-h-96'}
+              controls={true}
+              muted={true}
+              loading="lazy"
+            />
+          )
+        ) : (
+          <div
+            className={`grid gap-1 ${
+              allMedia.length === 2
+                ? 'grid-cols-2'
+                : allMedia.length === 3
+                ? 'grid-cols-2 grid-rows-2'
+                : 'grid-cols-2'
+            }`}
+          >
+            {allMedia.map((item, index) => (
+              <div
+                key={index}
+                className={`${allMedia.length === 3 && index === 0 ? 'row-span-2' : ''} aspect-[16/9]`}
+              >
+                {item.type === 'image' ? (
+                  <LazyImage
+                    src={item.url}
+                    alt={`Tweet media ${index + 1}`}
+                    className="w-full h-full object-cover"
+                    width={400}
+                    quality={80}
+                  />
+                ) : (
+                  <VideoPlayer
+                    src={item.url}
+                    alt={`Tweet video ${index + 1}`}
+                    className="w-full h-full"
+                    controls={true}
+                    muted={true}
+                    loading="lazy"
+                  />
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    );
+  };
+
   const fetchTweetDetail = async () => {
     try {
       setLoading(true);
       setError(null);
 
       // Fetch the main tweet
-      const { data: rawTweetData, error: tweetError } = await supabase
+      const { data: tweetData, error: tweetError } = await supabase
         .from('tweets')
         .select(`
           id,
@@ -166,7 +240,6 @@ export const TweetDetailPage: React.FC = () => {
           author_id,
           reply_to,
           image_urls,
-          video_urls,
           hashtags,
           mentions,
           tags,
@@ -175,9 +248,6 @@ export const TweetDetailPage: React.FC = () => {
           replies_count,
           views_count,
           created_at,
-          updated_at,
-          is_retweet,
-          original_tweet_id,
           profiles!tweets_author_id_fkey (
             id,
             username,
@@ -185,24 +255,16 @@ export const TweetDetailPage: React.FC = () => {
             avatar_url,
             bio,
             verified,
-            is_admin,
             followers_count,
             following_count,
             country,
-            created_at,
-            updated_at
+            created_at
           )
         `)
         .eq('id', tweetId)
         .single();
 
       if (tweetError) throw tweetError;
-
-      // Transform the raw data into the correct shape
-      const tweetData: TweetWithProfile = {
-        ...rawTweetData,
-        profiles: rawTweetData.profiles[0], // Convert array to single object
-      };
 
       // Get current user interactions
       let userLikes: string[] = [];
@@ -233,19 +295,20 @@ export const TweetDetailPage: React.FC = () => {
         userBookmarks = bookmarksResult.data?.map(bookmark => bookmark.tweet_id) || [];
       }
 
-      const formattedTweet = formatTweetData(tweetData, userLikes, userRetweets, userBookmarks);
+      const formattedTweet = formatTweetData(tweetData as unknown as TweetWithProfile, userLikes, userRetweets, userBookmarks);
       setTweet(formattedTweet);
 
-      // If this is a reply, fetch the parent tweet
-      if (formattedTweet.replyTo) {
-        fetchParentTweet(formattedTweet.replyTo);
+      // If this tweet is a reply, fetch the parent tweet
+      if (tweetData.reply_to) {
+        await fetchParentTweet(tweetData.reply_to);
       }
 
-      // Fetch replies for this tweet
-      fetchReplies(formattedTweet.id);
-    } catch (error) {
-      console.error('Error fetching tweet:', error);
-      setError('Failed to load tweet');
+      // Fetch replies to this tweet
+      await fetchReplies(tweetData.id);
+
+    } catch (err: any) {
+      setError(err.message);
+      console.error('Error fetching tweet detail:', err);
     } finally {
       setLoading(false);
     }
@@ -253,7 +316,7 @@ export const TweetDetailPage: React.FC = () => {
 
   const fetchParentTweet = async (parentId: string) => {
     try {
-      const { data: rawParentData, error: parentError } = await supabase
+      const { data: parentData, error: parentError } = await supabase
         .from('tweets')
         .select(`
           id,
@@ -261,7 +324,6 @@ export const TweetDetailPage: React.FC = () => {
           author_id,
           reply_to,
           image_urls,
-          video_urls,
           hashtags,
           mentions,
           tags,
@@ -270,9 +332,6 @@ export const TweetDetailPage: React.FC = () => {
           replies_count,
           views_count,
           created_at,
-          updated_at,
-          is_retweet,
-          original_tweet_id,
           profiles!tweets_author_id_fkey (
             id,
             username,
@@ -280,12 +339,10 @@ export const TweetDetailPage: React.FC = () => {
             avatar_url,
             bio,
             verified,
-            is_admin,
             followers_count,
             following_count,
             country,
-            created_at,
-            updated_at
+            created_at
           )
         `)
         .eq('id', parentId)
@@ -293,13 +350,7 @@ export const TweetDetailPage: React.FC = () => {
 
       if (parentError) throw parentError;
 
-      // Transform the raw data into the correct shape
-      const parentData: TweetWithProfile = {
-        ...rawParentData,
-        profiles: rawParentData.profiles[0], // Convert array to single object
-      };
-
-      // Get current user interactions for parent tweet
+      // Get user interactions for parent tweet
       let userLikes: string[] = [];
       let userRetweets: string[] = [];
       let userBookmarks: string[] = [];
@@ -328,10 +379,10 @@ export const TweetDetailPage: React.FC = () => {
         userBookmarks = bookmarksResult.data?.map(bookmark => bookmark.tweet_id) || [];
       }
 
-      setParentTweet(formatTweetData(parentData, userLikes, userRetweets, userBookmarks));
+      const formattedParent = formatTweetData(parentData as unknown as TweetWithProfile, userLikes, userRetweets, userBookmarks);
+      setParentTweet(formattedParent);
     } catch (error) {
       console.error('Error fetching parent tweet:', error);
-      // Don't set error state for parent tweet failures
     }
   };
 
@@ -643,39 +694,8 @@ export const TweetDetailPage: React.FC = () => {
                   }}
                 />
 
-                {/* Images */}
-                {tweet.images && tweet.images.length > 0 && (
-                  <div className="mb-4 rounded-2xl overflow-hidden border border-gray-200">
-                    {tweet.images.length === 1 ? (
-                      <img 
-                        src={tweet.images[0]} 
-                        alt="Tweet image" 
-                        className="w-full max-h-96 object-cover"
-                      />
-                    ) : (
-                      <div className={`grid gap-1 ${
-                        tweet.images.length === 2 ? 'grid-cols-2' :
-                        tweet.images.length === 3 ? 'grid-cols-2 grid-rows-2' :
-                        'grid-cols-2'
-                      }`}>
-                        {tweet.images.map((image, index) => (
-                          <div 
-                            key={index} 
-                            className={`${
-                              tweet.images!.length === 3 && index === 0 ? 'row-span-2' : ''
-                            }`}
-                          >
-                            <img 
-                              src={image} 
-                              alt={`Tweet image ${index + 1}`} 
-                              className="w-full h-full object-cover"
-                            />
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                )}
+                {/* Media (Images & Videos) */}
+                <MediaGrid />
 
                 {/* Timestamp */}
                 <div className="text-gray-500 text-sm mb-4 pb-4 border-b border-gray-100">
@@ -947,39 +967,8 @@ export const TweetDetailPage: React.FC = () => {
                 }}
               />
 
-              {/* Images */}
-              {tweet.images && tweet.images.length > 0 && (
-                <div className="mb-3 rounded-xl overflow-hidden">
-                  {tweet.images.length === 1 ? (
-                    <img 
-                      src={tweet.images[0]} 
-                      alt="Tweet image" 
-                      className="w-full aspect-[16/9] object-cover"
-                    />
-                  ) : (
-                    <div className={`grid gap-1 ${
-                      tweet.images.length === 2 ? 'grid-cols-2' :
-                      tweet.images.length === 3 ? 'grid-cols-2 grid-rows-2' :
-                      'grid-cols-2'
-                    }`}>
-                      {tweet.images.map((image, index) => (
-                        <div 
-                          key={index} 
-                          className={`aspect-[16/9] ${
-                            tweet.images!.length === 3 && index === 0 ? 'row-span-2' : ''
-                          }`}
-                        >
-                          <img 
-                            src={image} 
-                            alt={`Tweet image ${index + 1}`} 
-                            className="w-full h-full object-cover"
-                          />
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              )}
+              {/* Media (Images & Videos) */}
+              <MediaGrid mobile />
 
               {/* Timestamp */}
               <div className="text-gray-500 text-sm mb-3 pb-3 border-b border-gray-100">
