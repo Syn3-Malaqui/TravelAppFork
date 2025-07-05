@@ -1120,4 +1120,6 @@ export const TweetCard: React.FC<TweetCardProps> = React.memo(({
       )}
     </>
   );
-};
+});
+
+export default TweetCard;
