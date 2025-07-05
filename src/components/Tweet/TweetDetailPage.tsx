@@ -148,6 +148,7 @@ export const TweetDetailPage: React.FC = () => {
     if (tweet.images && tweet.images.length) {
       tweet.images.forEach((rawUrl) => {
         const cleanUrl = rawUrl.startsWith('image:') ? rawUrl.slice(6) : rawUrl.startsWith('video:') ? rawUrl.slice(6) : rawUrl;
+        if (!/^https?:\/\//.test(cleanUrl)) return;
         media.push({ url: cleanUrl, type: isVideoUrl(cleanUrl) ? 'video' : 'image' });
       });
     }

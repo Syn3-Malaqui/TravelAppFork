@@ -171,11 +171,10 @@ export const TweetCard: React.FC<TweetCardProps> = React.memo(({
     };
 
     // Add images
-    if (tweet.images) {
-      tweet.images.forEach(url => {
-        // Remove 'image:' prefix if present
-        const cleanUrl = url.startsWith('image:') ? url.slice(6) : url;
-        // Check if it's actually a video despite being in images array
+    if (tweet.images && tweet.images.length) {
+      tweet.images.forEach((rawUrl) => {
+        const cleanUrl = rawUrl.startsWith('image:') ? rawUrl.slice(6) : rawUrl.startsWith('video:') ? rawUrl.slice(6) : rawUrl;
+        if (!/^https?:\/\//.test(cleanUrl)) return; // skip non-URL placeholders
         media.push({ url: cleanUrl, type: isVideoUrl(cleanUrl) ? 'video' : 'image' });
       });
     }
@@ -193,17 +192,14 @@ export const TweetCard: React.FC<TweetCardProps> = React.memo(({
     if (tweet.media) {
       tweet.media.forEach(item => {
         if (typeof item === 'string') {
-          // Handle string URLs with prefixes
-          const cleanUrl = item.startsWith('video:') ? item.slice(6) : 
+          const cleanUrl = item.startsWith('video:') ? item.slice(6) :
                           item.startsWith('image:') ? item.slice(6) : item;
-          
-          // Determine type based on file extension, overriding any prefix
+          if (!/^https?:\/\//.test(cleanUrl)) return;
           const type = isVideoUrl(cleanUrl) ? 'video' : 'image';
           media.push({ url: cleanUrl, type });
         } else {
-          // Handle objects with url and type properties
           const cleanUrl = item.url.startsWith(`${item.type}:`) ? item.url.slice(item.type.length + 1) : item.url;
-          // Override type if URL indicates different media type
+          if (!/^https?:\/\//.test(cleanUrl)) return;
           const type = isVideoUrl(cleanUrl) ? 'video' : item.type;
           media.push({ url: cleanUrl, type });
         }
