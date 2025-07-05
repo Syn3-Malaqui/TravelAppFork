@@ -950,11 +950,6 @@ export const TweetCard: React.FC<TweetCardProps> = React.memo(({
                               loading="lazy"
                               onClick={(e: React.MouseEvent) => e.stopPropagation()}
                             />
-                            <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-30 pointer-events-none">
-                              <div className="bg-white bg-opacity-20 rounded-full p-3">
-                                <Play className="w-8 h-8 text-white" />
-                              </div>
-                            </div>
                           </div>
                         )}
                       </div>
@@ -986,11 +981,6 @@ export const TweetCard: React.FC<TweetCardProps> = React.memo(({
                                   loading="lazy"
                                   onClick={(e: React.MouseEvent) => e.stopPropagation()}
                                 />
-                                <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-30 pointer-events-none">
-                                  <div className="bg-white bg-opacity-20 rounded-full p-2">
-                                    <Play className="w-6 h-6 text-white" />
-                                  </div>
-                                </div>
                               </div>
                             )}
                           </div>
@@ -1024,11 +1014,6 @@ export const TweetCard: React.FC<TweetCardProps> = React.memo(({
                                   loading="lazy"
                                   onClick={(e: React.MouseEvent) => e.stopPropagation()}
                                 />
-                                <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-30 pointer-events-none">
-                                  <div className="bg-white bg-opacity-20 rounded-full p-2">
-                                    <Play className="w-6 h-6 text-white" />
-                                  </div>
-                                </div>
                               </div>
                             )}
                           </div>
