@@ -94,6 +94,19 @@ export const TweetDetailPage: React.FC = () => {
   }, [checkIfUserIsAdmin]);
 
   const formatTweetData = (tweetData: TweetWithProfile, userLikes: string[], userRetweets: string[], userBookmarks: string[]): Tweet => {
+    // Helper function to process media URLs
+    const processMediaUrls = (urls: (string | `image:${string}` | `video:${string}`)[] | undefined): (string | `image:${string}` | `video:${string}`)[] => {
+      if (!urls) return [];
+      return urls.map(url => {
+        // If URL is already prefixed, return as is
+        if (url.startsWith('image:') || url.startsWith('video:')) {
+          return url;
+        }
+        // Add appropriate prefix based on file type
+        return url.toLowerCase().endsWith('.mp4') ? `video:${url}` as const : `image:${url}` as const;
+      });
+    };
+
     return {
       id: tweetData.id,
       content: tweetData.content,
@@ -104,6 +117,7 @@ export const TweetDetailPage: React.FC = () => {
         avatar: tweetData.profiles.avatar_url || '',
         bio: tweetData.profiles.bio,
         verified: tweetData.profiles.verified,
+        isAdmin: tweetData.profiles.is_admin,
         followers: tweetData.profiles.followers_count,
         following: tweetData.profiles.following_count,
         country: tweetData.profiles.country,
@@ -114,14 +128,17 @@ export const TweetDetailPage: React.FC = () => {
       retweets: tweetData.retweets_count,
       replies: tweetData.replies_count,
       views: tweetData.views_count,
-      images: tweetData.image_urls,
+      images: processMediaUrls(tweetData.image_urls),
+      videos: processMediaUrls(tweetData.video_urls),
       isLiked: userLikes.includes(tweetData.id),
       isRetweeted: userRetweets.includes(tweetData.id),
       isBookmarked: userBookmarks.includes(tweetData.id),
-      hashtags: tweetData.hashtags,
-      mentions: tweetData.mentions,
+      hashtags: tweetData.hashtags || [],
+      mentions: tweetData.mentions || [],
       tags: tweetData.tags || [],
-      replyTo: tweetData.reply_to,
+      replyTo: tweetData.reply_to || undefined,
+      isRetweet: tweetData.is_retweet,
+      originalTweet: tweetData.original_tweet ? formatTweetData(tweetData.original_tweet, userLikes, userRetweets, userBookmarks) : undefined,
     };
   };
 
@@ -141,7 +158,7 @@ export const TweetDetailPage: React.FC = () => {
       setError(null);
 
       // Fetch the main tweet
-      const { data: tweetData, error: tweetError } = await supabase
+      const { data: rawTweetData, error: tweetError } = await supabase
         .from('tweets')
         .select(`
           id,
@@ -149,6 +166,7 @@ export const TweetDetailPage: React.FC = () => {
           author_id,
           reply_to,
           image_urls,
+          video_urls,
           hashtags,
           mentions,
           tags,
@@ -157,6 +175,9 @@ export const TweetDetailPage: React.FC = () => {
           replies_count,
           views_count,
           created_at,
+          updated_at,
+          is_retweet,
+          original_tweet_id,
           profiles!tweets_author_id_fkey (
             id,
             username,
@@ -164,16 +185,24 @@ export const TweetDetailPage: React.FC = () => {
             avatar_url,
             bio,
             verified,
+            is_admin,
             followers_count,
             following_count,
             country,
-            created_at
+            created_at,
+            updated_at
           )
         `)
         .eq('id', tweetId)
         .single();
 
       if (tweetError) throw tweetError;
+
+      // Transform the raw data into the correct shape
+      const tweetData: TweetWithProfile = {
+        ...rawTweetData,
+        profiles: rawTweetData.profiles[0], // Convert array to single object
+      };
 
       // Get current user interactions
       let userLikes: string[] = [];
@@ -204,20 +233,19 @@ export const TweetDetailPage: React.FC = () => {
         userBookmarks = bookmarksResult.data?.map(bookmark => bookmark.tweet_id) || [];
       }
 
-      const formattedTweet = formatTweetData(tweetData as TweetWithProfile, userLikes, userRetweets, userBookmarks);
+      const formattedTweet = formatTweetData(tweetData, userLikes, userRetweets, userBookmarks);
       setTweet(formattedTweet);
 
-      // If this tweet is a reply, fetch the parent tweet
-      if (tweetData.reply_to) {
-        await fetchParentTweet(tweetData.reply_to);
+      // If this is a reply, fetch the parent tweet
+      if (formattedTweet.replyTo) {
+        fetchParentTweet(formattedTweet.replyTo);
       }
 
-      // Fetch replies to this tweet
-      await fetchReplies(tweetData.id);
-
-    } catch (err: any) {
-      setError(err.message);
-      console.error('Error fetching tweet detail:', err);
+      // Fetch replies for this tweet
+      fetchReplies(formattedTweet.id);
+    } catch (error) {
+      console.error('Error fetching tweet:', error);
+      setError('Failed to load tweet');
     } finally {
       setLoading(false);
     }
@@ -225,7 +253,7 @@ export const TweetDetailPage: React.FC = () => {
 
   const fetchParentTweet = async (parentId: string) => {
     try {
-      const { data: parentData, error: parentError } = await supabase
+      const { data: rawParentData, error: parentError } = await supabase
         .from('tweets')
         .select(`
           id,
@@ -233,6 +261,7 @@ export const TweetDetailPage: React.FC = () => {
           author_id,
           reply_to,
           image_urls,
+          video_urls,
           hashtags,
           mentions,
           tags,
@@ -241,6 +270,9 @@ export const TweetDetailPage: React.FC = () => {
           replies_count,
           views_count,
           created_at,
+          updated_at,
+          is_retweet,
+          original_tweet_id,
           profiles!tweets_author_id_fkey (
             id,
             username,
@@ -248,10 +280,12 @@ export const TweetDetailPage: React.FC = () => {
             avatar_url,
             bio,
             verified,
+            is_admin,
             followers_count,
             following_count,
             country,
-            created_at
+            created_at,
+            updated_at
           )
         `)
         .eq('id', parentId)
@@ -259,7 +293,13 @@ export const TweetDetailPage: React.FC = () => {
 
       if (parentError) throw parentError;
 
-      // Get user interactions for parent tweet
+      // Transform the raw data into the correct shape
+      const parentData: TweetWithProfile = {
+        ...rawParentData,
+        profiles: rawParentData.profiles[0], // Convert array to single object
+      };
+
+      // Get current user interactions for parent tweet
       let userLikes: string[] = [];
       let userRetweets: string[] = [];
       let userBookmarks: string[] = [];
@@ -288,10 +328,10 @@ export const TweetDetailPage: React.FC = () => {
         userBookmarks = bookmarksResult.data?.map(bookmark => bookmark.tweet_id) || [];
       }
 
-      const formattedParent = formatTweetData(parentData as TweetWithProfile, userLikes, userRetweets, userBookmarks);
-      setParentTweet(formattedParent);
+      setParentTweet(formatTweetData(parentData, userLikes, userRetweets, userBookmarks));
     } catch (error) {
       console.error('Error fetching parent tweet:', error);
+      // Don't set error state for parent tweet failures
     }
   };
 
