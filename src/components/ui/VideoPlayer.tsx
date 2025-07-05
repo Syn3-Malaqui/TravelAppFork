@@ -48,4 +48,6 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
   );
 };
 
-export default VideoPlayer; 
+export default VideoPlayer;
+// Provide named export for compatibility with existing imports
+export { VideoPlayer }; 
